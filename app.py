@@ -94,36 +94,49 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [고급형 스타일 커스텀 CSS] 
-# 밋밋함을 없애고 설명글과 상자가 일체형 미니 카드로 묶이도록 CSS 스타일을 대폭 강화했습니다.
+# 💡 [정밀 밸런스 조정 CSS] 선생님 피드백에 맞추어 폰트 규격 및 상자 가로폭을 10% 스케일업했습니다.
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
-        div.block-container {padding-top: 4.5rem !important; padding-bottom: 0rem !important;}
+        div.block-container {padding-top: 5rem !important; padding-bottom: 0rem !important;}
         .stTable th, .stTable td, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 폼 상자 자체를 50% 세련된 깃허브형 카드로 변신시키는 마법의 핵심 CSS */
+        /* 💡 기존 360px에서 딱 10% 키운 400px 마스터 카드 레이아웃 */
         div[data-testid="stForm"] {
-            max-width: 360px !important;
+            max-width: 400px !important;
             margin: 0 auto !important;
-            background-color: #f6f8fa !important; /* 부드러운 회색 배경색 */
-            border: 1px solid #d0d7de !important; /* 깔끔한 외곽선 테두리 */
-            border-radius: 8px !important;       /* 모서리 라운딩 */
-            padding: 26px !important;             /* 내부 여백 안착 */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important; /* 세련된 그림자 효과 */
+            background-color: #f6f8fa !important; 
+            border: 1px solid #d0d7de !important; 
+            border-radius: 8px !important;       
+            padding: 30px !important; /* 내부 여백도 더 풍성하게 업그레이드 */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important; 
         }
         
-        /* 박스 내부 텍스트 스타일 정돈 */
-        .box-title { font-size: 20px !important; font-weight: 600 !important; color: #24292f !important; text-align: center; margin-bottom: 6px; }
-        .box-desc { font-size: 13px !important; color: #57606a !important; text-align: center; line-height: 1.4; margin-bottom: 20px; }
+        /* 💡 타이틀 크기를 중간 지점(23px)으로 딱 맞게 튜닝 */
+        .box-title { 
+            font-size: 23px !important; 
+            font-weight: 600 !important; 
+            color: #24292f !important; 
+            text-align: center; 
+            margin-bottom: 12px; 
+        }
+        
+        /* 설명글 스타일 조정 */
+        .box-desc { 
+            font-size: 13.5px !important; 
+            color: #57606a !important; 
+            text-align: center; 
+            line-height: 1.5; 
+            margin-bottom: 24px; 
+        }
         
         .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
         
         label div p { font-size: 14px !important; font-weight: 500 !important; color: #24292f !important; }
-        div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 6px 10px !important; background-color: #ffffff !important; }
+        div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 7px 10px !important; background-color: #ffffff !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -146,15 +159,16 @@ if is_admin_mode:
     if not st.session_state["admin_logged_in"]:
         col_space1, col_center, col_space2 = st.columns([1, 2, 1])
         with col_center:
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             
-            # 💡 [대변신] 타이틀과 설명문을 st.form 안쪽으로 완전히 이사시켰습니다!
             with st.form("admin_premium_login_form"):
+                # 💡 제목 크기 중상 스케일 및 설명글 한 줄 띄우기 구조 개편 완료
                 st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
+                st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True) # 얇은 구분선으로 가독성 확보
                 st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
                 
                 admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
-                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
             
             if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
