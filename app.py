@@ -12,7 +12,6 @@ META_FILE = "admin_meta.csv"
 
 # --- [보안] 암호 복잡도 검사 함수 ---
 def is_strong_password(pw):
-    # 12자 이상, 영문, 숫자, 특수문자 포함 여부 체크
     if len(pw) < 12:
         return False, "❌ 최소 12자리 이상이어야 합니다."
     if not re.search("[a-zA-Z]", pw):
@@ -21,7 +20,7 @@ def is_strong_password(pw):
         return False, "❌ 숫자가 포함되어야 합니다."
     if not re.search("[!@#$%^&*(),.?\":{}|<>]", pw):
         return False, "❌ 특수문자가 포함되어야 합니다."
-    return True, "✅ 사용 가능한 안전한 암호입니다."
+    return True, "✅ 사용 가능한 안전한 암호 조건입니다."
 
 # --- 데이터 로드/저장 함수 ---
 def load_master_subjects():
@@ -105,7 +104,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# URL 모드 확인
 query_params = st.query_params
 is_admin_mode = query_params.get("mode") == "admin"
 
@@ -140,28 +138,44 @@ if is_admin_mode:
             st.title("⚙️ 교과·학년 통합 제어 센터")
         with col_head_pw:
             st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
-            # 💡 암호 변경 팝오버 (작은 버튼 형태)
+            
+            # 💡 [업그레이드] 암호 변경 팝오버 창 구현
             with st.popover("🔐 암호 변경"):
-                st.markdown("**관리자 암호 설정**")
-                new_pw = st.text_input("새 암호 입력", type="password", help="12자 이상, 영문/숫자/특수문자 필수")
+                st.markdown("**관리자 암호 새 설정**")
                 
+                # 두 개의 입력창 배치
+                new_pw = st.text_input("1. 새 암호 입력", type="password")
+                confirm_pw = st.text_input("2. 새 암호 확인", type="password")
+                
+                # 유효성 조건 검사
                 is_valid, msg = is_strong_password(new_pw)
+                
+                # 실시간 상태 안내 메시지 출력
                 if new_pw:
-                    st.markdown(f"<p style='font-size:12px;'>{msg}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size:12px; margin-bottom:5px;'>{msg}</p>", unsafe_allow_html=True)
+                    if new_pw == confirm_pw and is_valid:
+                        st.success("✅ 두 암호가 완벽하게 일치합니다.")
+                    elif confirm_pw and new_pw != confirm_pw:
+                        st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
                 
                 st.markdown("""<div class="pw-guide">
                 <b>[설정 규칙]</b><br>
-                1. 최소 12자 이상<br>
-                2. 영문 + 숫자 + 특수기호 조합<br><br>
-                <b>[안전한 암호 예시]</b> (복사해서 사용 가능)<br>
+                1. 최소 12자 이상 필수<br>
+                2. 영문 + 숫자 + 특수기호 모두 포함<br><br>
+                <b>[안전한 암호 예시]</b> (복사 후 수정 가능)<br>
                 - <span class="pw-example">teacher!@2026info</span><br>
                 - <span class="pw-example">pass#$99grade!!</span><br>
                 - <span class="pw-example">study**24safe##</span>
                 </div>""", unsafe_allow_html=True)
                 
-                if st.button("변경 사항 저장", disabled=not is_valid, use_container_width=True):
+                # 두 입력값이 일치하고 보안 규격을 통과해야만 버튼 활성화
+                can_submit = is_valid and (new_pw == confirm_pw)
+                
+                if st.button("변경 사항 저장", disabled=not can_submit, use_container_width=True, type="primary"):
                     save_admin_password(new_pw)
-                    st.success("암호가 변경되었습니다!")
+                    # 알림을 띄우고 토스트를 찍은 후 화면을 리런하여 팝업창을 자동으로 닫습니다.
+                    st.toast("🎉 암호가 성공적으로 변경되었습니다!")
+                    st.success("암호 변경 완료! 창이 닫힙니다.")
                     st.rerun()
 
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
@@ -201,7 +215,7 @@ if is_admin_mode:
                     st.rerun()
                 else: st.error("과목/학년을 선택하세요.")
 
-        if "active_subject" in st.session_state:
+        if "active_subject" in st.session_state and st.session_state.active_subject:
             sub, grd = st.session_state.active_subject, st.session_state.active_grade
             cf, sf = get_file_names(sub, grd)
             conf = load_config(cf)
@@ -209,7 +223,6 @@ if is_admin_mode:
             st.markdown("---")
             st.markdown(f"### 📍 작업 중: <span style='color:#1E88E5;'>[{sub}] {grd}학년</span>", unsafe_allow_html=True)
             
-            # 파트1: 설정
             st.markdown("#### 📌 [파트 1] 학기 및 평가 세팅")
             col_t, _ = st.columns([1.5, 1.5])
             with col_t:
@@ -236,7 +249,6 @@ if is_admin_mode:
                     with cols_i[(i-1)%3]:
                         item_names.append(st.text_input(f"{i}번 이름", value=conf.get(f'항목{i}_이름', "") if conf else ""))
 
-            # 파트2: 제어
             st.markdown("#### 📂 [파트 2] 데이터 제어")
             ready = final_t != "학년도/학기를 선택하세요." and sel_cl and n_item > 0 and all(item_names)
             
