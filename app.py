@@ -94,7 +94,7 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [핵심 디자인 수정 CSS] 입력창과 로그인 버튼의 가로 크기를 기존 대비 딱 반값(50%) 수준인 340px로 제한했습니다.
+# 💡 [디자인 완전 교정] 스트림릿 내장 로그인 폼과 입력창, 버튼의 가로 길이를 강제로 50% 수준(360px)으로 완전 고정했습니다.
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
@@ -103,11 +103,17 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 로그인 상자, 입력창, 버튼을 세트로 묶어 가로 너비를 50% 수준으로 강제 축소하는 중앙 정렬 상자 */
-        .admin-login-wrap {
-            max-width: 340px;
-            margin: 0 auto;
-            text-align: left;
+        /* 💡 로그인창 전체(라벨, 입력칸, 로그인 버튼 전체)를 감싸서 가로폭을 딱 50% 크기로 제한하는 CSS 마스터 키 */
+        div[data-testid="column"] div[data-testid="stVerticalBlock"] div[data-testid="stElementContainer"] {
+            max-width: 360px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        
+        /* 제목과 설명글 텍스트는 정중앙에 시원하게 배치 */
+        .admin-top-title {
+            text-align: center !important;
+            width: 100% !important;
         }
         
         .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
@@ -115,7 +121,6 @@ st.markdown("""
         
         label div p { font-size: 14px !important; font-weight: 500 !important; color: #24292f !important; }
         div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 6px 10px !important; }
-        div[data-testid="stForm"] { border-radius: 6px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -138,17 +143,14 @@ if is_admin_mode:
     if not st.session_state["admin_logged_in"]:
         col_space1, col_center, col_space2 = st.columns([1, 2, 1])
         with col_center:
-            st.markdown("<h3 style='text-align: center;'>⚙️ 선생님 전용 통합 관리자 페이지</h3>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center; color: gray; font-size: 14px;'>여러 교과와 학년별 성적 데이터베이스를 스위칭하며 관리하는 공간입니다.</p>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
+            # 💡 타이틀 구역은 정중앙 정렬 스타일 클래스 부여
+            st.markdown("<div class='admin-top-title'><h3 style='margin-bottom:0px;'>⚙️ 선생님 전용 통합 관리자 페이지</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='color: gray; font-size: 14px; margin-top:5px;'>여러 교과와 학년별 성적 데이터베이스를 스위칭하며 관리하는 공간입니다.</p><br></div>", unsafe_allow_html=True)
             
-            # 💡 [크기 50% 축소 컨테이너 시작] 이 안의 비밀번호 창과 로그인 버튼은 딱 이쁘게 작아집니다.
-            st.markdown('<div class="admin-login-wrap">', unsafe_allow_html=True)
+            # 입력칸과 버튼 (위의 CSS 설정 덕분에 완벽하게 가로 50% 크기로 제한되어 정중앙 배치됩니다.)
             admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
-            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
             login_submitted = st.button("로그인", use_container_width=True, type="primary")
-            st.markdown('</div>', unsafe_allow_html=True)
-            # 💡 [컨테이너 끝]
             
             if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
                 if admin_pw == CURRENT_ADMIN_PW:
@@ -289,3 +291,52 @@ if is_admin_mode:
                 save_admin_password(new_pw)
                 st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
                 st.success("🎉 변경 성공! 새 비밀번호가 활성화되었습니다.")
+
+# ==========================================
+# B. 학생 화면 (기본)
+# ==========================================
+else:
+    col_l, col_r = st.columns([6, 1])
+    with col_l: st.title("🎒 수행평가 성적 확인 시스템")
+    with col_r:
+        if st.button("⚙️ 관리자"):
+            st.query_params.update(mode="admin")
+            st.rerun()
+    
+    st.header("📝 개인별 성적 조회")
+    active_dbs = get_active_databases()
+    
+    if not active_dbs:
+        st.warning("등록된 데이터가 없습니다.")
+    else:
+        opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
+        sel_s = st.selectbox("조회할 과목 선택", opts_s)
+        
+        if sel_s != "과목을 선택하세요.":
+            db = active_dbs[opts_s.index(sel_s)-1]
+            cf, sf = get_file_names(db['subject'], db['grade'].replace("학년",""))
+            config = load_config(cf)
+            
+            st.info(f"🧬 **{config['교과명']}** | **{config['학기통합명']}**")
+            
+            with st.form("login"):
+                classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")]
+                c1, c2 = st.columns(2)
+                with c1: b_sel = st.selectbox("반", classes)
+                with c2: n_sel = st.number_input("번호", 1, 50, 1)
+                name_in = st.text_input("이름")
+                pw_in = st.text_input("비밀번호", type="password")
+                if st.form_submit_button("점수 확인"):
+                    df_st = load_students(sf)
+                    if df_st.empty: st.error("성적 파일이 없습니다.")
+                    else:
+                        res = df_st[(df_st['반']==int(b_sel.replace("반",""))) & (df_st['번호']==n_sel) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
+                        if not res.empty:
+                            idx = res.index[0]
+                            scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
+                            st.success(f"🎉 {name_in} 학생의 점수입니다.")
+                            st.table(pd.DataFrame(scores))
+                            if df_st.loc[idx, '확인여부'] != "확인 완료":
+                                df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                df_st.to_csv(sf, index=False)
+                        else: st.error("정보가 일치하지 않습니다.")
