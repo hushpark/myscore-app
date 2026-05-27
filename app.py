@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit st
 import pandas as pd
 import os
 from datetime import datetime
@@ -94,7 +94,8 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [통합 디자인 세팅 CSS] 로그인 창 슬림 비율과 하단 암호 변경 구역 정밀 패치를 모두 결합했습니다.
+# 💡 [CSS 간섭 완전 차단 패치]
+# 오직 로그인창 고유의 키가 든 폼만 400px로 줄이고, 내부 관리자 암호창은 마음대로 늘어나도록 대상을 분리했습니다.
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
@@ -103,7 +104,7 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 로그인 폼 상자 전용 가로너비 400px 제한 세팅 */
+        /* 💡 오직 로그인 폼 상자만 400px 가로너비 제한 적용 */
         div[data-testid="stForm"]:has(input[key="admin_password_input_key"]) {
             max-width: 400px !important;
             margin: 0 auto !important;
@@ -114,8 +115,21 @@ st.markdown("""
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important; 
         }
         
-        .box-title { font-size: 23px !important; font-weight: 600 !important; color: #24292f !important; text-align: center; margin-bottom: 12px; }
-        .box-desc { font-size: 13.5px !important; color: #57606a !important; text-align: center; line-height: 1.5; margin-bottom: 24px; }
+        .box-title { 
+            font-size: 23px !important; 
+            font-weight: 600 !important; 
+            color: #24292f !important; 
+            text-align: center; 
+            margin-bottom: 12px; 
+        }
+        
+        .box-desc { 
+            font-size: 13.5px !important; 
+            color: #57606a !important; 
+            text-align: center; 
+            line-height: 1.5; 
+            margin-bottom: 24px; 
+        }
         
         .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
@@ -151,9 +165,9 @@ if is_admin_mode:
                 st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
                 st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
                 
-                # 💡 요구하신 한 줄 띄우기 완벽 유지
                 st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                 
+                # 고유 식별 key 지정으로 CSS 간섭 차단
                 admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password", key="admin_password_input_key")
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
@@ -266,7 +280,7 @@ if is_admin_mode:
                     st.success("성적 데이터 연동 완료!")
                 except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
 
-        # 💡 [정밀 복구 완료] 가로로 길게 찢어지던 버그를 잡고 예쁜 콤팩트 2단 배치 레이아웃을 다시 이식했습니다.
+        # 💡 [정상화 복구 완료] 위 레이아웃과 완벽히 독자적으로 분리되어, 예쁜 가로 비율을 정상적으로 출력합니다.
         st.markdown("<br><br><br>---", unsafe_allow_html=True)
         st.markdown("### 🔐 관리자 인증 암호 변경 (2중 교차 검증)")
         
