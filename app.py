@@ -94,25 +94,25 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [정중앙 정렬 스페셜 CSS] 
-# 브라우저의 전체 화면 높이를 계산하여 로그인 폼이 가로/세로 '완전 정중앙'에 위치하도록 정밀 교정했습니다.
+# 💡 [초강력 강제 정중앙 CSS] 
+# 스트림릿 내부 시스템 클래스를 직접 타격하여 로그인 폼을 무조건 '화면 정중앙(가로/세로)'에 '400px 크기'로 고정합니다.
 st.markdown("""
     <style>
+        /* 기본 헤더 제거 */
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
         
-        /* 로그인 전 화면일 때만 화면 전체를 유연하게 수직/수평 중앙 정렬하는 마법 */
-        .stApp:has(form[data-testid="stForm"].only-admin-center) div.block-container {
+        /* 💡 로그인 화면 진입 시 전체 캔버스를 상하좌우 정중앙 정렬 기지로 바꿈 */
+        .stApp:has(div.only-login-target) div.block-container {
             display: flex !important;
             flex-direction: column !important;
-            justify-content: center !important; /* 세로 가운데 정렬 */
-            align-items: center !important;     /* 가로 가운데 정렬 */
-            min-height: 85vh !important;       /* 브라우저 화면 높이 확보 */
-            padding-top: 0rem !important;
-            padding-bottom: 0rem !important;
+            justify-content: center !important; /* 세로 정중앙 */
+            align-items: center !important;     /* 가로 정중앙 */
+            min-height: 90vh !important;        /* 브라우저 세로 공간 90% 강제 점유 */
+            padding: 0rem !important;
         }
         
-        /* 마스터 카드 레이아웃 크기 고정 */
-        form[data-testid="stForm"].only-admin-center {
+        /* 💡 스트림릿 내장 Form 자체의 가로 크기를 선생님이 원하신 황금 비율(400px)로 강제 고정 */
+        .stApp:has(div.only-login-target) div[data-testid="stForm"] {
             max-width: 400px !important;
             width: 400px !important;
             background-color: #f6f8fa !important; 
@@ -122,7 +122,7 @@ st.markdown("""
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important; 
         }
         
-        /* 대시보드 내부 표 정렬용 */
+        /* 제어 센터 내부 테이블 디자인 정돈 */
         .stTable th, .stTable td, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
             text-align: center !important; vertical-align: middle !important;
         }
@@ -155,21 +155,22 @@ if is_admin_mode:
         st.session_state["admin_logged_in"] = False
 
     if not st.session_state["admin_logged_in"]:
-        # 💡 중앙 정렬용 특수 폼 컨테이너 실행
-        with st.form("admin_premium_login_form"):
-            st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
-            st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
-            
-            # 💡 요구하신 대로 한 줄 띄우고 깔끔하게 분리했습니다.
-            st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True) # 추가 한 줄 띄움
-            
-            admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-            login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
-            
-            # CSS가 타깃을 인지하도록 폼 뒤에 특수 클래스 주입
-            st.markdown("<script>document.forms[0].classList.add('only-admin-center');</script>", unsafe_allow_html=True)
+        # 💡 좌우 여백 분할 컬럼 내부에서 마스터 폼 실행
+        col_space1, col_center, col_space2 = st.columns([1, 2, 1])
+        with col_center:
+            with st.form("admin_premium_login_form"):
+                st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
+                st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
+                
+                st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True) 
+                
+                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
+                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
+                
+                # 💡 CSS에게 로그인 화면임을 알리는 영구 꼬표 고유 마크 주입
+                st.markdown("<div class='only-login-target'></div>", unsafe_allow_html=True)
         
         if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
             if admin_pw == CURRENT_ADMIN_PW:
@@ -179,7 +180,7 @@ if is_admin_mode:
                 st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 로그인 완료 후 대시보드는 상단부터 시원시원하게 정식 배치됩니다.
+        # 로그인 완료 후 대시보드는 1번 사진처럼 화면 전체를 쓰며 정상 상단 배치됩니다.
         st.title("⚙️ 교과·학년 통합 제어 센터")
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
@@ -330,7 +331,7 @@ else:
         st.warning("등록된 데이터가 없습니다.")
     else:
         opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
-        sel_s = st.selectbox("조회할 과목 선택", opts_s)
+        sel_s = st.selectbox("조회할 과목 선택", options=opts_s)
         
         if sel_s != "과목을 선택하세요.":
             db = active_dbs[opts_s.index(sel_s)-1]
