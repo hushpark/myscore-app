@@ -94,7 +94,6 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [핵심 교정 CSS] 오직 로그인창 고유의 키를 가진 폼 상자만 가로너비 400px로 정밀 축소합니다.
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
@@ -103,8 +102,8 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 로그인 폼 상자 전용 가로너비 400px 제한 세팅 */
-        div[data-testid="stForm"]:has(input[key="admin_password_input_key"]) {
+        /* 💡 가로너비 400px 마스터 카드 레이아웃 */
+        div[data-testid="stForm"] {
             max-width: 400px !important;
             margin: 0 auto !important;
             background-color: #f6f8fa !important; 
@@ -164,10 +163,10 @@ if is_admin_mode:
                 st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
                 st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
                 
-                # 요청하신 한 줄 띄우기 공간 유지
+                # 💡 요구하신 한 줄 띄우기용 마크다운 공백 주입 완료!
                 st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                 
-                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password", key="admin_password_input_key")
+                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
             
@@ -279,7 +278,6 @@ if is_admin_mode:
                     st.success("성적 데이터 연동 완료!")
                 except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
 
-        # 하단 암호 변경 구역 독자 유지
         st.markdown("<br><br><br>---", unsafe_allow_html=True)
         st.markdown("### 🔐 관리자 인증 암호 변경 (2중 교차 검증)")
         
@@ -354,7 +352,7 @@ else:
                         if not res.empty:
                             idx = res.index[0]
                             scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
-                            st.success(f"🎉 {name_in} excavation 학생의 점수입니다.")
+                            st.success(f"🎉 {name_in} 학생의 점수입니다.")
                             st.table(pd.DataFrame(scores))
                             if df_st.loc[idx, '확인여부'] != "확인 완료":
                                 df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
