@@ -7,6 +7,7 @@ import glob
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
+META_FILE = "admin_meta.csv"  # 💡 암호 저장용 내부 메타 파일
 
 # --- 직접 입력된 커스텀 과목 로드/저장 함수 ---
 def load_master_subjects():
@@ -39,6 +40,21 @@ def save_new_subject_to_master(group, subject):
             new_data.to_csv(CONFIG_FILE_MAIN, index=False)
     else:
         new_data.to_csv(CONFIG_FILE_MAIN, index=False)
+
+# --- 💡 암호 로드/저장 시스템 함수 ---
+def load_admin_password():
+    if os.path.exists(META_FILE):
+        try:
+            df = pd.read_csv(META_FILE)
+            if 'password' in df.columns and not df.empty:
+                return str(df.iloc[0]['password']).strip()
+        except:
+            pass
+    return "1234"  # 파일이 없으면 기본 암호는 1234
+
+def save_admin_password(new_pw):
+    df = pd.DataFrame([{"password": str(new_pw).strip()}])
+    df.to_csv(META_FILE, index=False)
 
 # --- 동적 파일 경로 생성 함수 ---
 def get_file_names(subject, grade):
@@ -80,7 +96,7 @@ def get_active_databases():
     return active_list
 
 def reset_all_data():
-    for f in glob.glob("config_*_*grade.csv") + glob.glob("students_*_*grade.csv") + [CONFIG_FILE_MAIN]:
+    for f in glob.glob("config_*_*grade.csv") + glob.glob("students_*_*grade.csv") + [CONFIG_FILE_MAIN, META_FILE]:
         try: os.remove(f)
         except: pass
     for key in list(st.session_state.keys()):
@@ -90,8 +106,6 @@ def reset_all_data():
 # --- 앱 기본 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [디자인 업그레이드 핵심 CSS]
-# 깃허브 로그인 박스 특유의 입체적인 사각형 테두리, 배경색, 그림자 라인을 완벽하게 모방해 적용했습니다.
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
@@ -99,8 +113,6 @@ st.markdown("""
         .stTable th, .stTable td, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
             text-align: center !important; vertical-align: middle !important;
         }
-        
-        /* 깃허브 감성 플로팅 박스 스타일 커스텀 */
         .github-box {
             background-color: #f6f8fa;
             border: 1px solid #d0d7de;
@@ -118,9 +130,9 @@ except AttributeError:
     query_all = st.experimental_get_query_params()
     is_admin_mode = query_all.get("mode", [None])[0] == "admin"
 
-# 마스터 데이터베이스 로드
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS_ADMIN = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
+CURRENT_ADMIN_PW = load_admin_password()  # 실시간 저장된 암호 불러오기
 
 # ==========================================
 # A. 선생님 관리자 화면 (?mode=admin)
@@ -131,36 +143,27 @@ if is_admin_mode:
     if "admin_logged_in" not in st.session_state:
         st.session_state["admin_logged_in"] = False
 
-    # 💡 로그인 전 화면: 깃허브와 똑같은 정중앙 미니멀 상자 양식 디자인 구현
     if not st.session_state["admin_logged_in"]:
         col_space1, col_center, col_space2 = st.columns([1.2, 1.6, 1.2])
         
         with col_center:
-            # 상단 전용 아이콘 및 타이틀
             st.markdown("<h3 style='text-align: center; margin-bottom: 5px;'>⚙️ Sign in to Admin</h3>", unsafe_allow_html=True)
             st.markdown("<p style='text-align: center; color: #57606a; font-size: 14px; margin-top: 0px;'>선생님 전용 통합 관리자 페이지</p>", unsafe_allow_html=True)
             
-            # 깃허브 상자 시작 HTML 정의
             st.markdown('<div class="github-box">', unsafe_allow_html=True)
-            
-            # 상자 내부에 정렬되는 패스워드 입력창
             admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요 (Password)", type="password")
-            
-            # 버튼을 누르거나 엔터를 치면 동작하도록 깔끔하게 흐름 제어
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             login_btn = st.button("Sign in", use_container_width=True, type="primary")
-            
-            # 깃허브 상자 마감 HTML 정의
             st.markdown('</div>', unsafe_allow_html=True)
             
-            if login_btn or (admin_pw == "1234"):
-                if admin_pw == "1234":
+            if login_btn or (admin_pw == CURRENT_ADMIN_PW):
+                if admin_pw == CURRENT_ADMIN_PW:
                     st.session_state["admin_logged_in"] = True
                     st.rerun()
                 elif admin_pw:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
-    # 로그인 성공 후
+    # 로그인 성공 후 제어 센터
     else:
         st.title("⚙️ 교과·학년 통합 제어 센터")
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
@@ -346,7 +349,24 @@ if is_admin_mode:
                     df_st = load_students(s_file)
                     if not df_st.empty: st.dataframe(df_st, use_container_width=True)
                     else: st.info("학생 성적 명렬 파일이 아직 업로드되지 않았습니다.")
-        else: st.info("💡 상단에서 교과군과 과목을 지정하여 [영역 활성화]를 누르시면 기저장된 서식이 복원 및 표출됩니다.")
+        else: 
+            st.info("💡 상단에서 교과군과 과목을 지정하여 [영역 활성화]를 누르시면 기저장된 서식이 복원 및 표출됩니다.")
+        
+        # 💡 [새로운 기능 추가] 관리자 화면 맨 밑단에 "암호 변경 양식" 상자 구현
+        st.markdown("<br><br><br>---", unsafe_allow_html=True)
+        st.markdown("### 🔐 관리자 인증 암호 변경")
+        col_pw1, col_pw2 = st.columns([2, 2])
+        with col_pw1:
+            new_admin_password_input = st.text_input("새롭게 적용할 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
+        with col_pw2:
+            st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+            if st.button("🔒 비밀번호 즉시 변경 및 저장"):
+                if not new_admin_password_input.strip():
+                    st.error("⚠️ 공백 암호는 사용할 수 없습니다.")
+                else:
+                    save_admin_password(new_admin_password_input.strip())
+                    st.success("🎉 관리자 암호가 성공적으로 변경되었습니다! 다음 접속부터 새 암호가 적용됩니다.")
+                    st.toast("⚙️ 암호 변경 파일 갱신 완료")
 
 # ==========================================
 # B. 학생 점수 확인 화면 (기본 접속 화면)
