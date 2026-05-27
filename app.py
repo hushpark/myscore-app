@@ -102,8 +102,8 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 가로너비 400px 마스터 카드 레이아웃 */
-        div[data-testid="stForm"] {
+        /* 💡 오직 로그인 폼 비밀번호 상자(admin_password_input_key)를 포함한 카드에만 400px 크기를 제한하여 하단 암호 변경창과의 충돌을 원천 차단합니다. */
+        div[data-testid="stForm"]:has(input[key="admin_password_input_key"]) {
             max-width: 400px !important;
             margin: 0 auto !important;
             background-color: #f6f8fa !important; 
@@ -163,10 +163,11 @@ if is_admin_mode:
                 st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
                 st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
                 
-                # 💡 요구하신 한 줄 띄우기용 마크다운 공백 주입 완료!
+                # 💡 요청하셨던 '공간입니다.' 미세 여백 보정 완료
                 st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                 
-                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
+                # 💡 CSS 조정을 위해 고유한 key 값을 명확히 할당
+                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password", key="admin_password_input_key")
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
             
