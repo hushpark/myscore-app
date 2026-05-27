@@ -162,8 +162,6 @@ if is_admin_mode:
                 st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
                 st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
                 st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
-                
-                # 💡 요구하신 한 줄 띄우기용 마크다운 공백 주입 완료!
                 st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                 
                 admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
@@ -178,7 +176,60 @@ if is_admin_mode:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        st.title("⚙️ 교과·학년 통합 제어 센터")
+        # 상단 타이틀 바 구성 (우측 상단에 암호 변경 버튼 및 학생화면 이동 버튼 배치)
+        col_title, col_btn_pw, col_btn_student = st.columns([5, 1.2, 1.2])
+        with col_title:
+            st.title("⚙️ 교과·학년 통합 제어 센터")
+        with col_btn_pw:
+            st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+            # 암호 변경 창 열고 닫기 토글 버튼
+            if "show_pw_changer" not in st.session_state:
+                st.session_state.show_pw_changer = False
+            if st.button("🔒 암호 변경", use_container_width=True):
+                st.session_state.show_pw_changer = not st.session_state.show_pw_changer
+        with col_btn_student:
+            st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+            if st.button("🎒 학생 화면", use_container_width=True):
+                st.query_params.clear()
+                st.session_state["admin_logged_in"] = False
+                st.rerun()
+
+        # 💡 [요청 반영] 우측 상단 버튼을 눌렀을 때만 나타나는 암호 변경 서브 패널
+        if st.session_state.show_pw_changer:
+            with st.expander("🔐 관리자 인증 암호 변경 (2중 교차 검증)", expanded=True):
+                col_pw1, col_pw2, col_pw_btn = st.columns([1.5, 1.5, 1.2])
+                with col_pw1:
+                    new_pw = st.text_input("1. 새 암호 입력", type="password", key="new_pw_static")
+                with col_pw2:
+                    confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="confirm_pw_static")
+                    
+                is_valid, msg = is_strong_password(new_pw)
+                
+                if new_pw:
+                    if new_pw == confirm_pw and is_valid:
+                        st.success("✅ 조건 통과! 두 암호가 일치합니다.")
+                    elif confirm_pw and new_pw != confirm_pw:
+                        st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
+                    else:
+                        st.warning(msg)
+                        
+                st.markdown("""<div class="pw-guide">
+                <b>[설정 규칙]</b> 최소 12자 이상 필수 & 영문, 숫자, 특수기호 조합 필수<br>
+                <b>[안전 암호 예시]</b> <span class="pw-example">teacher!@2026info</span> | <span class="pw-example">pass#$99grade!!</span> | <span class="pw-example">study**24safe##</span>
+                </div>""", unsafe_allow_html=True)
+
+                with col_pw_btn:
+                    can_submit = is_valid and (new_pw == confirm_pw)
+                    st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+                    if st.button("🔒 새로운 암호로 즉시 변경", disabled=not can_submit, use_container_width=True, type="primary"):
+                        save_admin_password(new_pw)
+                        st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
+                        st.success("🎉 변경 성공! 새 비밀번호가 활성화되었습니다.")
+                        st.session_state.show_pw_changer = False
+                        st.rerun()
+            st.markdown("---")
+
+        # 메인 관리 인터페이스 시작
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
@@ -277,38 +328,6 @@ if is_admin_mode:
                     df_up.to_csv(sf, index=False)
                     st.success("성적 데이터 연동 완료!")
                 except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
-
-        st.markdown("<br><br><br>---", unsafe_allow_html=True)
-        st.markdown("### 🔐 관리자 인증 암호 변경 (2중 교차 검증)")
-        
-        col_pw1, col_pw2, col_pw_btn = st.columns([1.5, 1.5, 1.2])
-        with col_pw1:
-            new_pw = st.text_input("1. 새 암호 입력", type="password", key="new_pw_static")
-        with col_pw2:
-            confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="confirm_pw_static")
-            
-        is_valid, msg = is_strong_password(new_pw)
-        
-        if new_pw:
-            if new_pw == confirm_pw and is_valid:
-                st.success("✅ 조건 통과! 두 암호가 일치합니다.")
-            elif confirm_pw and new_pw != confirm_pw:
-                st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
-            else:
-                st.warning(msg)
-                
-        st.markdown("""<div class="pw-guide">
-        <b>[설정 규칙]</b> 최소 12자 이상 필수 & 영문, 숫자, 특수기호 조합 필수<br>
-        <b>[안전 암호 예시]</b> <span class="pw-example">teacher!@2026info</span> | <span class="pw-example">pass#$99grade!!</span> | <span class="pw-example">study**24safe##</span>
-        </div>""", unsafe_allow_html=True)
-
-        with col_pw_btn:
-            can_submit = is_valid and (new_pw == confirm_pw)
-            st.markdown("<div style='height:2px;'></div>", unsafe_allow_html=True)
-            if st.button("🔒 새로운 암호로 즉시 변경", disabled=not can_submit, use_container_width=True, type="primary"):
-                save_admin_password(new_pw)
-                st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
-                st.success("🎉 변경 성공! 새 비밀번호가 활성화되었습니다.")
 
 # ==========================================
 # B. 학생 화면 (기본)
