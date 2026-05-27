@@ -102,7 +102,33 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 불필요한 크기 제한 CSS를 모두 삭제하여 시원시원한 원본 가로 비율을 백퍼센트 보장합니다. */
+        /* 💡 가로너비 400px 마스터 카드 레이아웃 */
+        div[data-testid="stForm"] {
+            max-width: 400px !important;
+            margin: 0 auto !important;
+            background-color: #f6f8fa !important; 
+            border: 1px solid #d0d7de !important; 
+            border-radius: 8px !important;       
+            padding: 30px !important; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important; 
+        }
+        
+        .box-title { 
+            font-size: 23px !important; 
+            font-weight: 600 !important; 
+            color: #24292f !important; 
+            text-align: center; 
+            margin-bottom: 12px; 
+        }
+        
+        .box-desc { 
+            font-size: 13.5px !important; 
+            color: #57606a !important; 
+            text-align: center; 
+            line-height: 1.5; 
+            margin-bottom: 24px; 
+        }
+        
         .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
         
@@ -133,11 +159,11 @@ if is_admin_mode:
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             
             with st.form("admin_premium_login_form"):
-                st.markdown("<div class='box-title' style='font-size:23px; font-weight:600; text-align:center;'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
+                st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
                 st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
-                st.markdown("<div class='box-desc' style='font-size:13.5px; color:#57606a; text-align:center; line-height:1.5;'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
+                st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
                 
-                # 💡 [정밀 교정] 약속드린 깔끔한 한 줄 공백 여백 확실하게 주입!
+                # 💡 요구하신 한 줄 띄우기용 마크다운 공백 주입 완료!
                 st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                 
                 admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
