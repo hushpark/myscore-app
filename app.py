@@ -94,14 +94,16 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
+# 💡 [맞춤 디자인 디자인 세팅] 입력창의 크기와 글자 폰트 크기를 완벽하게 정돈했습니다.
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
-        div.block-container {padding-top: 5rem !important; padding-bottom: 0rem !important;}
+        div.block-container {padding-top: 2.5rem !important; padding-bottom: 0rem !important;}
         .stTable th, .stTable td, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
             text-align: center !important; vertical-align: middle !important;
         }
         
+        /* 사진 속 아담한 깃허브 규격 컴팩트 로그인 박스 */
         .github-box { 
             background-color: #f6f8fa; 
             border: 1px solid #d0d7de; 
@@ -111,9 +113,10 @@ st.markdown("""
             width: 308px;
             margin: 0 auto;
         }
-        .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; }
+        .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
         
+        /* 라벨 폰트 및 입력 인풋 글자크기 동기화 */
         label div p { font-size: 14px !important; font-weight: 600 !important; color: #24292f !important; }
         div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 6px 8px !important; }
     </style>
@@ -127,7 +130,7 @@ GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
 CURRENT_ADMIN_PW = load_admin_password()
 
 # ==========================================
-# A. 선생님 관리자 화면
+# A. 선생님 관리자 화면 (?mode=admin)
 # ==========================================
 if is_admin_mode:
     if "admin_logged_in" not in st.session_state:
@@ -152,50 +155,8 @@ if is_admin_mode:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 상단 타이틀 + 암호 변경 팝오버 레이아웃
-        col_head_title, col_head_pw = st.columns([5, 1])
-        with col_head_title:
-            st.title("⚙️ 교과·학년 통합 제어 센터")
-        with col_head_pw:
-            st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
-            
-            # 💡 [구조 개선] 팝업 내부 상태 유지를 위해 팝오버 컴포넌트 생성
-            with st.popover("🔐 암호 변경"):
-                st.markdown("**관리자 암호 새 설정**")
-                
-                new_pw = st.text_input("1. 새 암호 입력", type="password", key="new_pw_input")
-                confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="confirm_pw_input")
-                
-                is_valid, msg = is_strong_password(new_pw)
-                
-                if new_pw:
-                    st.markdown(f"<p style='font-size:12px; margin-bottom:5px;'>{msg}</p>", unsafe_allow_html=True)
-                    if new_pw == confirm_pw and is_valid:
-                        st.success("✅ 두 암호가 완벽하게 일치합니다.")
-                    elif confirm_pw and new_pw != confirm_pw:
-                        st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
-                
-                st.markdown("""<div class="pw-guide">
-                <b>[설정 규칙]</b><br>
-                1. 최소 12자 이상 필수<br>
-                2. 영문 + 숫자 + 특수기호 모두 포함<br><br>
-                <b>[안전한 암호 예시]</b><br>
-                - <span class="pw-example">teacher!@2026info</span><br>
-                - <span class="pw-example">pass#$99grade!!</span><br>
-                - <span class="pw-example">study**24safe##</span>
-                </div>""", unsafe_allow_html=True)
-                
-                can_submit = is_valid and (new_pw == confirm_pw)
-                
-                # 💡 저장 버튼 누를 때 즉시 메시지가 먼저 출력되도록 처리
-                if st.button("변경 사항 저장", disabled=not can_submit, use_container_width=True, type="primary"):
-                    save_admin_password(new_pw)
-                    # 전역 알림(toast)을 먼저 띄워 확실하게 성공 메시지를 노출합니다.
-                    st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
-                    st.success("🎉 암호 변경 완료!")
-                    # 약간의 딜레이 체감을 준 뒤 안전하게 새로고침하여 암호 상태를 갱신합니다.
-                    st.rerun()
-
+        # 오리지널 깔끔한 타이틀
+        st.title("⚙️ 교과·학년 통합 제어 센터")
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
@@ -294,6 +255,39 @@ if is_admin_mode:
                     df_up.to_csv(sf, index=False)
                     st.success("성적 데이터 연동 완료!")
                 except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
+
+        # 💡 [복구 완료] 팝업 대신 화면 맨 아래 상시 노출 구역으로 원상복구했습니다.
+        st.markdown("<br><br><br>---", unsafe_allow_html=True)
+        st.markdown("### 🔐 관리자 인증 암호 변경 (2중 교차 검증)")
+        
+        col_pw1, col_pw2, col_pw_btn = st.columns([1.5, 1.5, 1.2])
+        with col_pw1:
+            new_pw = st.text_input("1. 새 암호 입력", type="password", key="new_pw_static")
+        with col_pw2:
+            confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="confirm_pw_static")
+            
+        is_valid, msg = is_strong_password(new_pw)
+        
+        if new_pw:
+            if new_pw == confirm_pw and is_valid:
+                st.success("✅ 조건 통과! 두 암호가 일치합니다.")
+            elif confirm_pw and new_pw != confirm_pw:
+                st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
+            else:
+                st.warning(msg)
+                
+        st.markdown("""<div class="pw-guide">
+        <b>[설정 규칙]</b> 최소 12자 이상 필수 & 영문, 숫자, 특수기호 조합 필수<br>
+        <b>[안전 암호 예시]</b> <span class="pw-example">teacher!@2026info</span> | <span class="pw-example">pass#$99grade!!</span> | <span class="pw-example">study**24safe##</span>
+        </div>""", unsafe_allow_html=True)
+
+        with col_pw_btn:
+            can_submit = is_valid and (new_pw == confirm_pw)
+            st.markdown("<div style='height:2px;'></div>", unsafe_allow_html=True)
+            if st.button("🔒 새로운 암호로 즉시 변경", disabled=not can_submit, use_container_width=True, type="primary"):
+                save_admin_password(new_pw)
+                st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
+                st.success("🎉 변경 성공! 새 비밀번호가 활성화되었습니다.")
 
 # ==========================================
 # B. 학생 화면 (기본)
