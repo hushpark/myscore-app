@@ -1,4 +1,4 @@
-import streamlit st
+import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
@@ -94,8 +94,7 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [CSS 간섭 완전 차단 패치]
-# 오직 로그인창 고유의 키가 든 폼만 400px로 줄이고, 내부 관리자 암호창은 마음대로 늘어나도록 대상을 분리했습니다.
+# 💡 로그인창 전용 가로너비 제한 세팅
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
@@ -104,7 +103,7 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 오직 로그인 폼 상자만 400px 가로너비 제한 적용 */
+        /* 오직 로그인 폼 상자만 400px 가로너비 제한 적용 */
         div[data-testid="stForm"]:has(input[key="admin_password_input_key"]) {
             max-width: 400px !important;
             margin: 0 auto !important;
@@ -167,7 +166,6 @@ if is_admin_mode:
                 
                 st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                 
-                # 고유 식별 key 지정으로 CSS 간섭 차단
                 admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password", key="admin_password_input_key")
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
@@ -280,7 +278,7 @@ if is_admin_mode:
                     st.success("성적 데이터 연동 완료!")
                 except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
 
-        # 💡 [정상화 복구 완료] 위 레이아웃과 완벽히 독자적으로 분리되어, 예쁜 가로 비율을 정상적으로 출력합니다.
+        # 하단 암호 변경 구역 독자 유지
         st.markdown("<br><br><br>---", unsafe_allow_html=True)
         st.markdown("### 🔐 관리자 인증 암호 변경 (2중 교차 검증)")
         
