@@ -94,7 +94,8 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [디자인 긴급 수리] 오직 로그인 전 화면에만 50% 축소가 가도록 대상을 고유 커스텀 타겟으로 변경했습니다.
+# 💡 [디자인 완전 개조 CSS] 
+# 기존의 불안정했던 지정을 버리고, 텍스트 입력과 버튼을 감싸는 Form 자체의 최대 너비를 340px로 강제 고정했습니다.
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
@@ -103,13 +104,15 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 오직 로그인 전에만 작동하는 미니 컴팩트 컨테이너 지정 */
-        .only-login-box div[data-testid="stElementContainer"] {
-            max-width: 360px !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
+        /* 💡 로그인 폼 자체의 크기를 강제로 딱 절반(340px)으로 조절하고 가운데로 모으는 핵심 장치 */
+        div[data-testid="stForm"] {
+            max-width: 340px !important;
+            margin: 0 auto !important;
+            border: none !important; /* 지저분한 외곽 테두리선 삭제 */
+            padding: 0px !important;  /* 여백 정돈 */
         }
         
+        /* 타이틀 구역 정중앙 고정 */
         .admin-top-title { text-align: center !important; width: 100% !important; }
         .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
@@ -141,12 +144,11 @@ if is_admin_mode:
             st.markdown("<div class='admin-top-title'><h3 style='margin-bottom:0px;'>⚙️ 선생님 전용 통합 관리자 페이지</h3>", unsafe_allow_html=True)
             st.markdown("<p style='color: gray; font-size: 14px; margin-top:5px;'>여러 교과와 학년별 성적 데이터베이스를 스위칭하며 관리하는 공간입니다.</p><br></div>", unsafe_allow_html=True)
             
-            # 💡 [핵심 패치] 이 구역만 50% 축소 스타일이 가도록 감싸 안았습니다.
-            st.markdown('<div class="only-login-box">', unsafe_allow_html=True)
-            admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
-            st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
-            login_submitted = st.button("로그인", use_container_width=True, type="primary")
-            st.markdown('</div>', unsafe_allow_html=True)
+            # 💡 [구조 변경] 입력창과 버튼을 하나의 st.form으로 묶어 CSS가 완벽하게 50% 크기로 지배하도록 설계했습니다.
+            with st.form("admin_login_form_container"):
+                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
+                st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
+                login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
             
             if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
                 if admin_pw == CURRENT_ADMIN_PW:
@@ -156,7 +158,7 @@ if is_admin_mode:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 💡 로그인 완료 시 여기는 위의 50% 상자의 간섭을 전혀 받지 않고 100% 원본 비율로 시원하게 나옵니다!
+        # 로그인 완료 후 대시보드는 1번 사진처럼 100% 와이드 화면으로 시원하게 출력됩니다.
         st.title("⚙️ 교과·학년 통합 제어 센터")
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
