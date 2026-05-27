@@ -94,37 +94,22 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [버그 완전 치료 디자인 세팅] 뜬금없는 회색 빈칸 상자 문제를 CSS 개조로 100% 제거했습니다.
+# 💡 [정교한 디자인 세팅] 오리지널 구조를 해치지 않으면서, 글자 크기만 아담하고 예쁘게 조절합니다.
 st.markdown("""
     <style>
         div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
-        div.block-container {padding-top: 5rem !important; padding-bottom: 0rem !important;}
+        div.block-container {padding-top: 4rem !important; padding-bottom: 0rem !important;}
         .stTable th, .stTable td, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
             text-align: center !important; vertical-align: middle !important;
-        }
-        
-        /* 아담한 깃허브 스타일 컴팩트 로그인 박스 */
-        .github-box { 
-            background-color: #f6f8fa; 
-            border: 1px solid #d0d7de; 
-            padding: 24px; 
-            border-radius: 6px; 
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); 
-            width: 308px;
-            margin: 0 auto;
-        }
-        
-        /* 스트림릿 내장 배경 버그 깨짐 방지 장치 */
-        div[data-testid="stTextInput"] div[data-testid="stWidgetLabel"] + div {
-            background-color: transparent !important;
         }
         
         .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
         
-        /* 직관적인 한글 명출용 폰트 스타일 */
-        label div p { font-size: 14px !important; font-weight: 600 !important; color: #24292f !important; }
-        div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 6px 8px !important; }
+        /* 💡 글자 크기와 입력창 높이를 가독성 좋은 아담한 사이즈로 정돈 */
+        label div p { font-size: 14px !important; font-weight: 500 !important; color: #24292f !important; }
+        div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 6px 10px !important; }
+        div[data-testid="stForm"] { border-radius: 6px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -139,23 +124,23 @@ CURRENT_ADMIN_PW = load_admin_password()
 # A. 선생님 관리자 화면 (?mode=admin)
 # ==========================================
 if is_admin_mode:
+    st.markdown('<html lang="ko"></html>', unsafe_allow_html=True)
+    
     if "admin_logged_in" not in st.session_state:
         st.session_state["admin_logged_in"] = False
 
     if not st.session_state["admin_logged_in"]:
-        _, col_center, _ = st.columns([1.5, 1.2, 1.5])
+        # 💡 선생님이 보내주신 오리지널 [1, 2, 1] 비율과 여백 코드를 고스란히 복구했습니다!
+        col_space1, col_center, col_space2 = st.columns([1, 2, 1])
         with col_center:
-            # 💡 영문 'Sign in to Admin' 문구를 친숙한 한글 명칭으로 전면 한글화
-            st.markdown("<h3 style='text-align: center; font-size: 24px; margin-bottom: 15px; font-weight: 400; color: #24292f;'>🔒 관리자 로그인</h3>", unsafe_allow_html=True)
-            st.markdown('<div class="github-box">', unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center;'>⚙️ 선생님 전용 통합 관리자 페이지</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: gray; font-size: 14px;'>여러 교과와 학년별 성적 데이터베이스를 스위칭하며 관리하는 공간입니다.</p>", unsafe_allow_html=True)
+            st.markdown("<br><br>", unsafe_allow_html=True)
             
-            # 라벨도 '관리자 비밀번호 입력'으로 한글 변경
-            admin_pw = st.text_input("관리자 비밀번호", type="password")
-            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-            
-            # 버튼 텍스트도 '로그인'으로 한글 변경
+            # 입력폼과 버튼 배치
+            admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             login_submitted = st.button("로그인", use_container_width=True, type="primary")
-            st.markdown('</div>', unsafe_allow_html=True)
             
             if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
                 if admin_pw == CURRENT_ADMIN_PW:
@@ -165,6 +150,7 @@ if is_admin_mode:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
+        # 로그인 이후 제어 센터 내부 화면
         st.title("⚙️ 교과·학년 통합 제어 센터")
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
@@ -265,6 +251,7 @@ if is_admin_mode:
                     st.success("성적 데이터 연동 완료!")
                 except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
 
+        # 상시 노출형 암호 변경 구역
         st.markdown("<br><br><br>---", unsafe_allow_html=True)
         st.markdown("### 🔐 관리자 인증 암호 변경 (2중 교차 검증)")
         
