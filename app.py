@@ -102,33 +102,7 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 💡 오직 로그인 폼 비밀번호 상자(admin_password_input_key)를 포함한 카드에만 400px 크기를 제한하여 하단 암호 변경창과의 충돌을 원천 차단합니다. */
-        div[data-testid="stForm"]:has(input[key="admin_password_input_key"]) {
-            max-width: 400px !important;
-            margin: 0 auto !important;
-            background-color: #f6f8fa !important; 
-            border: 1px solid #d0d7de !important; 
-            border-radius: 8px !important;       
-            padding: 30px !important; 
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important; 
-        }
-        
-        .box-title { 
-            font-size: 23px !important; 
-            font-weight: 600 !important; 
-            color: #24292f !important; 
-            text-align: center; 
-            margin-bottom: 12px; 
-        }
-        
-        .box-desc { 
-            font-size: 13.5px !important; 
-            color: #57606a !important; 
-            text-align: center; 
-            line-height: 1.5; 
-            margin-bottom: 24px; 
-        }
-        
+        /* 💡 불필요한 크기 제한 CSS를 모두 삭제하여 시원시원한 원본 가로 비율을 백퍼센트 보장합니다. */
         .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
         
@@ -159,15 +133,14 @@ if is_admin_mode:
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             
             with st.form("admin_premium_login_form"):
-                st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
+                st.markdown("<div class='box-title' style='font-size:23px; font-weight:600; text-align:center;'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
                 st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
-                st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
+                st.markdown("<div class='box-desc' style='font-size:13.5px; color:#57606a; text-align:center; line-height:1.5;'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
                 
-                # 💡 요청하셨던 '공간입니다.' 미세 여백 보정 완료
+                # 💡 [정밀 교정] 약속드린 깔끔한 한 줄 공백 여백 확실하게 주입!
                 st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                 
-                # 💡 CSS 조정을 위해 고유한 key 값을 명확히 할당
-                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password", key="admin_password_input_key")
+                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
             
