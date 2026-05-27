@@ -96,11 +96,26 @@ st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wi
 
 st.markdown("""
     <style>
-        div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important;}
-        div.block-container {padding-top: 2rem !important;}
-        .github-box { background-color: #f6f8fa; border: 1px solid #d0d7de; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); }
-        .pw-guide { font-size: 13px; color: #57606a; line-height: 1.6; }
-        .pw-example { font-family: monospace; background: #eef1f4; padding: 2px 5px; border-radius: 3px; }
+        div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
+        div.block-container {padding-top: 5rem !important; padding-bottom: 0rem !important;}
+        .stTable th, .stTable td, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
+            text-align: center !important; vertical-align: middle !important;
+        }
+        
+        .github-box { 
+            background-color: #f6f8fa; 
+            border: 1px solid #d0d7de; 
+            padding: 24px; 
+            border-radius: 6px; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); 
+            width: 308px;
+            margin: 0 auto;
+        }
+        .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; }
+        .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
+        
+        label div p { font-size: 14px !important; font-weight: 600 !important; color: #24292f !important; }
+        div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 6px 8px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -119,17 +134,22 @@ if is_admin_mode:
         st.session_state["admin_logged_in"] = False
 
     if not st.session_state["admin_logged_in"]:
-        _, col_center, _ = st.columns([1.2, 1.6, 1.2])
+        _, col_center, _ = st.columns([1.5, 1.2, 1.5])
         with col_center:
-            st.markdown("<h3 style='text-align: center;'>⚙️ Sign in to Admin</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center; font-size: 24px; margin-bottom: 15px; font-weight: 400; color: #24292f;'>⚙️ Sign in to Admin</h3>", unsafe_allow_html=True)
             st.markdown('<div class="github-box">', unsafe_allow_html=True)
             admin_pw = st.text_input("Password", type="password")
-            if st.button("Sign in", use_container_width=True, type="primary") or (admin_pw == CURRENT_ADMIN_PW):
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+            
+            login_submitted = st.button("Sign in", use_container_width=True, type="primary")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
                 if admin_pw == CURRENT_ADMIN_PW:
                     st.session_state["admin_logged_in"] = True
                     st.rerun()
-                elif admin_pw: st.error("❌ 비밀번호가 올바르지 않습니다.")
-            st.markdown('</div>', unsafe_allow_html=True)
+                elif admin_pw: 
+                    st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
         # 상단 타이틀 + 암호 변경 팝오버 레이아웃
@@ -139,18 +159,15 @@ if is_admin_mode:
         with col_head_pw:
             st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
             
-            # 💡 [업그레이드] 암호 변경 팝오버 창 구현
+            # 💡 [구조 개선] 팝업 내부 상태 유지를 위해 팝오버 컴포넌트 생성
             with st.popover("🔐 암호 변경"):
                 st.markdown("**관리자 암호 새 설정**")
                 
-                # 두 개의 입력창 배치
-                new_pw = st.text_input("1. 새 암호 입력", type="password")
-                confirm_pw = st.text_input("2. 새 암호 확인", type="password")
+                new_pw = st.text_input("1. 새 암호 입력", type="password", key="new_pw_input")
+                confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="confirm_pw_input")
                 
-                # 유효성 조건 검사
                 is_valid, msg = is_strong_password(new_pw)
                 
-                # 실시간 상태 안내 메시지 출력
                 if new_pw:
                     st.markdown(f"<p style='font-size:12px; margin-bottom:5px;'>{msg}</p>", unsafe_allow_html=True)
                     if new_pw == confirm_pw and is_valid:
@@ -162,20 +179,21 @@ if is_admin_mode:
                 <b>[설정 규칙]</b><br>
                 1. 최소 12자 이상 필수<br>
                 2. 영문 + 숫자 + 특수기호 모두 포함<br><br>
-                <b>[안전한 암호 예시]</b> (복사 후 수정 가능)<br>
+                <b>[안전한 암호 예시]</b><br>
                 - <span class="pw-example">teacher!@2026info</span><br>
                 - <span class="pw-example">pass#$99grade!!</span><br>
                 - <span class="pw-example">study**24safe##</span>
                 </div>""", unsafe_allow_html=True)
                 
-                # 두 입력값이 일치하고 보안 규격을 통과해야만 버튼 활성화
                 can_submit = is_valid and (new_pw == confirm_pw)
                 
+                # 💡 저장 버튼 누를 때 즉시 메시지가 먼저 출력되도록 처리
                 if st.button("변경 사항 저장", disabled=not can_submit, use_container_width=True, type="primary"):
                     save_admin_password(new_pw)
-                    # 알림을 띄우고 토스트를 찍은 후 화면을 리런하여 팝업창을 자동으로 닫습니다.
-                    st.toast("🎉 암호가 성공적으로 변경되었습니다!")
-                    st.success("암호 변경 완료! 창이 닫힙니다.")
+                    # 전역 알림(toast)을 먼저 띄워 확실하게 성공 메시지를 노출합니다.
+                    st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
+                    st.success("🎉 암호 변경 완료!")
+                    # 약간의 딜레이 체감을 준 뒤 안전하게 새로고침하여 암호 상태를 갱신합니다.
                     st.rerun()
 
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
