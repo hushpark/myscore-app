@@ -94,34 +94,37 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [우주 정중앙 고정 CSS] 
-# 기존 컬럼 간섭을 완전히 무력화하고, 로그인 창일 때 브라우저 캔버스 자체를 정중앙 기지로 개조했습니다.
+# 💡 [절대적 화면 중앙 정렬 마스터 킷]
+# 스트림릿 메인 패널(.main)과 컨테이너 자체를 강제로 화면 가로/세로 한가운데로 정렬하는 최신 기법입니다.
 st.markdown("""
     <style>
-        /* 상단 헤더 완전히 숨김 */
-        div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
+        /* 불필요한 기본 여백 및 헤더 완전 박멸 */
+        div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important; display: none !important;}
         
-        /* 💡 로그인창 고유 마크가 보이면, 스트림릿 전체 화면 구조를 상하좌우 100% 정중앙으로 강제 배치 */
-        .stApp:has(div.only-login-target-v2) div.block-container {
+        /* 💡 로그인창 고유 식별자가 감지될 때만 브라우저 뷰포트 자체를 100% 중앙 정렬 기지로 개조 */
+        .stApp:has(div.force-center-v3) .main {
             display: flex !important;
             flex-direction: column !important;
             justify-content: center !important; /* 세로 정중앙 */
             align-items: center !important;     /* 가로 정중앙 */
-            min-height: 98vh !important;        /* 잘림 방지를 위해 브라우저 가득 공간 확보 */
-            padding: 0rem !important;
+            height: 100vh !important;           /* 브라우저 화면의 100% 높이 강제 사용 */
+            min-height: 100vh !important;
+            overflow: hidden !important;        /* 잘림 및 스크롤바 방지 */
+        }
+        
+        /* 💡 스트림릿 메인 콘텐츠 박스 여백 초기화하여 중앙 정렬 무력화 방지 */
+        .stApp:has(div.force-center-v3) .block-container {
+            max-width: 100% !important;
+            width: auto !important;
+            padding: 0px !important;
             margin: 0 auto !important;
-            max-width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
         }
         
-        /* 💡 컬럼 내부 정렬이 깨지지 않도록 방해 요소 완벽 차단 */
-        .stApp:has(div.only-login-target-v2) div[data-testid="column"] {
-            width: 100% !important;
-            max-width: 100% !important;
-            flex: 1 1 auto !important;
-        }
-        
-        /* 💡 400px 프리미엄 카드 레이아웃 강제 지정 */
-        .stApp:has(div.only-login-target-v2) div[data-testid="stForm"] {
+        /* 💡 가로 400px 프리미엄 카드 레이아웃 강제 지정 및 상단 잘림 방지 */
+        .stApp:has(div.force-center-v3) div[data-testid="stForm"] {
             max-width: 400px !important;
             width: 400px !important;
             background-color: #f6f8fa !important; 
@@ -129,10 +132,11 @@ st.markdown("""
             border-radius: 8px !important;       
             padding: 30px !important; 
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important;
-            margin: 0 auto !important;
+            margin: 0px auto !important;
+            box-sizing: border-box !important;
         }
         
-        /* 내부 표 정렬 */
+        /* 대시보드 표 내부 정렬 */
         .stTable th, .stTable td, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
             text-align: center !important; vertical-align: middle !important;
         }
@@ -165,7 +169,6 @@ if is_admin_mode:
         st.session_state["admin_logged_in"] = False
 
     if not st.session_state["admin_logged_in"]:
-        # 💡 간섭을 일으키던 컬럼 분할 레이아웃을 제거하고 깔끔하게 폼 하나만 단독 표출합니다.
         with st.form("admin_premium_login_form"):
             st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
             st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
@@ -177,8 +180,8 @@ if is_admin_mode:
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
             
-            # 💡 완벽한 CSS 타격 제어를 위한 고유 표식 버전2 장착
-            st.markdown("<div class='only-login-target-v2'></div>", unsafe_allow_html=True)
+            # 💡 완전무결한 정중앙 배치를 유도하는 특수 버전3 엔진 고유 표식 태그 주입
+            st.markdown("<div class='force-center-v3'></div>", unsafe_allow_html=True)
         
         if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
             if admin_pw == CURRENT_ADMIN_PW:
@@ -188,7 +191,7 @@ if is_admin_mode:
                 st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 로그인 성공 후 대시보드는 1번 사진처럼 상단부터 화면 100% 꽉 차게 나옵니다!
+        # 로그인 이후 공간은 100% 원본 스크린으로 시원시원하게 정렬됩니다.
         st.title("⚙️ 교과·학년 통합 제어 센터")
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
