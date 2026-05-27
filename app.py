@@ -94,55 +94,40 @@ def reset_all_data():
 # --- 앱 설정 ---
 st.set_page_config(page_title="교과용 성적 확인 도우미 v7", layout="wide")
 
-# 💡 [절대적 화면 중앙 정렬 마스터 킷]
-# 스트림릿 메인 패널(.main)과 컨테이너 자체를 강제로 화면 가로/세로 한가운데로 정렬하는 최신 기법입니다.
 st.markdown("""
     <style>
-        /* 불필요한 기본 여백 및 헤더 완전 박멸 */
-        div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important; display: none !important;}
-        
-        /* 💡 로그인창 고유 식별자가 감지될 때만 브라우저 뷰포트 자체를 100% 중앙 정렬 기지로 개조 */
-        .stApp:has(div.force-center-v3) .main {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important; /* 세로 정중앙 */
-            align-items: center !important;     /* 가로 정중앙 */
-            height: 100vh !important;           /* 브라우저 화면의 100% 높이 강제 사용 */
-            min-height: 100vh !important;
-            overflow: hidden !important;        /* 잘림 및 스크롤바 방지 */
-        }
-        
-        /* 💡 스트림릿 메인 콘텐츠 박스 여백 초기화하여 중앙 정렬 무력화 방지 */
-        .stApp:has(div.force-center-v3) .block-container {
-            max-width: 100% !important;
-            width: auto !important;
-            padding: 0px !important;
-            margin: 0 auto !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-        }
-        
-        /* 💡 가로 400px 프리미엄 카드 레이아웃 강제 지정 및 상단 잘림 방지 */
-        .stApp:has(div.force-center-v3) div[data-testid="stForm"] {
-            max-width: 400px !important;
-            width: 400px !important;
-            background-color: #f6f8fa !important; 
-            border: 1px solid #d0d7de !important; 
-            border-radius: 8px !important;       
-            padding: 30px !important; 
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important;
-            margin: 0px auto !important;
-            box-sizing: border-box !important;
-        }
-        
-        /* 대시보드 표 내부 정렬 */
+        div[data-testid="stHeader"] {height: 0px !important; min-height: 0px !important; padding: 0px !important;}
+        div.block-container {padding-top: 5rem !important; padding-bottom: 0rem !important;}
         .stTable th, .stTable td, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
             text-align: center !important; vertical-align: middle !important;
         }
         
-        .box-title { font-size: 23px !important; font-weight: 600 !important; color: #24292f !important; text-align: center; margin-bottom: 12px; }
-        .box-desc { font-size: 13.5px !important; color: #57606a !important; text-align: center; line-height: 1.5; margin-bottom: 10px; }
+        /* 💡 가로너비 400px 마스터 카드 레이아웃 */
+        div[data-testid="stForm"] {
+            max-width: 400px !important;
+            margin: 0 auto !important;
+            background-color: #f6f8fa !important; 
+            border: 1px solid #d0d7de !important; 
+            border-radius: 8px !important;       
+            padding: 30px !important; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important; 
+        }
+        
+        .box-title { 
+            font-size: 23px !important; 
+            font-weight: 600 !important; 
+            color: #24292f !important; 
+            text-align: center; 
+            margin-bottom: 12px; 
+        }
+        
+        .box-desc { 
+            font-size: 13.5px !important; 
+            color: #57606a !important; 
+            text-align: center; 
+            line-height: 1.5; 
+            margin-bottom: 24px; 
+        }
         
         .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
@@ -169,29 +154,30 @@ if is_admin_mode:
         st.session_state["admin_logged_in"] = False
 
     if not st.session_state["admin_logged_in"]:
-        with st.form("admin_premium_login_form"):
-            st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
-            st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
-            
-            st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True) 
-            
-            admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
+        col_space1, col_center, col_space2 = st.columns([1, 2, 1])
+        with col_center:
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-            login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
             
-            # 💡 완전무결한 정중앙 배치를 유도하는 특수 버전3 엔진 고유 표식 태그 주입
-            st.markdown("<div class='force-center-v3'></div>", unsafe_allow_html=True)
-        
-        if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
-            if admin_pw == CURRENT_ADMIN_PW:
-                st.session_state["admin_logged_in"] = True
-                st.rerun()
-            elif admin_pw: 
-                st.error("❌ 비밀번호가 올바르지 않습니다.")
+            with st.form("admin_premium_login_form"):
+                st.markdown("<div class='box-title'>⚙️ 교과 통합 관리자</div>", unsafe_allow_html=True)
+                st.markdown("<hr style='margin: 10px 0; border:0; border-top:1px solid #e1e4e8;'>", unsafe_allow_html=True)
+                st.markdown("<div class='box-desc'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</div>", unsafe_allow_html=True)
+                
+                # 💡 요구하신 한 줄 띄우기용 마크다운 공백 주입 완료!
+                st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+                
+                admin_pw = st.text_input("관리자 인증 비밀번호를 입력하세요", type="password")
+                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                login_submitted = st.form_submit_button("로그인", use_container_width=True, type="primary")
+            
+            if login_submitted or (admin_pw == CURRENT_ADMIN_PW):
+                if admin_pw == CURRENT_ADMIN_PW:
+                    st.session_state["admin_logged_in"] = True
+                    st.rerun()
+                elif admin_pw: 
+                    st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 로그인 이후 공간은 100% 원본 스크린으로 시원시원하게 정렬됩니다.
         st.title("⚙️ 교과·학년 통합 제어 센터")
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
@@ -342,7 +328,7 @@ else:
         st.warning("등록된 데이터가 없습니다.")
     else:
         opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
-        sel_s = st.selectbox("조회할 과목 선택", options=opts_s)
+        sel_s = st.selectbox("조회할 과목 선택", opts_s)
         
         if sel_s != "과목을 선택하세요.":
             db = active_dbs[opts_s.index(sel_s)-1]
