@@ -262,4 +262,71 @@ if st.session_state["page_status"] == "student_main":
                                     idx = res.index[0]
                                     
                                     scores = {}
-                                    for i in range(int(config['항목개
+                                    for i in range(int(config['항목개수'])):
+                                        h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
+                                        if h_name in df_st.columns:
+                                            scores[h_name] = [df_st.loc[idx, h_name]]
+                                    
+                                    if df_st.loc[idx, '확인여부'] != "확인 완료":
+                                        df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        df_st.to_csv(sf, index=False)
+                                        
+                                    show_result_dialog(name_in, scores)
+                                else: 
+                                    st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
+
+# ------------------------------------------
+# 🛡️ 2. 교과 관리자 인증 화면 (로그인 전)
+# ------------------------------------------
+elif st.session_state["page_status"] == "teacher_auth":
+    
+    st.markdown("""
+        <style>
+        div[data-testid="stForm"] {
+            border: 1px solid #e2e8f0 !important;
+            padding: 35px 40px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+            background-color: #ffffff !important;
+            max-width: 450px !important;
+            margin: 40px auto 20px auto !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    with st.form("admin_login_form"):
+        st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>⚙️ 교과 통합 관리자</h2>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin: 15px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:25px; line-height: 1.5;'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</p>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>관리자 인증 비밀번호를 입력하세요</div>", unsafe_allow_html=True)
+        admin_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", label_visibility="collapsed")
+        
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+        
+        if st.form_submit_button("로그인", use_container_width=True, type="primary"):
+            if admin_pw == CURRENT_ADMIN_PW:
+                st.session_state["admin_logged_in"] = True
+                st.session_state["page_status"] = "teacher_main"
+                st.rerun()
+            else: 
+                st.error("❌ 비밀번호가 틀렸습니다.")
+                
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🎒 학생 화면으로 돌아가기", key="outer_student_btn", use_container_width=True):
+            st.session_state["page_status"] = "student_main"
+            st.rerun()
+
+# ------------------------------------------
+# ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후)
+# ------------------------------------------
+elif st.session_state["page_status"] == "teacher_main":
+    if not st.session_state["admin_logged_in"]:
+        st.session_state["page_status"] = "teacher_auth"
+        st.rerun()
+        
+    st.markdown("<h2>⚙️ 교과 제어 센터</h2>", unsafe_allow_html=True)
+    if st.button("🎒 학생 화면 (로그아웃)", key="outer_logout_btn", use_container_width=True):
+        st.session_state["page_status"] = "student_main"
+        st.session_state["admin_logged_in"] = False
+        st.rerun()
