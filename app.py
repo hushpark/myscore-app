@@ -172,28 +172,23 @@ def load_config(file):
 def load_students(file):
     return pd.read_csv(file) if os.path.exists(file) else pd.DataFrame()
 
-# 💡 [버그 교정 핵심]: 학생 화면용 데이터 검색 로직 수정
-# 학기 정보가 포함된 파일 패턴(config_*.csv)에서 데이터를 역으로 완벽하게 추적하고 읽어옵니다.
+# 💡 [버그 제로 교정]: 파일 목록을 역추적할 때 정규식 에러 및 누락 가능성을 원천 차단했습니다.
 def get_active_databases():
     active_list = []
-    for f in glob.glob("config_*_*grade_*.csv"):
+    for f in glob.glob("config_*.csv"):
         try:
-            # 원본 파일명에서 앞의 'config_'와 뒤의 '.csv' 제거
-            core_name = os.path.basename(f).replace("config_", "").replace(".csv", "")
+            filename = os.path.basename(f)
+            if filename == CONFIG_FILE_MAIN:
+                continue
+            core_name = filename.replace("config_", "").replace(".csv", "")
             
-            # 정규표현식을 통해 '과목명', '학년', '학기텍스트'를 안전하게 분리
-            # 구조: (.+)_(1|2|3)grade_(.+)
-            match = re.match(r"(.+)_(1|2|3)grade_(.+)", core_name)
+            # 구조 추적용 정규식 고도화 (.+?)_(1|2|3)grade_(.+)
+            match = re.search(r"(.+?)_(1|2|3)grade_(.+)", core_name)
             if match:
-                subject_name = match.group(1).replace("_", " ")
-                grade_name = f"{match.group(2)}학년"
-                semester_name = match.group(3).replace("_", " ")
-                
-                active_list.append({
-                    "subject": subject_name,
-                    "grade": grade_name,
-                    "semester": semester_name
-                })
+                sub_name = match.group(1).replace("_", " ")
+                grd_name = f"{match.group(2)}학년"
+                sem_name = match.group(3).replace("_", " ")
+                active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
         except: pass
     return active_list
 
@@ -312,7 +307,6 @@ if st.session_state["page_status"] == "student_main":
             st.warning("현재 등록된 성적 데이터가 없습니다.")
         else:
             st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🎯 대상 과목 및 학기 선택</div>", unsafe_allow_html=True)
-            # 학기 관리용 통합 라벨 표출
             opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
             st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
@@ -403,7 +397,7 @@ elif st.session_state["page_status"] == "teacher_auth":
             st.rerun()
 
 # ------------------------------------------
-# ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후)
+# ⚙️ 3. 교사용 제어 센터 센터 화면 (로그인 후)
 # ------------------------------------------
 elif st.session_state["page_status"] == "teacher_main":
     if not st.session_state["admin_logged_in"]:
@@ -559,30 +553,43 @@ elif st.session_state["page_status"] == "teacher_main":
                 sem = st.session_state.active_semester
                 
                 cf, sf = get_file_names(sub, grd, sem)
+                
+                # 💡 [버그 교정 핵심 구역]: 활성화된 학기 파일(cf) 정보를 실시간으로 먼저 로드합니다.
                 conf = load_config(cf)
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 st.markdown("<h4 style='color: #1e293b; margin-top: 0px;'>📌 학기 및 평가 세팅</h4>", unsafe_allow_html=True)
                 
                 with st.container(border=True):
-                    st.markdown(f"<div style='font-size:13px; font-weight:600; color:#3b82f6; margin-bottom:8px;'>🎯 지정 학기 연동 완료: {sem}</div>", unsafe_allow_html=True)
+                    # 기존에 저장된 데이터가 있다면 안내메시지를 변경하여 직관성 확보
+                    if conf:
+                        st.markdown(f"<div style='font-size:13px; font-weight:600; color:#16a34a; margin-bottom:8px;'>✅ 기존 설정 불러오기 완료 ({sem})</div>", unsafe_allow_html=True)
+                        saved_cl = [int(x) for x in str(conf.get('선택된반 목록', '')).split(",") if x.strip()]
+                        default_items_count = int(conf.get('항목개수', 0))
+                    else:
+                        st.markdown(f"<div style='font-size:13px; font-weight:600; color:#3b82f6; margin-bottom:8px;'>🎯 지정 학기 연동 완료: {sem}</div>", unsafe_allow_html=True)
+                        saved_cl = []
+                        default_items_count = 0
 
                     st.markdown("<div style='margin-top:8px; margin-bottom:2px; font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
-                    saved_cl = [int(x) for x in str(conf['선택된반 목록']).split(",")] if conf else []
                     sel_cl = []
                     cols_cl = st.columns(6)
                     for i in range(1, 13):
                         with cols_cl[(i-1)%6]:
-                            if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
+                            # 💡 기존 로드된 반 목록(saved_cl)에 포함되어 있다면 체크박스를 True로 강제 대입구현
+                            if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): 
+                                sel_cl.append(i)
 
                     st.markdown("<div style='margin-top:8px; margin-bottom:2px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
-                    n_item = st.number_input("평가 항목 개수", 0, 10, int(conf['항목개수']) if conf else 0, key="num_items_input")
+                    n_item = st.number_input("평가 항목 개수", 0, 10, default_items_count, key="num_items_input")
                     item_names = []
                     if n_item > 0:
                         cols_i = st.columns(2)
                         for i in range(1, n_item + 1):
                             with cols_i[(i-1)%2]:
-                                item_names.append(st.text_input(f"{i}번 항목명", value=conf.get(f'항목{i}_이름', "") if conf else "", key=f"item_name_input_{i}", label_visibility="collapsed"))
+                                # 💡 기존 로드된 항목명 이름이 존재하면 value에 세팅하여 자동 인출 복구
+                                default_val = conf.get(f'항목{i}_이름', "") if conf else ""
+                                item_names.append(st.text_input(f"{i}번 항목명", value=default_val, key=f"item_name_input_{i}", label_visibility="collapsed"))
 
                 # 저장 동작 프로세스
                 ready = sel_cl and n_item > 0 and all(item_names)
@@ -619,5 +626,5 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 교과군, 과목, 학년, 학기를 정확히 세팅한 뒤 [🚀 과목 활성화]를 눌러주세요.")
 
-        # 최하단 가이드 바 (강제 한 줄 정렬 속성 완벽 보존)
+        # 최하단 가이드 바
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:10px; border-radius:8px; margin-top:15px; color:#1e3a8a; font-size:14px; text-align: center; font-weight: 500; white-space: nowrap !important;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
