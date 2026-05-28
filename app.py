@@ -14,67 +14,61 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템 v7", layout="wide")
 
 # =========================================================================
-# 🎯 [초강력 스타일 복구 및 상단 유령 박스 완전 삭제]
+# 🎯 [스타일 결정판] 상단 유령 박스 완전 삭제 및 550px 아담한 카드 상자 구현
 # =========================================================================
 st.markdown("""
     <style>
-        /* 1. 최상위 컨테이너 자체를 550px 황금비율 상자로 강제 압착 */
-        .block-container, [data-testid="stVerticalBlock"] {
-            max-width: 550px !important;
-            margin: 40px auto 0 auto !important;
-            padding-left: 15px !important;
-            padding-right: 15px !important;
-        }
-        
+        /* 1. 웹 페이지 배경 및 헤더 리셋 */
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { display: none !important; }
         
-        /* 🚨 상단에 빈 사각형을 그리던 Streamlit 고유 태그들을 화면에서 강제로 영구 삭제 */
+        /* 🚨 [삭제 핵심] 타이틀 위에 둥둥 떠서 자리를 차지하던 스트림릿 기본 팝업/대화상자 요소를 완전히 파괴 */
         div[data-testid="stDialog"], div[role="dialog"], .stDialog, div.element-container:has(iframe) { 
             display: none !important; 
+            opacity: 0 !important; 
+            visibility: hidden !important; 
             height: 0px !important; 
             width: 0px !important; 
             margin: 0 !important; 
             padding: 0 !important; 
         }
+        iframe { display: none !important; height: 0px !important; }
         
-        /* 🎯 타이틀 바로 뒤에 올 하얀색 미니 카드 상자 디자인 */
-        .mini-card-body {
+        /* 🎯 [선생님 요청 반영] 전체 콘텐츠를 화면 중앙에 550px 크기의 이쁜 하얀색 상자로 가두기 (2번 그림 스타일) */
+        .central-clear-box {
+            max-width: 550px !important;
+            margin: 60px auto 0 auto !important;
             background-color: #ffffff !important;
-            padding: 30px !important;
-            border-radius: 12px !important;
+            padding: 35px !important;
+            border-radius: 14px !important;
             border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.04) !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.04) !important;
         }
         
-        div[data-testid="stForm"] {
+        /* 상자 내부 stForm 기본 외곽선 제거 */
+        .central-clear-box div[data-testid="stForm"] {
             border: none !important;
             padding: 0px !important;
             box-shadow: none !important;
         }
         
-        /* 타이틀과 제어판 단추 수평 1줄 정렬 */
-        .header-flex-wrapper {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-        
-        /* 교사용 제어판 슬림 단추 */
+        /* 교사용 제어판 슬림 단추 가이드라인 밀착 */
         div.stButton > button[key="outer_teacher_btn"] {
             width: fit-content !important;
             min-width: auto !important;
-            padding: 3px 12px !important;
+            padding: 4px 14px !important;
             font-size: 14px !important;
             border-radius: 6px !important;
             border: 1px solid #cbd5e1 !important;
             color: #475569 !important;
             background-color: #ffffff !important;
         }
+        div.stButton > button[key="outer_teacher_btn"]:hover {
+            background-color: #f1f5f9 !important;
+            border-color: #94a3b8 !important;
+        }
         
-        /* 확인 단추 스타일 */
+        /* 빨간색 강조 확인 단추 스타일 */
         div.stButton > button[kind="primary"] {
             background-color: #ef4444 !important;
             color: white !important;
@@ -84,8 +78,8 @@ st.markdown("""
             border-radius: 6px !important;
         }
         
-        h2 { font-size: 21px !important; color: #0f172a !important; font-weight: 800 !important; margin: 0 !important; }
-        h3 { font-size: 17px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 8px !important; }
+        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 0 0 15px 0 !important; text-align: left !important; }
+        h3 { font-size: 17px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 10px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -170,31 +164,42 @@ def reset_all_data():
     st.session_state.clear()
     st.rerun()
 
-# --- 세션 관리 ---
+# --- 내부 화면 페이지 제어 상태 관리 ---
 if "page_status" not in st.session_state:
     st.session_state["page_status"] = "student_main"
 
 if "admin_logged_in" not in st.session_state:
     st.session_state["admin_logged_in"] = False
 
+is_teacher_layout = (st.session_state["page_status"] == "teacher_main")
+is_logged_in = st.session_state["admin_logged_in"]
+
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
 CURRENT_ADMIN_PW = load_admin_password()
 
+
 # ==========================================
-# 🚀 1번 화면: 학생 조회 메인 영역 진입
+# 실제 화면 렌더링부
 # ==========================================
+
+# ------------------------------------------
+# 상태 1. 학생용 성적 조회 화면 (1번 그림 기반 교정)
+# ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    # 🎯 상단 타이틀과 제어판 버튼을 깨끗하게 수평 배치 (위에 아무런 유령 상자 없음)
-    st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
+    # 🎯 [2번 그림처럼 구현] 가로 550px 규격의 선명한 흰색 단독 카드 상자 생성
+    st.markdown("<div class='central-clear-box'>", unsafe_allow_html=True)
+    
+    # 타이틀 출력
+    st.markdown("<h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
+    
+    # 1번 그림 양식 복구: 타이틀 바로 아래에 배치되는 교사용 제어판 이동 버튼
     if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # 🎯 그 아래에 아담하고 정돈된 미니 입력 카드 배치
-    st.markdown("<div class='mini-card-body'>", unsafe_allow_html=True)
+        
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     st.markdown("### 📝 개인별 성적 조회")
     
     active_dbs = get_active_databases()
@@ -250,7 +255,7 @@ if st.session_state["page_status"] == "student_main":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ------------------------------------------
-# 상태 2. 교과 관리자 인증 화면
+# 상태 2. 교과 관리자 인증 화면 (로그인 전)
 # ------------------------------------------
 elif st.session_state["page_status"] == "teacher_auth":
     st.title("🛡️ 교과 관리자 인증")
@@ -259,7 +264,7 @@ elif st.session_state["page_status"] == "teacher_auth":
         st.rerun()
 
 # ------------------------------------------
-# 상태 3. 교사 제어판 화면
+# 상태 3. 교사용 제어 센터 화면 (로그인 후)
 # ------------------------------------------
 elif st.session_state["page_status"] == "teacher_main":
     st.title("⚙️ 교과 제어 센터")
