@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit st
 import pandas as pd
 import os
 from datetime import datetime
@@ -109,21 +109,29 @@ CURRENT_ADMIN_PW = load_admin_password()
 
 
 # =========================================================================
-# 🎯 [스타일 완전 개편] 유령 사각형 상자 파괴 및 가로 600px 완벽 구속 CSS
+# 🎯 [스타일 강제 정렬] 상단 유령 공백 사각형 완벽 봉인 + 가로 600px 구속 CSS
 # =========================================================================
 st.markdown("""
     <style>
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
-        div[data-testid="stHeader"] { height: 0px !important; display:none !important; }
+        div[data-testid="stHeader"] { height: 0px !important; display:none !important; background: transparent !important; }
         
-        /* 🚨 [범인 체포] 상단에 투명하게 유령 상자를 만들던 스트림릿 모달 기본 태그 완전 파괴 */
-        div[data-testid="stDialog"], div[role="dialog"], .stDialog { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0px !important; width: 0px !important; }
-        iframe { display: none !important; }
+        /* 🚨 [강제 무력화] 상단 사각형 투명 유령 박스 요소를 브라우저에서 물리적으로 완전 투명 삭제 */
+        div[data-testid="stDialog"], div[role="dialog"], .stDialog, div.element-container:has(iframe) { 
+            display: none !important; 
+            opacity: 0 !important; 
+            visibility: hidden !important; 
+            height: 0px !important; 
+            width: 0px !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+        }
+        iframe { display: none !important; height: 0px !important; }
         
         /* 🎯 메인 상자 디자인을 가로 600px 카드로 완벽 구속 및 강제 중앙 정렬 */
         .independent-card-box {
             max-width: 600px !important;
-            margin: 50px auto 40px auto !important;
+            margin: 30px auto 40px auto !important;
             background-color: #ffffff !important;
             padding: 35px !important;
             border-radius: 14px !important;
@@ -131,7 +139,6 @@ st.markdown("""
             box-shadow: 0 10px 25px rgba(0,0,0,0.04) !important;
         }
         
-        /* 상자 내부 기본 Form 테두리 무효화 */
         div[data-testid="stForm"] {
             border: none !important;
             padding: 0px !important;
@@ -175,7 +182,6 @@ st.markdown("""
         
         h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 0 !important; padding: 0 !important; }
         h3 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 10px !important; }
-        h4 { font-size: 16px !important; color: #334155 !important; font-weight: 600 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -184,15 +190,11 @@ st.markdown("""
 # 화면 분기 제어부 (1번 학생 화면 버그 클리어)
 # ==========================================
 
-# ------------------------------------------
-# 상태 1. 학생용 개인 성적 조회 첫 화면 (1번 화면)
-# ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    # 가로 600px 독립형 카드 상자
     st.markdown("<div class='independent-card-box'>", unsafe_allow_html=True)
     
-    # 🎯 타이틀 내부 우측 끝에 단추를 자석처럼 일치시켜 완벽한 한 줄 수평 정렬
+    # 타이틀 내부 우측 끝 가이드라인 한 줄 정렬 매핑
     st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
     if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
         st.session_state["page_status"] = "teacher_auth"
@@ -253,19 +255,12 @@ if st.session_state["page_status"] == "student_main":
                                 st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-# ------------------------------------------
-# 상태 2. 교과 관리자 인증 화면 (선생님 로그인 전)
-# ------------------------------------------
 elif st.session_state["page_status"] == "teacher_auth":
     st.title("🛡️ 교과 관리자 인증")
     if st.button("🎒 학생 화면"):
         st.session_state["page_status"] = "student_main"
         st.rerun()
 
-# ------------------------------------------
-# 상태 3. 진짜 교사용 제어 센터 첫 화면 (로그인 후)
-# ------------------------------------------
 elif st.session_state["page_status"] == "teacher_main":
     st.title("⚙️ 교과 제어 센터")
     if st.button("🎒 학생 화면 (로그아웃)"):
