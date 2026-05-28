@@ -21,6 +21,13 @@ st.markdown("""
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { display: none !important; background: transparent !important; }
         
+        /* 💡 추가: 하단 잉여 공간(푸터) 완전 제거 및 전체 화면 위로 끌어올리기 */
+        footer { display: none !important; }
+        .block-container {
+            padding-top: 3rem !important; 
+            padding-bottom: 1rem !important; 
+        }
+        
         div.element-container:has(iframe) { display: none !important; }
         iframe { display: none !important; height: 0px !important; }
         
@@ -31,13 +38,14 @@ st.markdown("""
             background-color: transparent !important;
         }
         
+        /* 💡 수정: 교사용 제어판 버튼 글씨 크기(12px) 및 패딩 축소 */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
         div.stButton > button[key="outer_logout_btn"] {
             width: fit-content !important;
             min-width: auto !important;
-            padding: 4px 14px !important;
-            font-size: 14px !important;
+            padding: 3px 12px !important;
+            font-size: 12px !important;
             border-radius: 6px !important;
             border: 1px solid #cbd5e1 !important;
             color: #475569 !important;
@@ -188,7 +196,7 @@ if st.session_state["page_status"] == "student_main":
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
             max-width: 500px !important; 
-            margin: 0px auto 40px auto !important;
+            margin: 0px auto 20px auto !important; /* 하단 마진도 살짝 줄였습니다 */
         }
         </style>
     """, unsafe_allow_html=True)
@@ -196,7 +204,7 @@ if st.session_state["page_status"] == "student_main":
     # 교사용 제어판 버튼
     col_empty, col_btn = st.columns([3, 1])
     with col_btn:
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
             st.session_state["page_status"] = "teacher_auth"
             st.rerun()
