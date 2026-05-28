@@ -68,6 +68,12 @@ st.markdown("""
         
         h2 { font-size: 24px !important; color: #0f172a !important; font-weight: 800 !important; margin: 20px 0 10px 0 !important; }
         h4 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 8px !important; }
+        
+        /* 💡 추가 포인트: 팝업창(모달) 내부 성적 테이블의 제목(th)과 점수(td) 모두 가운데 정렬 */
+        div[role="dialog"] table th, 
+        div[role="dialog"] table td {
+            text-align: center !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -196,7 +202,7 @@ if st.session_state["page_status"] == "student_main":
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
             max-width: 500px !important; 
-            margin: 0px auto 20px auto !important; 
+            margin: 0px auto 20px auto Mom !important; 
         }
         </style>
     """, unsafe_allow_html=True)
@@ -221,7 +227,6 @@ if st.session_state["page_status"] == "student_main":
         if not active_dbs:
             st.warning("현재 등록된 성적 데이터가 없습니다.")
         else:
-            # 💡 수정 포인트 1: 숫자 대신 아이콘과 세련된 소제목 적용
             st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🎯 대상 과목 선택</div>", unsafe_allow_html=True)
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
@@ -236,19 +241,14 @@ if st.session_state["page_status"] == "student_main":
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
                     with st.form("login_form"):
-                        # 💡 수정 포인트 2: 숫자 대신 아이콘과 세련된 소제목 적용
                         st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🔐 본인 인증 정보 입력</div>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
                         
-                        c1, c2, c3 = st.columns(3)
+                        c1, c2, c3, c4 = st.columns([1, 1, 1.5, 1.5])
                         with c1: b_in = st.selectbox("반", classes)
                         with c2: n_in = st.number_input("번호", 1, 50, 1)
                         with c3: name_in = st.text_input("이름", placeholder="홍길동")
-                        
-                        # 💡 수정 포인트 3: 비밀번호 칸을 컬럼 안에 넣어 비율 축소 (약 60% 넓이)
-                        col_pw, col_empty = st.columns([3, 2])
-                        with col_pw:
-                            pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력")
+                        with c4: pw_in = st.text_input("비밀번호", type="password", placeholder="****")
                             
                         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                         
