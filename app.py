@@ -38,10 +38,11 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 교사용 제어판 및 상단 이동 버튼들 */
+        /* 교사용 제어판 및 상단 이동 버튼들 (암호변경 버튼 추가) */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
-        div.stButton > button[key="outer_logout_btn"] {
+        div.stButton > button[key="outer_logout_btn"],
+        div.stButton > button[key="outer_pw_btn"] {
             width: fit-content !important;
             min-width: auto !important;
             padding: 3px 12px !important;
@@ -52,8 +53,10 @@ st.markdown("""
             background-color: #ffffff !important;
         }
         
+        /* 우측 정렬 유지 */
         div.stButton:has(button[key="outer_teacher_btn"]),
-        div.stButton:has(button[key="outer_logout_btn"]) {
+        div.stButton:has(button[key="outer_logout_btn"]),
+        div.stButton:has(button[key="outer_pw_btn"]) {
             display: flex;
             justify-content: flex-end;
         }
@@ -168,6 +171,44 @@ def show_result_dialog(student_name, scores_dict):
     if st.button("확인 후 닫기", use_container_width=True, type="primary"):
         st.session_state.clear()
         st.rerun()
+
+# 🎯 비밀번호 변경을 위한 팝업 모달 함수
+@st.dialog("🔐 관리자 암호 수정")
+def password_update_dialog():
+    st.markdown("<div style='padding: 5px;'></div>", unsafe_allow_html=True)
+    new_pw = st.text_input("1. 새 암호 입력", type="password", key="dialog_new_pw")
+    confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="dialog_confirm_pw")
+    
+    is_valid, msg = is_strong_password(new_pw)
+    
+    if new_pw:
+        if new_pw == confirm_pw and is_valid:
+            st.markdown("<div style='background-color:#E8F5E9; border-radius:4px; padding:10px; color:#2E7D32; font-weight:500; margin-bottom:10px;'>✅ 두 암호가 완벽하게 일치합니다.</div>", unsafe_allow_html=True)
+        elif confirm_pw and new_pw != confirm_pw:
+            st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
+        else:
+            st.warning(msg)
+            
+    st.markdown("""<div style="font-size: 13px; color: #57606a; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+    <b>[안전 암호 규칙]</b><br>
+    - 최소 12자 이상 필수<br>
+    - 영문 + 숫자 + 특수기호 조합<br>
+    - 예시: <code style='background:#eee; padding:2px 4px;'>teacher!@2026info</code>
+    </div>""", unsafe_allow_html=True)
+    st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+
+    can_submit = is_valid and (new_pw == confirm_pw)
+    
+    b_col1, b_col2 = st.columns(2)
+    with b_col1:
+        if st.button("저장 후 적용", disabled=not can_submit, use_container_width=True, type="primary"):
+            save_admin_password(new_pw)
+            st.toast("🎉 암호가 변경되었습니다!")
+            st.rerun()
+    with b_col2:
+        if st.button("수정 취소", use_container_width=True):
+            st.rerun()
+
 
 # --- 내부 화면 페이지 제어 상태 초기화 ---
 if "page_status" not in st.session_state:
@@ -325,7 +366,7 @@ elif st.session_state["page_status"] == "teacher_auth":
                 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🎒 학생 화면으로 돌아가기", key="outer_student_btn", use_container_width=True):
+        if st.button("🎒 학생 화면", key="outer_student_btn", use_container_width=True):
             st.session_state["page_status"] = "student_main"
             st.rerun()
 
@@ -337,23 +378,27 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 💡 상단 헤더 및 로그아웃 버튼 배치
-    col_t1, col_t2 = st.columns([5, 1])
+    # 💡 상단 헤더, 암호 변경 버튼, 학생 화면(로그아웃) 버튼 배치
+    col_t1, col_t2, col_t3 = st.columns([4, 1.1, 1.1])
     with col_t1:
         st.markdown("<h2 style='margin-top:0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
     with col_t2:
         st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-        if st.button("🎒 학생 화면 (로그아웃)", key="outer_logout_btn", use_container_width=True):
+        # 💡 암호 변경 모달창 호출
+        if st.button("🔐 암호 변경", key="outer_pw_btn", use_container_width=True):
+            password_update_dialog()
+    with col_t3:
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        # 💡 학생 화면으로 문구 변경
+        if st.button("🎒 학생 화면", key="outer_logout_btn", use_container_width=True):
             st.session_state["page_status"] = "student_main"
             st.session_state["admin_logged_in"] = False
             st.rerun()
             
     st.markdown("<hr style='margin: 10px 0 25px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
     
-    # 💡 첨부해주신 스크린샷 완벽 재현 부분!
     st.markdown("<h4 style='color: #1e293b; margin-bottom: 20px;'>🛠️ [단계 1] 획기적인 교과군별 과목 지정</h4>", unsafe_allow_html=True)
     
-    # 세션 상태 초기화 보호
     if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
     
     c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1])
