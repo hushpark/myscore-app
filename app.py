@@ -172,16 +172,28 @@ def load_config(file):
 def load_students(file):
     return pd.read_csv(file) if os.path.exists(file) else pd.DataFrame()
 
+# 💡 [버그 교정 핵심]: 학생 화면용 데이터 검색 로직 수정
+# 학기 정보가 포함된 파일 패턴(config_*.csv)에서 데이터를 역으로 완벽하게 추적하고 읽어옵니다.
 def get_active_databases():
     active_list = []
     for f in glob.glob("config_*_*grade_*.csv"):
         try:
-            parts = f.replace("config_", "").replace(".csv", "").split("_")
-            if len(parts) >= 4:
-                subject_name = parts[0].replace("_", " ")
-                grade_name = parts[1].replace("grade", "학년")
-                semester_name = f"{parts[2]} {parts[3]}"
-                active_list.append({"subject": subject_name, "grade": grade_name, "semester": semester_name})
+            # 원본 파일명에서 앞의 'config_'와 뒤의 '.csv' 제거
+            core_name = os.path.basename(f).replace("config_", "").replace(".csv", "")
+            
+            # 정규표현식을 통해 '과목명', '학년', '학기텍스트'를 안전하게 분리
+            # 구조: (.+)_(1|2|3)grade_(.+)
+            match = re.match(r"(.+)_(1|2|3)grade_(.+)", core_name)
+            if match:
+                subject_name = match.group(1).replace("_", " ")
+                grade_name = f"{match.group(2)}학년"
+                semester_name = match.group(3).replace("_", " ")
+                
+                active_list.append({
+                    "subject": subject_name,
+                    "grade": grade_name,
+                    "semester": semester_name
+                })
         except: pass
     return active_list
 
@@ -257,7 +269,6 @@ if "sel_semester_idx" not in st.session_state: st.session_state.sel_semester_idx
 
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
-# 학기 목록 리스트
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 CURRENT_ADMIN_PW = load_admin_password()
 
@@ -301,6 +312,7 @@ if st.session_state["page_status"] == "student_main":
             st.warning("현재 등록된 성적 데이터가 없습니다.")
         else:
             st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🎯 대상 과목 및 학기 선택</div>", unsafe_allow_html=True)
+            # 학기 관리용 통합 라벨 표출
             opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
             st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
@@ -430,7 +442,7 @@ elif st.session_state["page_status"] == "teacher_main":
         frame_left, frame_right = st.columns([1.0, 2.0])
         
         # ==========================================
-        # 👈 [좌측 프레임 (설정 가이드 가시성 복원)]
+        # 👈 [좌측 프레임]
         # ==========================================
         with frame_left:
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
@@ -538,11 +550,10 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
-        # 👉 [우측 프레임 (버그 변수 완전 교정 및 데이터 복원)]
+        # 👉 [우측 프레임]
         # ==========================================
         with frame_right:
             if has_active:
-                # 💡 [버그 교정 핵심]: 꼬여있던 세션 변수 할당 문법 오류를 깨끗하게 분리 교정했습니다.
                 sub = st.session_state.active_subject
                 grd = st.session_state.active_grade
                 sem = st.session_state.active_semester
