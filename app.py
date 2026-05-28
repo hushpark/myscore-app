@@ -14,15 +14,14 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템 v7", layout="wide")
 
 # =========================================================================
-# 🎯 [스타일 결정판] 상단 유령 박스 완전 삭제 및 550px 아담한 카드 상자 구현
+# 🎯 [스타일 결정판] 2번 그림처럼 완벽하게 아담한 상자 안에 모든 색상 가두기
 # =========================================================================
 st.markdown("""
     <style>
-        /* 1. 웹 페이지 배경 및 헤더 리셋 */
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { display: none !important; }
         
-        /* 🚨 [삭제 핵심] 타이틀 위에 둥둥 떠서 자리를 차지하던 스트림릿 기본 팝업/대화상자 요소를 완전히 파괴 */
+        /* 🚨 상단 유령 사각형 공백 버그 무조건 완전 파괴 */
         div[data-testid="stDialog"], div[role="dialog"], .stDialog, div.element-container:has(iframe) { 
             display: none !important; 
             opacity: 0 !important; 
@@ -34,10 +33,10 @@ st.markdown("""
         }
         iframe { display: none !important; height: 0px !important; }
         
-        /* 🎯 [선생님 요청 반영] 전체 콘텐츠를 화면 중앙에 550px 크기의 이쁜 하얀색 상자로 가두기 (2번 그림 스타일) */
-        .central-clear-box {
+        /* 🎯 [2번 그림 100% 일치] 모든 내용과 알림 색상을 가로 550px 하얀색 상자 안으로 완벽 구속 */
+        .universal-compact-card {
             max-width: 550px !important;
-            margin: 60px auto 0 auto !important;
+            margin: 50px auto 40px auto !important;
             background-color: #ffffff !important;
             padding: 35px !important;
             border-radius: 14px !important;
@@ -45,14 +44,23 @@ st.markdown("""
             box-shadow: 0 10px 25px rgba(0,0,0,0.04) !important;
         }
         
-        /* 상자 내부 stForm 기본 외곽선 제거 */
-        .central-clear-box div[data-testid="stForm"] {
+        /* 상자 내부 알림 메시지(성공/에러)가 상자 밖으로 퍼지지 않게 카드 안쪽으로 100% 구속 */
+        .universal-compact-card div[data-testid="stNotification"],
+        .universal-compact-card .stAlert {
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            border-radius: 8px !important;
+        }
+        
+        /* 내부 Form 기본 테두리 무효화 */
+        .universal-compact-card div[data-testid="stForm"] {
             border: none !important;
             padding: 0px !important;
             box-shadow: none !important;
         }
         
-        /* 교사용 제어판 슬림 단추 가이드라인 밀착 */
+        /* 교사용 제어판 단추 슬림화 및 정렬선 맞춤 */
         div.stButton > button[key="outer_teacher_btn"] {
             width: fit-content !important;
             min-width: auto !important;
@@ -63,12 +71,8 @@ st.markdown("""
             color: #475569 !important;
             background-color: #ffffff !important;
         }
-        div.stButton > button[key="outer_teacher_btn"]:hover {
-            background-color: #f1f5f9 !important;
-            border-color: #94a3b8 !important;
-        }
         
-        /* 빨간색 강조 확인 단추 스타일 */
+        /* 조회 버튼 빨간색 최적화 */
         div.stButton > button[kind="primary"] {
             background-color: #ef4444 !important;
             color: white !important;
@@ -78,8 +82,8 @@ st.markdown("""
             border-radius: 6px !important;
         }
         
-        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 0 0 15px 0 !important; text-align: left !important; }
-        h3 { font-size: 17px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 10px !important; }
+        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 0 0 15px 0 !important; }
+        h3 { font-size: 17px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 8px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -180,26 +184,22 @@ CURRENT_ADMIN_PW = load_admin_password()
 
 
 # ==========================================
-# 실제 화면 렌더링부
+# 🚀 진짜 최종 화면 출력 파트
 # ==========================================
 
-# ------------------------------------------
-# 상태 1. 학생용 성적 조회 화면 (1번 그림 기반 교정)
-# ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    # 🎯 [2번 그림처럼 구현] 가로 550px 규격의 선명한 흰색 단독 카드 상자 생성
-    st.markdown("<div class='central-clear-box'>", unsafe_allow_html=True)
+    # 🎯 [선생님 요청 핵심] 가로 550px 아담하고 예쁜 흰색 전용 카드 상자 열기 (모든 것은 이 안에 가둠)
+    st.markdown("<div class='universal-compact-card'>", unsafe_allow_html=True)
     
-    # 타이틀 출력
     st.markdown("<h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
     
-    # 1번 그림 양식 복구: 타이틀 바로 아래에 배치되는 교사용 제어판 이동 버튼
+    # 1번 그림 양식: 타이틀 바로 밑에 이쁘게 안착하는 버튼
     if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
     st.markdown("### 📝 개인별 성적 조회")
     
     active_dbs = get_active_databases()
@@ -216,6 +216,7 @@ if st.session_state["page_status"] == "student_main":
             config = load_config(cf)
             
             if config:
+                # 🎯 안내 메시지 초록색 박스도 이 상자 너비(550px) 안에 이쁘게 가둬짐
                 st.success(f"🧬 **{config['교과명']}** | **{config['학기통합명']}**")
                 
                 with st.form("login_form"):
@@ -252,20 +253,15 @@ if st.session_state["page_status"] == "student_main":
                                     df_st.to_csv(sf, index=False)
                             else: 
                                 st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
-    st.markdown("</div>", unsafe_allow_html=True)
+                                
+    st.markdown("</div>", unsafe_allow_html=True) # 🎯 550px 카드 상자 닫기
 
-# ------------------------------------------
-# 상태 2. 교과 관리자 인증 화면 (로그인 전)
-# ------------------------------------------
 elif st.session_state["page_status"] == "teacher_auth":
     st.title("🛡️ 교과 관리자 인증")
     if st.button("🎒 학생 화면"):
         st.session_state["page_status"] = "student_main"
         st.rerun()
 
-# ------------------------------------------
-# 상태 3. 교사용 제어 센터 화면 (로그인 후)
-# ------------------------------------------
 elif st.session_state["page_status"] == "teacher_main":
     st.title("⚙️ 교과 제어 센터")
     if st.button("🎒 학생 화면 (로그아웃)"):
