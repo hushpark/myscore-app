@@ -128,25 +128,30 @@ def password_update_dialog():
         if st.button("수정 취소", use_container_width=True):
             st.rerun()
 
-# --- 앱 기본 설정 ---
-st.set_page_config(page_title="교과 성적 제어 센터 v7", layout="wide")
+# --- 앱 기본 세팅 ---
+st.set_page_config(page_title="수행평가 결과 시스템 v7", layout="wide")
 
-# 내부 화면 감지를 위한 세션 상태 초기화
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = "student"  # 기본값: 학생 화면
+# 화면 이동 감지 시스템 초기화
+if "page_status" not in st.session_state:
+    st.session_state["page_status"] = "student_main"
+
 if "admin_logged_in" not in st.session_state:
     st.session_state["admin_logged_in"] = False
 
-# 고정 변수 매핑
+# 현재 활성화된 화면 스위치 상태 확인
+is_teacher_layout = (st.session_state["page_status"] == "teacher_main")
+is_logged_in = st.session_state["admin_logged_in"]
+
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
 CURRENT_ADMIN_PW = load_admin_password()
 
+
 # =========================================================================
-# 🎯 [핵심 교정] 화면 상태에 따라 CSS를 완전히 고립시켜 상단 사각형 버그 원천 박멸
+# 🎯 [스타일 결정판] 3가지 화면의 구조적 CSS를 칼로 자르듯 분리하여 매핑
 # =========================================================================
-if st.session_state["current_page"] == "teacher" and st.session_state["admin_logged_in"]:
-    # ⚙️ 교사용 와이드 전용 대형 제어판 스타일
+if is_teacher_layout and is_logged_in:
+    # ⚙️ [모드 1] 로그인 성공 후 진입한 진짜 교사용 와이드 대시보드
     st.markdown("""
         <style>
             div[data-testid="stHeader"] { height: 0px !important; display:none; }
@@ -156,37 +161,80 @@ if st.session_state["current_page"] == "teacher" and st.session_state["admin_log
             h4 { color: #334155 !important; }
         </style>
     """, unsafe_allow_html=True)
-else:
-    # 🎒 학생 화면 및 관리자 로그인 대기 화면용 컴팩트 500px 박스 스타일
+    
+elif is_teacher_layout and not is_logged_in:
+    # 🛡️ [모드 2] 교사용 제어판 인증창 (선생님이 원하신 3번 그림 완벽 마운트)
     st.markdown("""
         <style>
-            .main { background-color: #f8fafc; }
+            .main { background-color: #f8fafc !important; }
             div[data-testid="stHeader"] { height: 0px !important; display:none; }
             
-            /* 팝업 관련 레이어가 임의로 투명 사각형을 채우는 현상 완전 파괴 */
+            /* 상단 유령 박스 버그 파괴 */
             div[data-testid="stDialog"] { display: none !important; opacity: 0 !important; }
             iframe { display: none !important; }
             
-            /* 🎯 학생 화면 전체 컴포넌트를 정확히 가로 500px 박스로 구속 및 정중앙 배치 */
-            .student-centered-card {
-                max-width: 500px !important;
-                margin: 70px auto 0 auto !important;
+            /* 🎯 [3번 그림 핵심] 중앙 집중형 입체감 있는 420px 전용 로그인 박스 배치 */
+            .admin-premium-box {
+                max-width: 440px !important;
+                margin: 100px auto 0 auto !important;
                 background-color: #ffffff !important;
-                padding: 35px !important;
-                border-radius: 14px !important;
+                padding: 40px 35px !important;
+                border-radius: 16px !important;
                 border: 1px solid #e2e8f0 !important;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.06) !important;
+                text-align: center;
             }
             
-            /* Form 기본 외곽선 제거 */
-            .student-centered-card div[data-testid="stForm"] {
+            .admin-premium-box div[data-testid="stForm"] {
                 border: none !important;
                 padding: 0px !important;
                 box-shadow: none !important;
             }
             
-            /* 💡 상단 타이틀과 우측 정렬 버튼의 수평 매칭용 Flex 프레임 */
-            .header-flex-box {
+            div.stButton > button[kind="primary"] {
+                background-color: #ef4444 !important;
+                color: white !important;
+                border: none !important;
+                font-weight: bold !important;
+                padding: 10px 0px !important;
+                border-radius: 8px !important;
+            }
+            
+            .admin-title-text { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+            .admin-desc-text { font-size: 14px; color: #64748b; line-height: 1.5; margin-bottom: 25px; }
+        </style>
+    """, unsafe_allow_html=True)
+    
+else:
+    # 🎒 [모드 3] 학생용 메인 성적 조회 화면 (1번 그림 완성형)
+    st.markdown("""
+        <style>
+            .main { background-color: #f8fafc; }
+            div[data-testid="stHeader"] { height: 0px !important; display:none; }
+            
+            /* 상단 빈 사각형 버그 박멸 */
+            div[data-testid="stDialog"] { display: none !important; opacity: 0 !important; }
+            iframe { display: none !important; }
+            
+            /* 학생 화면 전체를 600px 상자로 가두기 */
+            .student-master-card {
+                max-width: 600px !important;
+                margin: 60px auto 0 auto !important;
+                background-color: #ffffff !important;
+                padding: 35px !important;
+                border-radius: 14px !important;
+                border: 1px solid #e2e8f0 !important;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.04) !important;
+            }
+            
+            .student-master-card div[data-testid="stForm"] {
+                border: none !important;
+                padding: 0px !important;
+                box-shadow: none !important;
+            }
+            
+            /* 💡 상단 헤더 정렬용 Flex 바인더 */
+            .header-flex-wrapper {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -194,53 +242,58 @@ else:
                 width: 100%;
             }
             
-            /* 버튼 슬림화 및 정렬 가이드 밀착 */
-            div.stButton > button[key="toggle_admin_btn"] {
+            /* 💡 교사용 제어판 이동 단추 슬림화 및 화면 우측 가이드 라인 밀착 */
+            div.stButton > button[key="go_to_teacher_btn"] {
                 width: fit-content !important;
-                padding: 4px 12px !important;
-                font-size: 14px !important;
+                min-width: auto !important;
+                padding: 4px 14px !important;
+                font-size: 15px !important;
+                float: right !important;
                 border-radius: 6px !important;
                 border: 1px solid #cbd5e1 !important;
                 color: #475569 !important;
                 background-color: #ffffff !important;
             }
-            div.stButton > button[key="toggle_admin_btn"]:hover {
+            div.stButton > button[key="go_to_teacher_btn"]:hover {
                 background-color: #f1f5f9 !important;
                 border-color: #94a3b8 !important;
             }
             
-            h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 21px !important; margin: 0 !important; padding: 0 !important; }
-            h3 { font-size: 17px !important; font-weight: 700 !important; color: #1e293b !important; }
+            h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 23px !important; margin: 0 !important; padding: 0 !important; }
+            h3 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; }
         </style>
     """, unsafe_allow_html=True)
 
 
 # ==========================================
-# 구역 1. 교사용 제어 센터 제어 로직
+# 구역 A. 선생님 관리자 대시보드 파트
 # ==========================================
-if st.session_state["current_page"] == "teacher":
+if is_teacher_layout:
     
-    # [비로그인 상태] -> 500px 컴팩트 인증 창 출력
-    if not st.session_state["admin_logged_in"]:
-        st.markdown("<div class='student-centered-card'>", unsafe_allow_html=True)
-        st.markdown("<div class='header-flex-box'><h2>🛡️ 관리자 인증</h2>", unsafe_allow_html=True)
-        if st.button("🎒 학생화면", key="toggle_admin_btn"):
-            st.session_state["current_page"] = "student"
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+    # [인증 전] -> 3번 그림 디자인 100% 매칭박스 로드
+    if not is_logged_in:
+        st.markdown("<div class='admin-premium-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='admin-title-text'>🛡️ 교과 관리자 인증</div>", unsafe_allow_html=True)
+        st.markdown("<div class='admin-desc-text'>본인 교과의 성적 데이터를 관리하기 위해<br>인증 비밀번호를 입력해 주세요.</div>", unsafe_allow_html=True)
         
-        with st.form("admin_premium_login_form"):
-            st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-top:-10px; margin-bottom:25px;'>성적 제어판 진입을 위해<br>인증 비밀번호를 입력해 주세요.</p>", unsafe_allow_html=True)
-            admin_pw = st.text_input("비밀번호", type="password", placeholder="Password")
+        with st.form("admin_login_form"):
+            admin_pw = st.text_input("비밀번호", type="password", placeholder="Password", label_visibility="collapsed")
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            
             if st.form_submit_button("인증 및 로그인", use_container_width=True, type="primary"):
                 if admin_pw == CURRENT_ADMIN_PW:
                     st.session_state["admin_logged_in"] = True
                     st.rerun()
-                else: st.error("❌ 비밀번호가 틀렸습니다.")
+                else: 
+                    st.error("❌ 비밀번호가 틀렸습니다.")
+                    
+        st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+        if st.button("🎒 학생 화면으로 가기", use_container_width=True):
+            st.session_state["page_status"] = "student_main"
+            st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
-
-    # [로그인 성공 상태] -> 제한 없는 대형 와이드 제어판 활성화
+        
+    # [인증 성공] -> 원본 소스코드의 가로형 와이드 제어판 개방
     else:
         t_col1, t_col2, t_col3 = st.columns([5, 1.4, 1.2])
         with t_col1: st.title("⚙️ 교과·학년 통합 제어 센터")
@@ -249,14 +302,13 @@ if st.session_state["current_page"] == "teacher":
             if st.button("🔐 암호 수정", use_container_width=True): password_update_dialog()
         with t_col3:
             st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
-            if st.button("🎒 학생 화면 로그아웃", use_container_width=True):
-                st.session_state["current_page"] = "student"
+            if st.button("🎒 학생 화면", use_container_width=True):
+                st.session_state["page_status"] = "student_main"
                 st.session_state["admin_logged_in"] = False
                 st.rerun()
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
-        # [단계 1] 구역
         with st.container(border=True):
             st.markdown("<h4 style='margin-bottom:20px;'>🛠️ [단계 1] 교과군 및 과목 지정</h4>", unsafe_allow_html=True)
             
@@ -332,17 +384,18 @@ if st.session_state["current_page"] == "teacher":
                     
                     st.button("🗑️ 전체 데이터 초기화", on_click=reset_all_data, use_container_width=True)
 
-
 # ==========================================
-# 구역 2. 학생용 성적 조회 화면 (기본값)
+# 구역 B. 학생용 개인 성적 조회 파트 (기본)
 # ==========================================
 else:
-    st.markdown("<div class='student-centered-card'>", unsafe_allow_html=True)
-    st.markdown("<div class='header-flex-box'><h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
-    if st.button("🔓 교사용 제어판", key="toggle_admin_btn"):
-        st.session_state["current_page"] = "teacher"
+    st.markdown('<div class="student-master-card">', unsafe_allow_html=True)
+    
+    # 1번 그림 수평 정렬 완벽 이행
+    st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
+    if st.button("🔓 교사용 제어판", key="go_to_teacher_btn"):
+        st.session_state["page_status"] = "teacher_main"
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("### 📝 개인별 성적 조회")
     
@@ -396,5 +449,5 @@ else:
                                     df_st.to_csv(sf, index=False)
                             else: 
                                 st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
+                                
+    st.markdown('</div>', unsafe_allow_html=True)
