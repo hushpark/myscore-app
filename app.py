@@ -384,7 +384,7 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 💡 교사용 카드 최대 폭을 1000px 스케일로 지정
+    # 🎯 요청하신 대로 카드 최대 가로 폭을 900px로 최적화 조정 완료!
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -393,7 +393,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 1000px !important; 
+            max-width: 900px !important; 
             margin: 0px auto 20px auto !important; 
         }
         </style>
@@ -456,8 +456,8 @@ elif st.session_state["page_status"] == "teacher_main":
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
-        # 💡 [CSS 강제 개포인트] 인라인 스타일에 'nowrap'과 'inline-block' 조합을 직접 주입하여 "다." 글자 떨어짐 원천 철벽 차단!
-        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
+        # 💡 [문구 교정 완료] 앞부분 날리고 깔끔하게 정돈! 강제 일직선 정렬 기능 유지
+        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
         
         # 🚀 과목 활성화 세부 작업 패널 분기 구역
         if "active_subject" in st.session_state and st.session_state.active_subject:
