@@ -39,16 +39,16 @@ st.markdown("""
         .main { background-color: #f8fafc; }
         div[data-testid="stHeader"] {height: 0px !important; display:none;}
         
-        /* 팝업창 잔상 버그 무조건 차단 */
-        div[data-testid="stDialog"] { display: none !important; }
+        /* 팝업창 잔상으로 상단에 생기던 빈 사각형 투명 버그 완벽 박멸 */
+        div[data-testid="stDialog"] { display: none !important; opacity: 0 !important; }
         iframe { display: none !important; }
         
-        /* 🎯 학생 화면 전체를 500px 정중앙 전용 박스로 강력 구속 */
+        /* 🎯 [선생님 요청 반영] 학생 화면 전체 컴포넌트를 가로 600px 중앙 집중형 카드로 구속 */
         .student-container {
-            max-width: 500px !important;
+            max-width: 600px !important;
             margin: 60px auto 0 auto !important;
             background-color: #ffffff !important;
-            padding: 30px !important;
+            padding: 35px !important;
             border-radius: 14px !important;
             border: 1px solid #e2e8f0 !important;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
@@ -62,16 +62,50 @@ st.markdown("""
             max-width: 100% !important;
         }
         
-        h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 22px !important; margin: 0; text-align: center; }
-        h3 { font-size: 17px !important; font-weight: 700 !important; color: #1e293b !important; }
+        /* 💡 [선생님 요청 반영] 교사용 제어판 이동 단추 슬림화 및 화면 우측 가이드라인 라인 완전 밀착 */
+        div.stButton > button[key="go_to_admin_btn"] {
+            width: fit-content !important;
+            min-width: auto !important;
+            padding: 4px 14px !important;
+            font-size: 15px !important; /* 조회할 과목 선택 글씨 스케일과 매칭 */
+            float: right !important;
+            border-radius: 6px !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #475569 !important;
+            background-color: #ffffff !important;
+        }
+        div.stButton > button[key="go_to_admin_btn"]:hover {
+            background-color: #f1f5f9 !important;
+            border-color: #94a3b8 !important;
+        }
+        
+        /* 600px 박스 내부 수평 균형을 위한 상단 타이틀-버튼 묶음 Flex 정의 */
+        .header-flex-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        
+        h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 23px !important; margin: 0 !important; padding: 0 !important; }
+        h3 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# 🎯 학생용 500px HTML 카드 박스 레이어 시작
+# 🎯 학생용 600px HTML 카드 박스 레이어 시작
 st.markdown('<div class="student-container">', unsafe_allow_html=True)
 
-st.markdown("<h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
-st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+# 🎯 [버그 해결] 600px 박스 안에서 타이틀과 단추가 절대로 깨지거나 밀리지 않는 Flex 구조 정렬
+st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
+
+# 🎯 [부활 및 연동] 교사용 화면(app_teacher)으로 진입하는 버튼 코드 강제 장착 완료!
+if st.button("🔓 교사용 제어판", key="go_to_admin_btn"):
+    st.query_params.update(mode="admin")
+    st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 st.markdown("### 📝 개인별 성적 조회")
 
 active_dbs = get_active_databases()
@@ -109,7 +143,15 @@ else:
                         res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
                         if not res.empty:
                             idx = res.index[0]
-                            scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
+                            scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_is_strong_password' if f'항목{i+1}_이름' not in df_st.columns else f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
+                            
+                            # 순정 명렬 데이터 바인딩
+                            scores = {}
+                            for i in range(int(config['항목개수'])):
+                                h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
+                                if h_name in df_st.columns:
+                                    scores[h_name] = [df_st.loc[idx, h_name]]
+                                    
                             st.success(f"🎉 {name_in} 학생의 조회 결과입니다.")
                             st.table(pd.DataFrame(scores))
                             
