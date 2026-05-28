@@ -21,7 +21,7 @@ st.markdown("""
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { display: none !important; background: transparent !important; }
         
-        /* 💡 추가: 하단 잉여 공간(푸터) 완전 제거 및 전체 화면 위로 끌어올리기 */
+        /* 하단 잉여 공간(푸터) 완전 제거 및 전체 화면 위로 끌어올리기 */
         footer { display: none !important; }
         .block-container {
             padding-top: 3rem !important; 
@@ -38,7 +38,7 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 💡 수정: 교사용 제어판 버튼 글씨 크기(12px) 및 패딩 축소 */
+        /* 교사용 제어판 버튼 글씨 크기(12px) 및 패딩 축소 */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
         div.stButton > button[key="outer_logout_btn"] {
@@ -159,7 +159,7 @@ def show_result_dialog(student_name, scores_dict):
     st.table(pd.DataFrame(scores_dict))
     
     if st.button("확인 후 닫기", use_container_width=True, type="primary"):
-        # 💡 핵심 로직: 세션(기억)을 완전히 지워버려서 사이트에 처음 접속한 초기 상태로 되돌립니다.
+        # 사이트 세션을 완전히 지워 초기 화면으로 되돌림
         st.session_state.clear()
         st.rerun()
 
@@ -196,7 +196,7 @@ if st.session_state["page_status"] == "student_main":
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
             max-width: 500px !important; 
-            margin: 0px auto 20px auto !important; /* 하단 마진도 살짝 줄였습니다 */
+            margin: 0px auto 20px auto !important; 
         }
         </style>
     """, unsafe_allow_html=True)
@@ -221,7 +221,8 @@ if st.session_state["page_status"] == "student_main":
         if not active_dbs:
             st.warning("현재 등록된 성적 데이터가 없습니다.")
         else:
-            st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>1. 조회할 과목 선택</div>", unsafe_allow_html=True)
+            # 💡 수정 포인트 1: 숫자 대신 아이콘과 세련된 소제목 적용
+            st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🎯 대상 과목 선택</div>", unsafe_allow_html=True)
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
             st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
@@ -235,7 +236,8 @@ if st.session_state["page_status"] == "student_main":
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
                     with st.form("login_form"):
-                        st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>2. 학생 정보 및 비밀번호 입력</div>", unsafe_allow_html=True)
+                        # 💡 수정 포인트 2: 숫자 대신 아이콘과 세련된 소제목 적용
+                        st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🔐 본인 인증 정보 입력</div>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
                         
                         c1, c2, c3 = st.columns(3)
@@ -243,7 +245,11 @@ if st.session_state["page_status"] == "student_main":
                         with c2: n_in = st.number_input("번호", 1, 50, 1)
                         with c3: name_in = st.text_input("이름", placeholder="홍길동")
                         
-                        pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력")
+                        # 💡 수정 포인트 3: 비밀번호 칸을 컬럼 안에 넣어 비율 축소 (약 60% 넓이)
+                        col_pw, col_empty = st.columns([3, 2])
+                        with col_pw:
+                            pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력")
+                            
                         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                         
                         if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
@@ -256,71 +262,4 @@ if st.session_state["page_status"] == "student_main":
                                     idx = res.index[0]
                                     
                                     scores = {}
-                                    for i in range(int(config['항목개수'])):
-                                        h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
-                                        if h_name in df_st.columns:
-                                            scores[h_name] = [df_st.loc[idx, h_name]]
-                                    
-                                    if df_st.loc[idx, '확인여부'] != "확인 완료":
-                                        df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                        df_st.to_csv(sf, index=False)
-                                        
-                                    show_result_dialog(name_in, scores)
-                                else: 
-                                    st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
-
-# ------------------------------------------
-# 🛡️ 2. 교과 관리자 인증 화면 (로그인 전)
-# ------------------------------------------
-elif st.session_state["page_status"] == "teacher_auth":
-    
-    st.markdown("""
-        <style>
-        div[data-testid="stForm"] {
-            border: 1px solid #e2e8f0 !important;
-            padding: 35px 40px !important;
-            border-radius: 12px !important;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
-            background-color: #ffffff !important;
-            max-width: 450px !important;
-            margin: 40px auto 20px auto !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    with st.form("admin_login_form"):
-        st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>⚙️ 교과 통합 관리자</h2>", unsafe_allow_html=True)
-        st.markdown("<hr style='margin: 15px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:25px; line-height: 1.5;'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</p>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>관리자 인증 비밀번호를 입력하세요</div>", unsafe_allow_html=True)
-        admin_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", label_visibility="collapsed")
-        
-        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-        
-        if st.form_submit_button("로그인", use_container_width=True, type="primary"):
-            if admin_pw == CURRENT_ADMIN_PW:
-                st.session_state["admin_logged_in"] = True
-                st.session_state["page_status"] = "teacher_main"
-                st.rerun()
-            else: 
-                st.error("❌ 비밀번호가 틀렸습니다.")
-                
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("🎒 학생 화면으로 돌아가기", key="outer_student_btn", use_container_width=True):
-            st.session_state["page_status"] = "student_main"
-            st.rerun()
-
-# ------------------------------------------
-# ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후)
-# ------------------------------------------
-elif st.session_state["page_status"] == "teacher_main":
-    if not st.session_state["admin_logged_in"]:
-        st.session_state["page_status"] = "teacher_auth"
-        st.rerun()
-        
-    st.markdown("<h2>⚙️ 교과 제어 센터</h2>", unsafe_allow_html=True)
-    if st.button("🎒 학생 화면 (로그아웃)", key="outer_logout_btn", use_container_width=True):
-        st.session_state["page_status"] = "student_main"
-        st.session_state["admin_logged_in"] = False
-        st.rerun()
+                                    for i in range(int(config['항목개
