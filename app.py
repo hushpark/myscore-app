@@ -34,11 +34,12 @@ st.markdown("""
         }
         iframe { display: none !important; height: 0px !important; }
         
-        /* 내장 Form 기본 테두리 무효화 */
+        /* 내장 Form 기본 테두리 무효화 (카드 컨테이너 안에 자연스럽게 스며들도록 함) */
         div[data-testid="stForm"] {
             border: none !important;
             padding: 0px !important;
             box-shadow: none !important;
+            background-color: transparent !important;
         }
         
         /* 교사용 제어판 슬림 이동 단추 스타일 지정 */
@@ -55,7 +56,7 @@ st.markdown("""
             background-color: #ffffff !important;
         }
         
-        /* 💡 교사용 제어판 버튼을 컨테이너 우측 끝(과목선택창 라인)으로 밀착 정렬 */
+        /* 💡 상단 우측 버튼 정렬 유지 */
         div.stButton:has(button[key="outer_teacher_btn"]) {
             display: flex;
             justify-content: flex-end;
@@ -181,70 +182,95 @@ CURRENT_ADMIN_PW = load_admin_password()
 # ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    # 💡 컬럼을 사용하여 제목은 왼쪽, 버튼은 오른쪽에 동일 선상으로 배치
+    # 💡 학생 화면의 전체 컨테이너를 통합 카드 디자인으로 묶는 CSS
+    st.markdown("""
+        <style>
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            border: 1px solid #e2e8f0 !important;
+            padding: 35px 40px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+            background-color: #ffffff !important;
+            max-width: 600px !important;
+            margin: 15px auto 40px auto !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # 📌 상단 타이틀과 "교사용 제어판" 버튼 유지
     col_title, col_btn = st.columns([3, 1])
     with col_title:
         st.markdown("<h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
     with col_btn:
-        # H2 태그의 기본 마진(20px)과 높이를 맞추기 위해 상단 여백 추가
         st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
         if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
             st.session_state["page_status"] = "teacher_auth"
             st.rerun()
             
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    st.markdown("### 📝 개인별 성적 조회")
-    
     active_dbs = get_active_databases()
-    if not active_dbs:
-        st.warning("현재 등록된 성적 데이터가 없습니다.")
-    else:
-        opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
-        sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    
+    # 📌 여기서부터 과목선택 + 조회폼 모두를 예쁜 카드(컨테이너) 안에 담음
+    with st.container(border=True):
+        st.markdown("<h3 style='text-align: center; margin: 0px 0px 5px 0px;'>📝 개인별 성적 조회</h3>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:20px;'>과목을 선택하고 본인의 정보를 정확하게 입력해 주세요.</p>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin: 10px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
-        if sel_s != "과목을 선택하세요.":
-            db = active_dbs[opts_s.index(sel_s)-1]
-            cf, sf = get_file_names(db['subject'], db['grade'].replace("학년",""))
-            config = load_config(cf)
+        if not active_dbs:
+            st.warning("현재 등록된 성적 데이터가 없습니다.")
+        else:
+            # 1. 과목 선택 영역
+            st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>1. 조회할 과목 선택</div>", unsafe_allow_html=True)
+            opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
+            sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
+            st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
             
-            if config:
-                st.success(f"🧬 **{config['교과명']}** | **{config['학기통합명']}**")
+            if sel_s != "과목을 선택하세요.":
+                db = active_dbs[opts_s.index(sel_s)-1]
+                cf, sf = get_file_names(db['subject'], db['grade'].replace("학년",""))
+                config = load_config(cf)
                 
-                with st.form("login_form"):
-                    classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
+                if config:
+                    # 선택된 과목 표시 디자인
+                    st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
-                    c1, c2, c3 = st.columns(3)
-                    with c1: b_in = st.selectbox("반", classes)
-                    with c2: n_in = st.number_input("번호", 1, 50, 1)
-                    with c3: name_in = st.text_input("이름", placeholder="홍길동")
-                    
-                    pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호")
-                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-                    
-                    if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True):
-                        df_st = load_students(sf)
-                        if df_st.empty: 
-                            st.error("성적 데이터가 아직 연동되지 않은 교과입니다.")
-                        else:
-                            res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
-                            if not res.empty:
-                                idx = res.index[0]
-                                
-                                scores = {}
-                                for i in range(int(config['항목개수'])):
-                                    h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
-                                    if h_name in df_st.columns:
-                                        scores[h_name] = [df_st.loc[idx, h_name]]
-                                        
-                                st.success(f"🎉 {name_in} 학생의 조회 결과입니다.")
-                                st.table(pd.DataFrame(scores))
-                                
-                                if df_st.loc[idx, '확인여부'] != "확인 완료":
-                                    df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                    df_st.to_csv(sf, index=False)
-                            else: 
-                                st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
+                    # 2. 학생 정보 입력 폼
+                    with st.form("login_form"):
+                        st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>2. 학생 정보 및 비밀번호 입력</div>", unsafe_allow_html=True)
+                        classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
+                        
+                        c1, c2, c3 = st.columns(3)
+                        with c1: b_in = st.selectbox("반", classes)
+                        with c2: n_in = st.number_input("번호", 1, 50, 1)
+                        with c3: name_in = st.text_input("이름", placeholder="홍길동")
+                        
+                        pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력")
+                        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                        
+                        # 💡 primary 타입을 적용하여 빨간색 메인 버튼 활성화
+                        if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
+                            df_st = load_students(sf)
+                            if df_st.empty: 
+                                st.error("성적 데이터가 아직 연동되지 않은 교과입니다.")
+                            else:
+                                res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
+                                if not res.empty:
+                                    idx = res.index[0]
+                                    
+                                    scores = {}
+                                    for i in range(int(config['항목개수'])):
+                                        h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
+                                        if h_name in df_st.columns:
+                                            scores[h_name] = [df_st.loc[idx, h_name]]
+                                            
+                                    st.markdown("<hr style='margin: 15px 0; border-top: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
+                                    st.success(f"🎉 {name_in} 학생의 조회 결과입니다.")
+                                    st.table(pd.DataFrame(scores))
+                                    
+                                    if df_st.loc[idx, '확인여부'] != "확인 완료":
+                                        df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        df_st.to_csv(sf, index=False)
+                                else: 
+                                    st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
 
 # ------------------------------------------
 # 🛡️ 2. 교과 관리자 인증 화면 (로그인 전)
