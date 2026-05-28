@@ -151,8 +151,8 @@ def show_result_dialog(student_name, scores_dict):
     st.table(pd.DataFrame(scores_dict))
     
     if st.button("확인 후 닫기", use_container_width=True, type="primary"):
-        # 💡 핵심 해결책: 닫기 버튼을 누르면 폼 고유 ID를 변경하여 아예 폼을 초기화합니다.
-        st.session_state["login_form_key"] += 1
+        # 💡 핵심 로직: 세션(기억)을 완전히 지워버려서 사이트에 처음 접속한 초기 상태로 되돌립니다.
+        st.session_state.clear()
         st.rerun()
 
 # --- 내부 화면 페이지 제어 상태 초기화 ---
@@ -164,10 +164,6 @@ if "admin_logged_in" not in st.session_state:
 
 if "show_pw_edit_section" not in st.session_state:
     st.session_state["show_pw_edit_section"] = False
-
-# 💡 폼 초기화를 위한 카운터 변수 추가
-if "login_form_key" not in st.session_state:
-    st.session_state["login_form_key"] = 0
 
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
@@ -230,8 +226,7 @@ if st.session_state["page_status"] == "student_main":
                 if config:
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
-                    # 💡 동적 key를 부여받은 폼을 생성 (번호가 바뀌면 폼이 완전히 새로 그려짐)
-                    with st.form(f"login_form_{st.session_state['login_form_key']}"):
+                    with st.form("login_form"):
                         st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>2. 학생 정보 및 비밀번호 입력</div>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
                         
