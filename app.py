@@ -10,6 +10,81 @@ import re
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
+# --- 앱 기본 세팅 (가장 먼저 실행) ---
+st.set_page_config(page_title="수행평가 결과 시스템 v7", layout="wide")
+
+# =========================================================================
+# 🎯 [초강력 마스터 CSS] 화면 전체를 가로 600px로 완벽 압착 및 상단 버그 박멸
+# =========================================================================
+st.markdown("""
+    <style>
+        /* 1. 웹 페이지 메인 컨테이너 자체를 가로 600px로 강제 고정 및 중앙 정렬 */
+        .block-container, [data-testid="stVerticalBlock"] {
+            max-width: 600px !important;
+            margin: 50px auto 0 auto !important;
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+        }
+        
+        /* 백그라운드 톤 정리 */
+        .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
+        div[data-testid="stHeader"] { display: none !important; }
+        
+        /* 🚨 상단 유령 사각형 상자 요소를 물리적으로 완전 파괴 및 투명화 */
+        div[data-testid="stDialog"], div[role="dialog"], .stDialog, div.element-container:has(iframe) { 
+            display: none !important; 
+            opacity: 0 !important; 
+            visibility: hidden !important; 
+            height: 0px !important; 
+            width: 0px !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+        }
+        iframe { display: none !important; height: 0px !important; }
+        
+        /* 기본 stForm 내장 테두리 제거 */
+        div[data-testid="stForm"] {
+            border: none !important;
+            padding: 0px !important;
+            box-shadow: none !important;
+        }
+        
+        /* 💡 타이틀과 버튼이 절대로 깨지지 않는 완벽한 수평 1줄 Flex 정렬 */
+        .header-flex-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        
+        /* 교사용 제어판 버튼 슬림 스타일 및 우측 라인 밀착 */
+        div.stButton > button[key="outer_teacher_btn"] {
+            width: fit-content !important;
+            min-width: auto !important;
+            padding: 4px 14px !important;
+            font-size: 15px !important;
+            border-radius: 6px !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #475569 !important;
+            background-color: #ffffff !important;
+        }
+        
+        /* 빨간색 강조 확인 단추 스타일 */
+        div.stButton > button[kind="primary"] {
+            background-color: #ef4444 !important;
+            color: white !important;
+            border: none !important;
+            font-weight: bold !important;
+            padding: 10px 0px !important;
+            border-radius: 6px !important;
+        }
+        
+        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 0 !important; padding: 0 !important; }
+        h3 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 10px !important; }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- [보안] 암호 복잡도 검사 함수 ---
 def is_strong_password(pw):
     if len(pw) < 12:
@@ -91,110 +166,30 @@ def reset_all_data():
     st.session_state.clear()
     st.rerun()
 
-# --- 앱 기본 세팅 ---
-st.set_page_config(page_title="수행평가 결과 시스템 v7", layout="wide")
-
+# --- 세션 초기화 ---
 if "page_status" not in st.session_state:
     st.session_state["page_status"] = "student_main"
 
 if "admin_logged_in" not in st.session_state:
     st.session_state["admin_logged_in"] = False
 
-is_teacher_layout = (st.session_state["page_status"] == "teacher_main")
-is_logged_in = st.session_state["admin_logged_in"]
-
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
 CURRENT_ADMIN_PW = load_admin_password()
 
-
-# =========================================================================
-# 🎯 [스타일 제어] 상단 유령 공백 완전 소멸 + 가로 600px 구속 CSS
-# =========================================================================
-st.markdown("""
-    <style>
-        .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
-        div[data-testid="stHeader"] { height: 0px !important; display:none !important; background: transparent !important; }
-        
-        /* 🚨 상단에 투명하게 유령 상자를 만들던 스트림릿 모달 기본 태그 완전 파괴 */
-        div[data-testid="stDialog"], div[role="dialog"], .stDialog, div.element-container:has(iframe) { 
-            display: none !important; 
-            opacity: 0 !important; 
-            visibility: hidden !important; 
-            height: 0px !important; 
-            width: 0px !important; 
-            margin: 0 !important; 
-            padding: 0 !important; 
-        }
-        iframe { display: none !important; height: 0px !important; }
-        
-        /* 🎯 메인 상자 디자인을 가로 600px 카드로 완벽 구속 및 강제 중앙 정렬 */
-        .independent-card-box {
-            max-width: 600px !important;
-            margin: 30px auto 40px auto !important;
-            background-color: #ffffff !important;
-            padding: 35px !important;
-            border-radius: 14px !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.04) !important;
-        }
-        
-        div[data-testid="stForm"] {
-            border: none !important;
-            padding: 0px !important;
-            box-shadow: none !important;
-        }
-        
-        /* 💡 타이틀과 버튼이 절대로 깨지지 않는 HTML Flex 수평 1줄 정렬 */
-        .header-flex-wrapper {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            width: 100%;
-        }
-        
-        /* 교사용 제어판 버튼 슬림 스타일 및 우측 정렬선 칼밀착 */
-        div.stButton > button[key="outer_teacher_btn"] {
-            width: fit-content !important;
-            min-width: auto !important;
-            padding: 4px 14px !important;
-            font-size: 15px !important;
-            border-radius: 6px !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #475569 !important;
-            background-color: #ffffff !important;
-        }
-        div.stButton > button[key="outer_teacher_btn"]:hover {
-            background-color: #f1f5f9 !important;
-            border-color: #94a3b8 !important;
-        }
-        
-        /* 빨간색 강조 확인 단추 스타일 */
-        div.stButton > button[kind="primary"] {
-            background-color: #ef4444 !important;
-            color: white !important;
-            border: none !important;
-            font-weight: bold !important;
-            padding: 10px 0px !important;
-            border-radius: 6px !important;
-        }
-        
-        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 0 !important; padding: 0 !important; }
-        h3 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 10px !important; }
-    </style>
-""", unsafe_allow_html=True)
-
-
 # ==========================================
-# 화면 분기 제어부
+# 화면 분기 제어 영역
 # ==========================================
 
+# ------------------------------------------
+# 상태 1. 학생용 개인 성적 조회 첫 화면
+# ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    st.markdown("<div class='independent-card-box'>", unsafe_allow_html=True)
+    # 🎯 하얀색 아담한 카드 형태 레이아웃 컨테이너 감싸기
+    st.markdown("<div style='background-color: #ffffff; padding: 35px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.04);'>", unsafe_allow_html=True)
     
-    # 타이틀 내부 우측 끝 가이드라인 한 줄 정렬
+    # 🎯 타이틀 내부 우측 끝 가이드라인에 1열 매칭 수평 정렬
     st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
     if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
         st.session_state["page_status"] = "teacher_auth"
