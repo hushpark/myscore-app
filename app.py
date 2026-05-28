@@ -140,10 +140,10 @@ CURRENT_ADMIN_PW = load_admin_password()
 
 
 # =========================================================================
-# 🎯 [핵심 변경] 모드별 스타일 분리 주입 구역
+# 🎯 [스타일 주입 구역] 학생용 모드와 관리자용 모드의 CSS 완벽 이원화
 # =========================================================================
 if not is_admin_mode:
-    # 🎒 B. 학생용 화면 스타일 (500px 구속, 유령 박스 버그 차단)
+    # 🎒 B. 학생용 화면 스타일 (500px 구속, 상단 투명 잔상 버그 원천 삭제)
     st.markdown("""
         <style>
             .main { background-color: #f8fafc; }
@@ -153,7 +153,7 @@ if not is_admin_mode:
             div[data-testid="stDialog"] { display: none !important; }
             iframe { display: none !important; }
             
-            /* 💡 학생용 전체 컴포넌트를 정확히 가로 500px 중앙 집중형 카드로 구속 */
+            /* 학생용 전체 컴포넌트를 정확히 가로 500px 중앙 집중형 카드로 구속 */
             .student-container {
                 max-width: 500px !important;
                 margin: 50px auto 0 auto !important;
@@ -164,12 +164,12 @@ if not is_admin_mode:
                 box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
             }
             
-            /* 💡 교사용 제어판 버튼을 글자 길이에 맞춰 축소 및 우측 라인 밀착 정렬 */
+            /* 교사용 제어판 버튼을 글자 길이에 맞춰 축소 및 우측 라인 밀착 정렬 */
             div.stButton > button[key="go_to_admin_btn"] {
                 width: fit-content !important;
                 min-width: auto !important;
                 padding: 3px 12px !important;
-                font-size: 15px !important; /* 조회할 과목 선택 글씨 스케일과 매칭 */
+                font-size: 15px !important;
                 float: right !important;
                 border-radius: 6px !important;
                 border: 1px solid #cbd5e1 !important;
@@ -194,12 +194,12 @@ if not is_admin_mode:
         </style>
     """, unsafe_allow_html=True)
 else:
-    # ⚙️ A. 교사용 관리자 화면 스타일 (원래의 넓고 시원시원한 가로 와이드 정렬 유지)
+    # ⚙️ A. 교사용 관리자 화면 스타일 (원래 요구하셨던 구조 100% 원상 복구)
     st.markdown("""
         <style>
             div[data-testid="stHeader"] { height: 0px !important; display:none; }
             
-            /* 교과 관리자 로그인 인증 전용 스타일 박스 (420px 전통 규격 유지) */
+            /* 🎯 [선생님 요청 핵심 반영] 교과 관리자 로그인 인증 전용 박스는 무조건 가로 420px(약 400px) 아담한 박스로 구속! */
             .admin-center-login {
                 max-width: 420px !important;
                 margin: 90px auto 0 auto !important;
@@ -213,21 +213,10 @@ else:
                 max-width: 100% !important;
             }
             
-            /* 컴팩트 카드 가로너비 스타일 정의 */
-            .compact-card {
-                max-width: 650px;
-                margin: 0 auto;
-                background-color: #ffffff;
-                padding: 35px;
-                border-radius: 16px;
-                border: 1px solid #e2e8f0;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            }
-            
             .box-title { font-size: 26px; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 8px; }
             .box-desc { font-size: 14px; color: #64748b; text-align: center; margin-bottom: 25px; line-height: 1.5; }
             
-            /* 버튼 라운딩 처리 */
+            /* 버튼 스타일링 */
             div.stButton > button { border-radius: 8px !important; transition: all 0.2s; }
             div.stButton > button[kind="primary"] { background-color: #ef4444 !important; border:none !important; }
             
@@ -244,6 +233,7 @@ if is_admin_mode:
     if "admin_logged_in" not in st.session_state:
         st.session_state["admin_logged_in"] = False
 
+    # A-1. 교과 관리자 로그인 인증 (여기는 무조건 가로 400px 아담함 유지)
     if not st.session_state["admin_logged_in"]:
         st.markdown("<div class='admin-center-login'>", unsafe_allow_html=True)
         with st.form("admin_premium_login_form"):
@@ -257,10 +247,12 @@ if is_admin_mode:
                     st.rerun()
                 else: st.error("❌ 비밀번호가 틀렸습니다.")
         st.markdown("</div>", unsafe_allow_html=True)
+        
+    # A-2. 로그인 성공 시 진입하는 진짜 교사용 제어 센터 (여기는 시원시원한 와이드 보장)
     else:
-        # 상단 네비게이션 바 (컴팩트 정렬 와이드 형태 복구)
+        # 상단 네비게이션 바
         t_col1, t_col2, t_col3 = st.columns([5, 1.4, 1.2])
-        with t_col1: st.title("⚙️ 교과 제어 센터")
+        with t_col1: st.title("⚙️ 교과·학년 통합 제어 센터")
         with t_col2:
             st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
             if st.button("🔐 암호 수정", use_container_width=True): password_update_dialog()
@@ -273,7 +265,7 @@ if is_admin_mode:
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
-        # 💡 [단계 1] 구역
+        # [단계 1] 구역
         with st.container(border=True):
             st.markdown("<h4 style='margin-bottom:20px;'>🛠️ [단계 1] 교과군 및 과목 지정</h4>", unsafe_allow_html=True)
             
@@ -351,18 +343,15 @@ if is_admin_mode:
                     st.button("🗑️ 전체 데이터 초기화", on_click=reset_all_data, use_container_width=True)
 
 # ==========================================
-# B. 학생 화면 (기본) -> 500px 정밀 콤팩트 카드 고정
+# B. 학생 화면 (기본) -> 500px 정밀 카드 정렬 완료
 # ==========================================
 else:
-    # 🎯 학생 화면 컴포넌트 전체를 500px HTML 컨테이너 상자 안에 격리
     st.markdown('<div class="student-container">', unsafe_allow_html=True)
     
-    # 헤더 정렬 배치 (명칭 최적화 및 우측 정렬선 자석 밀착)
     h_col1, h_col2 = st.columns([3.3, 1.7])
     with h_col1: 
         st.markdown("<h2 style='text-align:left;'>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
     with h_col2:
-        # 단추 크기를 글자 크기에 맞추고 폰트를 아담하게 스케일 다운 완료
         if st.button("🔓 교사용 제어판", key="go_to_admin_btn"):
             st.query_params.update(mode="admin")
             st.rerun()
@@ -388,7 +377,6 @@ else:
             with st.form("login_form"):
                 classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if config else ["1반"]
                 
-                # 가로 500px에 최적화된 3분할 입력 라인
                 c1, c2, c3 = st.columns(3)
                 with c1: b_in = st.selectbox("반", classes)
                 with c2: n_in = st.number_input("번호", 1, 50, 1)
@@ -397,7 +385,6 @@ else:
                 pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호")
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 
-                # 🎯 [순정 소스코드 매칭 복구] 조회하기 서브밋 및 성적 매핑 핵심 알고리즘 복구 완료
                 if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True):
                     df_st = load_students(sf)
                     if df_st.empty: 
@@ -410,11 +397,10 @@ else:
                             st.success(f"🎉 {name_in} 학생의 조회 결과입니다.")
                             st.table(pd.DataFrame(scores))
                             
-                            # 실시간 확인 완료 마킹 처리
                             if df_st.loc[idx, '확인여부'] != "확인 완료":
                                 df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                 df_st.to_csv(sf, index=False)
                         else: 
                             st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다. 다시 확인해 주세요.")
                             
-    st.markdown('</div>', unsafe_allow_html=True) # HTML 카드 닫기
+    st.markdown('</div>', unsafe_allow_html=True)
