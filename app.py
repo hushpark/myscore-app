@@ -14,7 +14,8 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [순정 마스터 CSS] 유령 사각형 태그 요소를 원천 봉쇄하는 스타일 양식
+# 🎯 [CSS 최적화] 유령 사각형 차단 및 디자인 양식
+# (주의: 팝업창을 띄우기 위해 기존 stDialog 숨김 처리 코드는 제거했습니다)
 # =========================================================================
 st.markdown("""
     <style>
@@ -22,16 +23,8 @@ st.markdown("""
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { display: none !important; background: transparent !important; }
         
-        /* 🚨 서버 잔상으로 인해 발생하는 모든 유령 대화상자/프레임 요소를 브라우저단에서 영구 차단 */
-        div[data-testid="stDialog"], div[role="dialog"], .stDialog, div.element-container:has(iframe) { 
-            display: none !important; 
-            opacity: 0 !important; 
-            visibility: hidden !important; 
-            height: 0px !important; 
-            width: 0px !important; 
-            margin: 0 !important; 
-            padding: 0 !important; 
-        }
+        /* 유령 프레임 차단 (iframe만 차단 유지, 팝업창은 허용) */
+        div.element-container:has(iframe) { display: none !important; }
         iframe { display: none !important; height: 0px !important; }
         
         /* 내장 Form 기본 테두리 무효화 (카드 컨테이너 안에 자연스럽게 스며들도록 함) */
@@ -158,6 +151,15 @@ def reset_all_data():
     st.session_state.clear()
     st.rerun()
 
+# 🎯 성적 조회 결과를 보여주는 팝업 모달 함수
+@st.dialog("🎉 성적 조회 결과")
+def show_result_dialog(student_name, scores_dict):
+    st.markdown(f"<div style='margin-bottom:15px;'><b>{student_name}</b> 학생의 성적 내역입니다.</div>", unsafe_allow_html=True)
+    st.table(pd.DataFrame(scores_dict))
+    
+    if st.button("확인 후 닫기", use_container_width=True, type="primary"):
+        st.rerun()
+
 # --- 내부 화면 페이지 제어 상태 초기화 ---
 if "page_status" not in st.session_state:
     st.session_state["page_status"] = "student_main"
@@ -192,26 +194,26 @@ if st.session_state["page_status"] == "student_main":
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
             max-width: 600px !important;
-            margin: 15px auto 40px auto !important;
+            margin: 0px auto 40px auto !important;
         }
         </style>
     """, unsafe_allow_html=True)
     
-    # 📌 상단 타이틀과 "교사용 제어판" 버튼 유지
-    col_title, col_btn = st.columns([3, 1])
-    with col_title:
-        st.markdown("<h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
+    # 📌 교사용 제어판 버튼은 상단 바깥쪽 우측에 배치
+    col_empty, col_btn = st.columns([3, 1])
     with col_btn:
-        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
             st.session_state["page_status"] = "teacher_auth"
             st.rerun()
             
     active_dbs = get_active_databases()
     
-    # 📌 여기서부터 과목선택 + 조회폼 모두를 예쁜 카드(컨테이너) 안에 담음
+    # 📌 여기서부터 타이틀 + 과목선택 + 조회폼 모두를 예쁜 카드(컨테이너) 안에 담음
     with st.container(border=True):
-        st.markdown("<h3 style='text-align: center; margin: 0px 0px 5px 0px;'>📝 개인별 성적 조회</h3>", unsafe_allow_html=True)
+        
+        # 타이틀이 박스 안으로 들어옴!
+        st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
         st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:20px;'>과목을 선택하고 본인의 정보를 정확하게 입력해 주세요.</p>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 10px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
@@ -261,14 +263,14 @@ if st.session_state["page_status"] == "student_main":
                                         h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
                                         if h_name in df_st.columns:
                                             scores[h_name] = [df_st.loc[idx, h_name]]
-                                            
-                                    st.markdown("<hr style='margin: 15px 0; border-top: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
-                                    st.success(f"🎉 {name_in} 학생의 조회 결과입니다.")
-                                    st.table(pd.DataFrame(scores))
                                     
+                                    # 조회 성공 시 확인 기록 저장
                                     if df_st.loc[idx, '확인여부'] != "확인 완료":
                                         df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                         df_st.to_csv(sf, index=False)
+                                        
+                                    # 🎯 성적 결과를 팝업창으로 호출!
+                                    show_result_dialog(name_in, scores)
                                 else: 
                                     st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
 
