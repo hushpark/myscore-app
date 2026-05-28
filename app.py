@@ -15,19 +15,15 @@ st.set_page_config(page_title="수행평가 결과 시스템", layout="centered"
 
 # =========================================================================
 # 🎯 [CSS 최적화] 유령 사각형 차단 및 디자인 양식
-# (주의: 팝업창을 띄우기 위해 기존 stDialog 숨김 처리 코드는 제거했습니다)
 # =========================================================================
 st.markdown("""
     <style>
-        /* 웹 페이지 백그라운드 정리 및 헤더 바 완전 숨김 */
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { display: none !important; background: transparent !important; }
         
-        /* 유령 프레임 차단 (iframe만 차단 유지, 팝업창은 허용) */
         div.element-container:has(iframe) { display: none !important; }
         iframe { display: none !important; height: 0px !important; }
         
-        /* 내장 Form 기본 테두리 무효화 (카드 컨테이너 안에 자연스럽게 스며들도록 함) */
         div[data-testid="stForm"] {
             border: none !important;
             padding: 0px !important;
@@ -35,7 +31,6 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 교사용 제어판 슬림 이동 단추 스타일 지정 */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
         div.stButton > button[key="outer_logout_btn"] {
@@ -49,13 +44,11 @@ st.markdown("""
             background-color: #ffffff !important;
         }
         
-        /* 💡 상단 우측 버튼 정렬 유지 */
         div.stButton:has(button[key="outer_teacher_btn"]) {
             display: flex;
             justify-content: flex-end;
         }
         
-        /* 확인 및 저장용 주요 단추 양식 정의 */
         div.stButton > button[kind="primary"] {
             background-color: #ef4444 !important;
             color: white !important;
@@ -66,7 +59,7 @@ st.markdown("""
         }
         
         h2 { font-size: 24px !important; color: #0f172a !important; font-weight: 800 !important; margin: 20px 0 10px 0 !important; }
-        h3 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 8px !important; }
+        h4 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 8px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -158,6 +151,10 @@ def show_result_dialog(student_name, scores_dict):
     st.table(pd.DataFrame(scores_dict))
     
     if st.button("확인 후 닫기", use_container_width=True, type="primary"):
+        # 💡 핵심 로직: 창을 닫을 때 입력했던 정보를 완전히 삭제(초기화)합니다.
+        for key in ["login_b", "login_n", "login_name", "login_pw"]:
+            if key in st.session_state:
+                del st.session_state[key]
         st.rerun()
 
 # --- 내부 화면 페이지 제어 상태 초기화 ---
@@ -184,7 +181,6 @@ CURRENT_ADMIN_PW = load_admin_password()
 # ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    # 💡 학생 화면의 전체 컨테이너를 통합 카드 디자인으로 묶는 CSS
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -193,13 +189,13 @@ if st.session_state["page_status"] == "student_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 600px !important;
+            max-width: 500px !important; 
             margin: 0px auto 40px auto !important;
         }
         </style>
     """, unsafe_allow_html=True)
     
-    # 📌 교사용 제어판 버튼은 상단 바깥쪽 우측에 배치
+    # 교사용 제어판 버튼
     col_empty, col_btn = st.columns([3, 1])
     with col_btn:
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
@@ -209,18 +205,16 @@ if st.session_state["page_status"] == "student_main":
             
     active_dbs = get_active_databases()
     
-    # 📌 여기서부터 타이틀 + 과목선택 + 조회폼 모두를 예쁜 카드(컨테이너) 안에 담음
+    # 학생용 카드 컨테이너
     with st.container(border=True):
-        
-        # 타이틀이 박스 안으로 들어옴!
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; margin: 0px 0px 10px 0px; color: #475569;'>📝 개인별 성적 조회</h4>", unsafe_allow_html=True)
         st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:20px;'>과목을 선택하고 본인의 정보를 정확하게 입력해 주세요.</p>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 10px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         if not active_dbs:
             st.warning("현재 등록된 성적 데이터가 없습니다.")
         else:
-            # 1. 과목 선택 영역
             st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>1. 조회할 과목 선택</div>", unsafe_allow_html=True)
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
@@ -232,23 +226,21 @@ if st.session_state["page_status"] == "student_main":
                 config = load_config(cf)
                 
                 if config:
-                    # 선택된 과목 표시 디자인
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
-                    # 2. 학생 정보 입력 폼
                     with st.form("login_form"):
                         st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>2. 학생 정보 및 비밀번호 입력</div>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
                         
                         c1, c2, c3 = st.columns(3)
-                        with c1: b_in = st.selectbox("반", classes)
-                        with c2: n_in = st.number_input("번호", 1, 50, 1)
-                        with c3: name_in = st.text_input("이름", placeholder="홍길동")
+                        # 💡 핵심 로직: 각각의 입력창에 고유한 key를 부여합니다.
+                        with c1: b_in = st.selectbox("반", classes, key="login_b")
+                        with c2: n_in = st.number_input("번호", 1, 50, 1, key="login_n")
+                        with c3: name_in = st.text_input("이름", placeholder="홍길동", key="login_name")
                         
-                        pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력")
+                        pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", key="login_pw")
                         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                         
-                        # 💡 primary 타입을 적용하여 빨간색 메인 버튼 활성화
                         if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
                             df_st = load_students(sf)
                             if df_st.empty: 
@@ -264,12 +256,10 @@ if st.session_state["page_status"] == "student_main":
                                         if h_name in df_st.columns:
                                             scores[h_name] = [df_st.loc[idx, h_name]]
                                     
-                                    # 조회 성공 시 확인 기록 저장
                                     if df_st.loc[idx, '확인여부'] != "확인 완료":
                                         df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                         df_st.to_csv(sf, index=False)
                                         
-                                    # 🎯 성적 결과를 팝업창으로 호출!
                                     show_result_dialog(name_in, scores)
                                 else: 
                                     st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
