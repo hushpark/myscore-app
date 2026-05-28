@@ -74,9 +74,9 @@ st.markdown("""
         h2 { font-size: 24px !important; color: #0f172a !important; font-weight: 800 !important; margin: 20px 0 10px 0 !important; }
         h4 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 8px !important; }
         
-        /* 팝업창(모달) 내부 성적 테이블의 제목(th)과 점수(td) 모두 가운데 정렬 */
-        div[role="dialog"] table th, 
-        div[role="dialog"] table td {
+        /* 팝업창(모달) 및 모니터링 내부 성적 테이블의 제목(th)과 점수(td) 모두 가운데 정렬 */
+        div[role="dialog"] table th, div[role="dialog"] table td,
+        div.monitor-table table th, div.monitor-table table td {
             text-align: center !important;
         }
     </style>
@@ -221,7 +221,6 @@ if "admin_logged_in" not in st.session_state:
 if "show_pw_edit_section" not in st.session_state:
     st.session_state["show_pw_edit_section"] = False
 
-# 대화상자 및 리인덱싱 방지 세션 보호 변수
 if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
 if "sel_sub_idx" not in st.session_state: st.session_state.sel_sub_idx = 0
 if "sel_grade_idx" not in st.session_state: st.session_state.sel_grade_idx = 0
@@ -384,7 +383,6 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 🎯 요청하신 대로 카드 최대 가로 폭을 900px로 최적화 조정 완료!
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -456,10 +454,9 @@ elif st.session_state["page_status"] == "teacher_main":
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
-        # 💡 [문구 교정 완료] 앞부분 날리고 깔끔하게 정돈! 강제 일직선 정렬 기능 유지
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
         
-        # 🚀 과목 활성화 세부 작업 패널 분기 구역
+        # 🚀 과목 활성화 이후 작업 구역
         if "active_subject" in st.session_state and st.session_state.active_subject:
             sub, grd = st.session_state.active_subject, st.session_state.active_grade
             cf, sf = get_file_names(sub, grd)
@@ -510,6 +507,7 @@ elif st.session_state["page_status"] == "teacher_main":
                             for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
                             pd.DataFrame([d]).to_csv(cf, index=False)
                             st.success("저장 완료!")
+                            st.rerun()
                     else: st.button("⚠️ 설정 미완료", disabled=True, use_container_width=True)
                 with c2:
                     if st.button("➕ 다른 과목 추가하기", use_container_width=True):
@@ -530,6 +528,7 @@ elif st.session_state["page_status"] == "teacher_main":
                             df_up = pd.read_csv(up_f, encoding='cp949')
                             df_up.to_csv(sf, index=False)
                             st.success("성적 데이터 연동 완료!")
+                            st.rerun()
                         except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
                         
                 with up_col2:
@@ -547,6 +546,37 @@ elif st.session_state["page_status"] == "teacher_main":
                         mime="text/csv",
                         use_container_width=True
                     )
+
+            # ==========================================
+            # 💡 [신규 추가] 📊 실시간 데이터 확인 모니터 구역
+            # ==========================================
+            st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+            with st.container(border=True):
+                st.markdown("<h4 style='color: #0f172a; margin-top: 5px; margin-bottom: 15px;'>📊 실시간 데이터 연동 모니터</h4>", unsafe_allow_html=True)
+                
+                # 1. 설정값 존재 유무 파악
+                if conf:
+                    st.markdown(f"""
+                    <div style='background:#f8fafc; border:1px solid #e2e8f0; padding:12px 15px; border-radius:6px; font-size:14px; margin-bottom:15px;'>
+                        ✅ <b>설정 파일 감지됨:</b> {conf.get('학기통합명', '미정')} | 
+                        <b>배정 학급:</b> {conf.get('선택된반 목록', '미정')} | 
+                        <b>평가 항목:</b> {conf.get('항목개수', 0)}개 세팅 완료
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.info("ℹ️ 파트 1 설정을 저장하면 세팅 요약 정보가 여기에 표시됩니다.")
+                
+                # 2. 명렬표 데이터 존재 유무 파악
+                df_monitor = load_students(sf)
+                if not df_monitor.empty:
+                    st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📋 현재 연동된 학생 명렬표 (가운데 정렬)</div>", unsafe_allow_html=True)
+                    
+                    # 가운데 정렬 CSS 클래스 주입을 위한 래퍼 디브 생성
+                    st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
+                    st.dataframe(df_monitor, use_container_width=True, hide_index=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.warning("⚠️ 아직 업로드된 학생 성적 CSV 데이터가 없습니다. 파일을 업로드해 주세요.")
             
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             if st.button("🗑️ 초기화 (모든 데이터 포맷)", use_container_width=True): 
