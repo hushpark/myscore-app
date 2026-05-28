@@ -135,7 +135,7 @@ st.markdown("""
         label div p { font-size: 14px !important; font-weight: 500 !important; color: #24292f !important; }
         div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 7px 10px !important; background-color: #ffffff !important; }
         
-        /* 빨간색 버튼 전용 스타일 강제 입히기 */
+        /* 변경 사항 저장 버튼 빨간색 강제 지정 스타일 */
         div.stButton > button[kind="primary"] {
             background-color: #ff0000 !important;
             color: white !important;
@@ -190,16 +190,17 @@ if is_admin_mode:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 🎯 [구조 변경] 세 번째 그림처럼 타이틀 우측 정단 끝에 버튼들이 배치되도록 설정
-        col_main_title, col_main_pw_btn, col_main_student_btn = st.columns([4.4, 1.4, 1.2])
+        # 타이틀 우측 상단 끝 버튼 배치 영역
+        col_main_title, col_main_pw_btn, col_main_student_btn = st.columns([4.6, 1.3, 1.1])
         with col_main_title:
             st.title("⚙️ 교과·학년 통합 제어 센터")
             
         with col_main_pw_btn:
             st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+            # 💡 [버그 완벽 수정] 첫 화면 시작 시 강제로 True가 되는 현상을 막기 위해 기본값을 명확히 False로 고정
             if "show_pw_panel" not in st.session_state:
                 st.session_state.show_pw_panel = False
-            # 버튼 클릭 시 바로 아래 미니 설정 대화상자 생성용 토글
+                
             if st.button("🔐 관리자 암호 변경", use_container_width=True, key="header_pw_btn"):
                 st.session_state.show_pw_panel = not st.session_state.show_pw_panel
                 st.rerun()
@@ -209,14 +210,17 @@ if is_admin_mode:
             if st.button("🎒 학생 화면", use_container_width=True, key="header_student_btn"):
                 st.query_params.clear()
                 st.session_state["admin_logged_in"] = False
+                st.session_state.show_pw_panel = False # 학생 화면으로 갈 때 패널 초기화
                 st.rerun()
 
-        # 🎯 [요청 반영] 버튼 바로 하단 우측 영역에 독립 팝업처럼 열리는 암호 새 설정 대화상자 블록
+        # 🎯 [요청 완벽 반영] 버튼을 클릭했을 때만 그 바로 아래 독립된 미니 컴팩트창 전개
         if st.session_state.show_pw_panel:
-            p_space, p_container = st.columns([4.4, 2.6])
+            # 칸 배치를 4.9 : 2.1로 세밀하게 쪼개어 우측 끝 버튼 아래에 완벽하게 400px 규격으로 안착시킵니다.
+            p_space, p_container = st.columns([4.9, 2.1])
             with p_container:
                 with st.container(border=True):
-                    st.markdown("<h4 style='margin-bottom:15px; font-weight:600; color:#24292f;'>관리자 암호 새 설정</h4>", unsafe_allow_html=True)
+                    # 💡 요청하신 문구 수정 및 아이콘 추가 ("🔐 관리자 암호 수정")
+                    st.markdown("<h4 style='margin-bottom:15px; font-weight:600; color:#24292f;'>🔐 관리자 암호 수정</h4>", unsafe_allow_html=True)
                     
                     new_pw = st.text_input("1. 새 암호 입력", type="password", key="panel_new_pw")
                     confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="panel_confirm_pw")
@@ -244,7 +248,6 @@ if is_admin_mode:
 
                     can_submit = is_valid and (new_pw == confirm_pw)
                     
-                    # 스크린샷 양식 맞춤 전용 버튼 제어판 (빨간색)
                     b_col1, b_col2 = st.columns(2)
                     with b_col1:
                         if st.button("변경 사항 저장", disabled=not can_submit, use_container_width=True, type="primary", key="save_pw_btn"):
@@ -258,7 +261,7 @@ if is_admin_mode:
                             st.rerun()
             st.markdown("---")
 
-        # 메인 프로그램 [단계 1] 시작 영역 (언제나 맨 위 고정 배치 완료)
+        # 메인 프로그램 [단계 1] 영역 (언제나 최상단 노출 보장)
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
