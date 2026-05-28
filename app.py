@@ -102,7 +102,7 @@ st.markdown("""
             text-align: center !important; vertical-align: middle !important;
         }
         
-        /* 로그인 창 전용 마스터 카드 레이아웃 */
+        /* 메인 로그인 폼 스타일링 */
         div[data-testid="stForm"] {
             max-width: 400px !important;
             margin: 0 auto !important;
@@ -129,11 +129,25 @@ st.markdown("""
             margin-bottom: 24px; 
         }
         
-        .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 5px; }
-        .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
+        .pw-guide { font-size: 13px; color: #57606a; line-height: 1.6; margin-top: 8px; }
+        .pw-example { font-family: monospace; background: #eef1f4; padding: 2px 5px; border-radius: 3px; font-size: 13px; }
         
         label div p { font-size: 14px !important; font-weight: 500 !important; color: #24292f !important; }
         div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 7px 10px !important; background-color: #ffffff !important; }
+        
+        /* 🚨 빨간색 버튼 전용 스타일 강제 입히기 (스크린샷 싱크로율) */
+        div.stButton > button[kind="primary"] {
+            background-color: #ff0000 !important;
+            color: white !important;
+            border-color: #ff0000 !important;
+            font-weight: bold !important;
+            font-size: 16px !important;
+            padding: 10px 0px !important;
+        }
+        div.stButton > button[kind="primary"]:hover {
+            background-color: #cc0000 !important;
+            border-color: #cc0000 !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -176,74 +190,18 @@ if is_admin_mode:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 상단 제어 센터 레이아웃 정렬
-        col_title, col_btn_pw, col_btn_student = st.columns([4.8, 1.4, 1.1])
-        with col_title:
+        # 🎯 [구조 교정] 메인 상단바 구성 (디자인 비대칭 예방을 위해 독립 분리)
+        col_main_title, col_main_student_btn = st.columns([6, 1.2])
+        with col_main_title:
             st.title("⚙️ 교과·학년 통합 제어 센터")
-        
-        with col_btn_pw:
-            st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
-            if "show_pw_panel" not in st.session_state:
-                st.session_state.show_pw_panel = False
-                
-            # 토글 스위치 버튼
-            if st.button("🔐 관리자 암호 변경", use_container_width=True):
-                st.session_state.show_pw_panel = not st.session_state.show_pw_panel
-                st.rerun()
-                
-        with col_btn_student:
+        with col_main_student_btn:
             st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
             if st.button("🎒 학생 화면", use_container_width=True):
                 st.query_params.clear()
                 st.session_state["admin_logged_in"] = False
                 st.rerun()
 
-        # 🎯 [버그 영원히 박멸] HTML 편법 대신 순정 컬럼 비율 배치로 정확히 가로 400px급 박스 구현
-        if st.session_state.show_pw_panel:
-            # 1:1.6:1 비율로 쪼개서 가운데 칸(col_pw_center)만 아담하게 사용합니다.
-            col_pw_left, col_pw_center, col_pw_right = st.columns([1, 1.6, 1])
-            
-            with col_pw_center:
-                # 카드 느낌을 내기 위해 순정 수동 컨테이너 영역 지정
-                with st.container(border=True):
-                    st.markdown("<h3 style='text-align:center; margin-bottom:15px;'>🔐 암호 수정 대화상자</h3>", unsafe_allow_html=True)
-                    
-                    new_pw = st.text_input("1. 새 암호 입력", type="password", key="panel_new_pw")
-                    confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="panel_confirm_pw")
-                        
-                    is_valid, msg = is_strong_password(new_pw)
-                    
-                    if new_pw:
-                        if new_pw == confirm_pw and is_valid:
-                            st.success("✅ 조건 통과! 변경 가능합니다.")
-                        elif confirm_pw and new_pw != confirm_pw:
-                            st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
-                        else:
-                            st.warning(msg)
-                            
-                    st.markdown("""<div class="pw-guide" style="margin-bottom:20px;">
-                    <b>[설정 규칙]</b> 최소 12자 이상 필수 & 영문, 숫자, 특수기호 조합 필수<br>
-                    <b>[안전 예시]</b> <span class="pw-example">teacher!@2026info</span>
-                    </div>""", unsafe_allow_html=True)
-
-                    can_submit = is_valid and (new_pw == confirm_pw)
-                    
-                    # 버튼 영역 반반 배치
-                    b_col1, b_col2 = st.columns(2)
-                    with b_col1:
-                        if st.button("🔒 즉시 변경", disabled=not can_submit, use_container_width=True, type="primary"):
-                            save_admin_password(new_pw)
-                            st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
-                            st.session_state.show_pw_panel = False
-                            st.rerun()
-                    with b_col2:
-                        if st.button("❌ 변경 취소", use_container_width=True):
-                            st.session_state.show_pw_panel = False
-                            st.rerun()
-                            
-            st.markdown("---")
-
-        # 메인 관리 인터페이스 시작
+        # 🎯 [요청 반영] 단계 1을 무조건 암호 창보다 위쪽에 고정 노출!
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
@@ -281,6 +239,63 @@ if is_admin_mode:
                     st.rerun()
                 else: st.error("과목/학년을 선택하세요.")
 
+        # 🎯 [요청 핵심] 단계 1 바로 밑에 배치되는 우측 정렬 암호 트리거 단추와 미니 독립 팝업창 구조
+        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+        col_trigger_L, col_trigger_R = st.columns([5.5, 1.7])
+        
+        with col_trigger_R:
+            if "show_pw_panel" not in st.session_state:
+                st.session_state.show_pw_panel = False
+            # 버튼을 누르면 바로 아래에 미니 창이 토글 오픈됩니다.
+            if st.button("🔐 관리자 암호 변경", use_container_width=True, key="trigger_btn"):
+                st.session_state.show_pw_panel = not st.session_state.show_pw_panel
+                st.rerun()
+                
+            # 🎯 버튼 바로 아래 소형 독립 구조로 생성되는 암호 새 설정 대화상자 (스크린샷 복사판)
+            if st.session_state.show_pw_panel:
+                with st.container(border=True):
+                    st.markdown("<h4 style='margin-bottom:15px; font-weight:600; color:#24292f;'>관리자 암호 새 설정</h4>", unsafe_allow_html=True)
+                    
+                    new_pw = st.text_input("1. 새 암호 입력", type="password", key="panel_new_pw")
+                    confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="panel_confirm_pw")
+                    
+                    is_valid, msg = is_strong_password(new_pw)
+                    
+                    if new_pw:
+                        if new_pw == confirm_pw and is_valid:
+                            st.markdown("<div style='background-color:#E8F5E9; border-radius:4px; padding:10px; color:#2E7D32; font-weight:500; margin-bottom:10px;'>✅ 두 암호가 완벽하게 일치합니다.</div>", unsafe_allow_html=True)
+                        elif confirm_pw and new_pw != confirm_pw:
+                            st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
+                        else:
+                            st.warning(msg)
+                            
+                    st.markdown("""<div class="pw-guide">
+                    <b>[설정 규칙]</b><br>
+                    1. 최소 12자 이상 필수<br>
+                    2. 영문 + 숫자 + 특수기호 모두 포함<br><br>
+                    <b>[안전한 암호 예시]</b> (복사 후 수정 가능)<br>
+                    - <span class="pw-example">teacher!@2026info</span><br>
+                    - <span class="pw-example">pass#$99grade!!</span><br>
+                    - <span class="pw-example">study**24safe##</span>
+                    </div>""", unsafe_allow_html=True)
+                    st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+
+                    can_submit = is_valid and (new_pw == confirm_pw)
+                    
+                    # 스크린샷처럼 정렬된 버튼 제어판 (빨간색 적용 완료)
+                    b_col1, b_col2 = st.columns(2)
+                    with b_col1:
+                        if st.button("변경 사항 저장", disabled=not can_submit, use_container_width=True, type="primary", key="save_pw_btn"):
+                            save_admin_password(new_pw)
+                            st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
+                            st.session_state.show_pw_panel = False
+                            st.rerun()
+                    with b_col2:
+                        if st.button("❌ 변경 취소", use_container_width=True, key="cancel_pw_btn"):
+                            st.session_state.show_pw_panel = False
+                            st.rerun()
+
+        # 하위 파트 인터페이스 (영역 활성화 시 매끄럽게 하단 전개)
         if "active_subject" in st.session_state and st.session_state.active_subject:
             sub, grd = st.session_state.active_subject, st.session_state.active_grade
             cf, sf = get_file_names(sub, grd)
@@ -321,21 +336,21 @@ if is_admin_mode:
             c1, c2, c3 = st.columns([1.5, 1.5, 1])
             with c1:
                 if ready:
-                    if st.button(f"💾 [{sub}] 설정 저장"):
+                    if st.button(f"💾 [{sub}] 설정 저장", key="main_config_save"):
                         d = {"교과명":sub, "학년":grd, "학기통합명":final_t, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
                         for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
                         pd.DataFrame([d]).to_csv(cf, index=False)
                         st.success("저장 완료!")
-                else: st.button("⚠️ 설정 미완료", disabled=True)
+                else: st.button("⚠️ 설정 미완료", disabled=True, key="disabled_save_btn")
             with c2:
-                if st.button("➕ 다른 과목 추가하기"):
+                if st.button("➕ 다른 과목 추가하기", key="add_other_sub_btn"):
                     st.session_state.active_subject = None
                     st.session_state.sel_group_idx = 0
                     st.rerun()
             with c3:
-                if st.button("🗑️ 전체 시스템 포맷"): reset_all_data()
+                if st.button("🗑️ 전체 시스템 포맷", key="format_all_btn"): reset_all_data()
 
-            up_f = st.file_uploader("📁 성적 CSV 업로드", type="csv")
+            up_f = st.file_uploader("📁 성적 CSV 업로드", type="csv", key="grade_csv_uploader")
             if up_f:
                 try:
                     df_up = pd.read_csv(up_f, encoding='cp949')
@@ -350,7 +365,7 @@ else:
     col_l, col_r = st.columns([6, 1])
     with col_l: st.title("🎒 수행평가 성적 확인 시스템")
     with col_r:
-        if st.button("⚙️ 관리자"):
+        if st.button("⚙️ 관리자", key="go_to_admin_btn"):
             st.query_params.update(mode="admin")
             st.rerun()
     
@@ -361,7 +376,7 @@ else:
         st.warning("등록된 데이터가 없습니다.")
     else:
         opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
-        sel_s = st.selectbox("조회할 과목 선택", opts_s)
+        sel_s = st.selectbox("조회할 과목 선택", opts_s, key="student_select_sub")
         
         if sel_s != "과목을 선택하세요.":
             db = active_dbs[opts_s.index(sel_s)-1]
