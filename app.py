@@ -379,6 +379,7 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
+    # 💡 교사용 메인 화면 너비를 850px로 시원하게 확장!
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -387,7 +388,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 800px !important;
+            max-width: 850px !important;
             margin: 0px auto 20px auto !important; 
         }
         </style>
@@ -412,8 +413,8 @@ elif st.session_state["page_status"] == "teacher_main":
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
         
-        # 💡 버튼 컬럼 크기를 줄이고, 앞의 3개 컬럼에 공간을 분배하여 버튼 가로 길이를 축소
-        c1, c2, c3, c4 = st.columns([1.3, 1.3, 1.2, 0.8])
+        # 💡 넓어진 850px에 맞춰 버튼 공간을 넉넉히 분배
+        c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.1, 1.0])
         
         with c1:
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 1단계: 교과군 분류</div>", unsafe_allow_html=True)
@@ -433,7 +434,6 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.selectbox("세부과목", ["선택 대기"], disabled=True, label_visibility="collapsed")
                 
         with c3:
-            # 💡 텍스트 줄바꿈 방지를 위해 라벨 수정
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🎓 3단계: 관리 학년</div>", unsafe_allow_html=True)
             sel_gr = st.selectbox("관리학년", options=GRADE_OPTIONS, label_visibility="collapsed")
             final_gr = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
@@ -447,5 +447,4 @@ elif st.session_state["page_status"] == "teacher_main":
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
-        # 💡 "상단에서 " 문구 삭제
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
