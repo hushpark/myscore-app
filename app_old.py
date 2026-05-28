@@ -137,18 +137,18 @@ st.markdown("""
         .main { background-color: #f8fafc; }
         div[data-testid="stHeader"] {height: 0px !important; display:none;}
         
-        /* 💡 컴팩트 중앙 집중형 카드 스타일 */
-        .compact-card {
-            max-width: 650px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            padding: 35px;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        /* 💡 컴팩트 중앙 집중형 카드 스타일 가로 너비 강제 제어 */
+        .compact-container-box {
+            max-width: 480px !important;
+            margin: 0 auto !important;
+            background-color: #ffffff !important;
+            padding: 35px !important;
+            border-radius: 16px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
         }
         
-        /* 로그인 폼 전용 (400px) */
+        /* 로그인 폼 전용 (420px) */
         div[data-testid="stForm"] {
             max-width: 420px !important;
             margin: 0 auto !important;
@@ -214,7 +214,7 @@ if is_admin_mode:
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
-        # 💡 [단계 1] 구역을 더 깔끔하고 컴팩트한 카드로 감쌈
+        # [단계 1] 구역
         with st.container(border=True):
             st.markdown("<h4 style='margin-bottom:20px;'>🛠️ [단계 1] 교과군 및 과목 지정</h4>", unsafe_allow_html=True)
             
@@ -296,36 +296,59 @@ if is_admin_mode:
 # ==========================================
 else:
     col_head1, col_head2 = st.columns([6, 1.2])
-    with col_head1: st.title("🎒 수행평가 성적 조회 시스템")
+    with col_head1: st.title("🎒 수행평가 성적 확인 시스템")
     with col_head2:
         st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
-        if st.button("⚙️ 관리자 인증"):
+        if st.button("⚙️ 관리자", key="go_to_admin_btn"):
             st.query_params.update(mode="admin")
             st.rerun()
             
-    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
     
-    # 💡 학생 조회창도 깔끔한 카드로 구성
     active_dbs = get_active_databases()
     if not active_dbs:
         st.warning("현재 등록된 성적 데이터가 없습니다.")
     else:
-        with st.container(border=True):
-            sel_s = st.selectbox("조회할 과목 선택", ["과목을 선택하세요"] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs])
-            if sel_s != "과목을 선택하세요":
-                db = active_dbs[0] # 인덱싱 생략
-                cf, sf = get_file_names(db['subject'], db['grade'].replace("학년",""))
-                config = load_config(cf)
+        # 🎯 [핵심 수정] 학생들이 조하러 왔을 때 마주하는 컴포넌트를 정중앙 480px 에쁜 박스로 강제 가둠!
+        st.markdown('<div class="compact-container-box">', unsafe_allow_html=True)
+        st.markdown("### 📝 개인별 성적 조회", unsafe_allow_html=True)
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        
+        opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
+        sel_s = st.selectbox("조회할 과목 선택", opts_s, key="student_select_sub")
+        
+        if sel_s != "과목을 선택하세요.":
+            db = active_dbs[opts_s.index(sel_s)-1]
+            cf, sf = get_file_names(db['subject'], db['grade'].replace("학년",""))
+            config = load_config(cf)
+            
+            st.info(f"🧬 **{config['교과명']}** | **{config['학기통합명']}**")
+            
+            # 학생 인증 및 성적 확인 순정 폼 복구
+            with st.form("login"):
+                classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")]
+                c1, c2 = st.columns(2)
+                with c1: b_sel = st.selectbox("반", classes)
+                with c2: n_sel = st.number_input("번호", 1, 50, 1)
+                name_in = st.text_input("이름")
+                pw_in = st.text_input("비밀번호", type="password")
                 
-                with st.form("login_form"):
-                    st.write(f"🧬 **{config['교과명']}** 성적 확인")
-                    c1, c2, c3 = st.columns(3)
-                    with c1: b_in = st.selectbox("반", [f"{x}반" for x in config['선택된반 목록'].split(",")])
-                    with c2: n_in = st.number_input("번호", 1, 50, 1)
-                    with c3: name_in = st.text_input("이름")
-                    pw_in = st.text_input("비밀번호", type="password")
-                    
-                    if st.form_submit_button("성적 확인하기", use_container_width=True):
-                        df_st = load_students(sf)
-                        # ... 조회 로직 생략 (기존과 동일)
-                        st.info("조회 결과를 불러오는 중...")
+                if st.form_submit_button("점수 확인하기", use_container_width=True, type="primary"):
+                    df_st = load_students(sf)
+                    if df_st.empty: 
+                        st.error("성적 파일이 등록되어 있지 않습니다. 담당 교사에게 문의하세요.")
+                    else:
+                        res = df_st[(df_st['반']==int(b_sel.replace("반",""))) & (df_st['번호']==n_sel) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
+                        if not res.empty:
+                            idx = res.index[0]
+                            scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
+                            st.success(f"🎉 {name_in} 학생의 수행평가 결과입니다.")
+                            st.table(pd.DataFrame(scores))
+                            
+                            # 확인 도장 찍기 로직
+                            if df_st.loc[idx, '확인여부'] != "확인 완료":
+                                df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                df_st.to_csv(sf, index=False)
+                        else: 
+                            st.error("입력한 정보와 일치하는 학생 데이터가 없습니다. 반, 번호, 이름, 비밀번호를 다시 확인하세요.")
+        st.markdown('</div>', unsafe_allow_html=True) # 카드 디자인 박스 닫기
