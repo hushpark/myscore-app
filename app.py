@@ -412,7 +412,8 @@ elif st.session_state["page_status"] == "teacher_main":
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
         
-        c1, c2, c3, c4 = st.columns([1.1, 1.1, 0.9, 1.3])
+        # 💡 버튼 컬럼 크기를 줄이고, 앞의 3개 컬럼에 공간을 분배하여 버튼 가로 길이를 축소
+        c1, c2, c3, c4 = st.columns([1.3, 1.3, 1.2, 0.8])
         
         with c1:
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 1단계: 교과군 분류</div>", unsafe_allow_html=True)
@@ -432,7 +433,8 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.selectbox("세부과목", ["선택 대기"], disabled=True, label_visibility="collapsed")
                 
         with c3:
-            st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🎓 3단계: 관리 학년 선택</div>", unsafe_allow_html=True)
+            # 💡 텍스트 줄바꿈 방지를 위해 라벨 수정
+            st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🎓 3단계: 관리 학년</div>", unsafe_allow_html=True)
             sel_gr = st.selectbox("관리학년", options=GRADE_OPTIONS, label_visibility="collapsed")
             final_gr = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
             
@@ -445,5 +447,5 @@ elif st.session_state["page_status"] == "teacher_main":
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
-        # 💡 점선 테두리와 강조 색상, 굵은 글씨를 활용하여 안내 문구를 눈에 띄게 변경했습니다!
-        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'>💡 상단에서 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
+        # 💡 "상단에서 " 문구 삭제
+        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
