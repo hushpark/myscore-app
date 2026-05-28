@@ -55,6 +55,12 @@ st.markdown("""
             background-color: #ffffff !important;
         }
         
+        /* 💡 교사용 제어판 버튼을 컨테이너 우측 끝(과목선택창 라인)으로 밀착 정렬 */
+        div.stButton:has(button[key="outer_teacher_btn"]) {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
         /* 확인 및 저장용 주요 단추 양식 정의 */
         div.stButton > button[kind="primary"] {
             background-color: #ef4444 !important;
@@ -175,12 +181,17 @@ CURRENT_ADMIN_PW = load_admin_password()
 # ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    st.markdown("<h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
-    
-    if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
-        st.session_state["page_status"] = "teacher_auth"
-        st.rerun()
-        
+    # 💡 컬럼을 사용하여 제목은 왼쪽, 버튼은 오른쪽에 동일 선상으로 배치
+    col_title, col_btn = st.columns([3, 1])
+    with col_title:
+        st.markdown("<h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
+    with col_btn:
+        # H2 태그의 기본 마진(20px)과 높이를 맞추기 위해 상단 여백 추가
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
+            st.session_state["page_status"] = "teacher_auth"
+            st.rerun()
+            
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
     st.markdown("### 📝 개인별 성적 조회")
     
@@ -211,7 +222,7 @@ if st.session_state["page_status"] == "student_main":
                     pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호")
                     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                     
-                    if st.form_submit_button("🔍 내 점 확인하기", use_container_width=True):
+                    if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True):
                         df_st = load_students(sf)
                         if df_st.empty: 
                             st.error("성적 데이터가 아직 연동되지 않은 교과입니다.")
@@ -240,7 +251,6 @@ if st.session_state["page_status"] == "student_main":
 # ------------------------------------------
 elif st.session_state["page_status"] == "teacher_auth":
     
-    # 💡 이 화면에서만 로그인 폼 테두리와 패딩을 카드 형태로 복원하는 전용 CSS 주입
     st.markdown("""
         <style>
         div[data-testid="stForm"] {
@@ -256,20 +266,14 @@ elif st.session_state["page_status"] == "teacher_auth":
     """, unsafe_allow_html=True)
     
     with st.form("admin_login_form"):
-        # 1. 제목 및 구분선
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>⚙️ 교과 통합 관리자</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 15px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-        
-        # 2. 안내 문구
         st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:25px; line-height: 1.5;'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</p>", unsafe_allow_html=True)
-        
-        # 3. 비밀번호 라벨 및 입력창 (기본 라벨 숨김)
         st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>관리자 인증 비밀번호를 입력하세요</div>", unsafe_allow_html=True)
         admin_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", label_visibility="collapsed")
         
         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
         
-        # 4. 로그인 버튼 (기존 CSS 설정에 의해 빨간색으로 나옵니다)
         if st.form_submit_button("로그인", use_container_width=True, type="primary"):
             if admin_pw == CURRENT_ADMIN_PW:
                 st.session_state["admin_logged_in"] = True
@@ -278,7 +282,6 @@ elif st.session_state["page_status"] == "teacher_auth":
             else: 
                 st.error("❌ 비밀번호가 틀렸습니다.")
                 
-    # 학생 화면으로 돌아가기 버튼 (카드 바깥 중앙 정렬)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("🎒 학생 화면으로 돌아가기", key="outer_student_btn", use_container_width=True):
