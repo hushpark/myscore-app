@@ -69,7 +69,7 @@ st.markdown("""
         h2 { font-size: 24px !important; color: #0f172a !important; font-weight: 800 !important; margin: 20px 0 10px 0 !important; }
         h4 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 8px !important; }
         
-        /* 💡 추가 포인트: 팝업창(모달) 내부 성적 테이블의 제목(th)과 점수(td) 모두 가운데 정렬 */
+        /* 팝업창(모달) 내부 성적 테이블의 제목(th)과 점수(td) 모두 가운데 정렬 */
         div[role="dialog"] table th, 
         div[role="dialog"] table td {
             text-align: center !important;
@@ -202,7 +202,7 @@ if st.session_state["page_status"] == "student_main":
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
             max-width: 500px !important; 
-            margin: 0px auto 20px auto Mom !important; 
+            margin: 0px auto 20px auto !important; 
         }
         </style>
     """, unsafe_allow_html=True)
@@ -262,10 +262,26 @@ if st.session_state["page_status"] == "student_main":
                                     idx = res.index[0]
                                     
                                     scores = {}
+                                    total_sum = 0 # 💡 합계 계산을 위한 변수 추가
+                                    
                                     for i in range(int(config['항목개수'])):
                                         h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
                                         if h_name in df_st.columns:
-                                            scores[h_name] = [df_st.loc[idx, h_name]]
+                                            val = df_st.loc[idx, h_name]
+                                            scores[h_name] = [val]
+                                            
+                                            # 💡 숫자로 변환 가능한 값만 안전하게 더하기
+                                            try:
+                                                if pd.notna(val):
+                                                    total_sum += float(val)
+                                            except:
+                                                pass
+                                    
+                                    # 💡 총점을 깔끔하게 추가 (소수점이 .0으로 딱 떨어지면 정수로 표현)
+                                    if float(total_sum).is_integer():
+                                        scores['합계'] = [int(total_sum)]
+                                    else:
+                                        scores['합계'] = [round(total_sum, 2)]
                                     
                                     if df_st.loc[idx, '확인여부'] != "확인 완료":
                                         df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
