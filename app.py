@@ -128,30 +128,25 @@ def password_update_dialog():
         if st.button("수정 취소", use_container_width=True):
             st.rerun()
 
-# --- 앱 기본 세팅 ---
+# --- 앱 기본 설정 ---
 st.set_page_config(page_title="교과 성적 제어 센터 v7", layout="wide")
 
-# 🎯 [핵심] 주소창 파라미터 대신 내부 세션 메모리 변수로 완벽한 화면 전환 제어
-if "view_page" not in st.session_state:
-    st.session_state["view_page"] = "student_view" # 기본값은 학생조회
-
+# 내부 화면 감지를 위한 세션 상태 초기화
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = "student"  # 기본값: 학생 화면
 if "admin_logged_in" not in st.session_state:
     st.session_state["admin_logged_in"] = False
 
-# 현재 어떤 화면을 그려야 하는지 상태 스위치 정의
-is_teacher_mode = (st.session_state["view_page"] == "teacher_view")
-is_logged_in = st.session_state["admin_logged_in"]
-
+# 고정 변수 매핑
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
 CURRENT_ADMIN_PW = load_admin_password()
 
-
 # =========================================================================
-# 🎯 [스타일 독립 분리] 화면 상태에 따라 CSS를 완벽히 나누어 간섭 100% 차단
+# 🎯 [핵심 교정] 화면 상태에 따라 CSS를 완전히 고립시켜 상단 사각형 버그 원천 박멸
 # =========================================================================
-if is_teacher_mode and is_logged_in:
-    # ⚙️ [화면 1] 로그인 완료 후 교사용 통합 제어 센터 -> 원래 원본의 와이드 형태 100% 복구
+if st.session_state["current_page"] == "teacher" and st.session_state["admin_logged_in"]:
+    # ⚙️ 교사용 와이드 전용 대형 제어판 스타일
     st.markdown("""
         <style>
             div[data-testid="stHeader"] { height: 0px !important; display:none; }
@@ -162,20 +157,20 @@ if is_teacher_mode and is_logged_in:
         </style>
     """, unsafe_allow_html=True)
 else:
-    # 🎒 [화면 2, 3] 학생용 성적 확인 화면 및 교사용 로그인 인증창 공통 (가로 600px 아담한 카드 형태)
+    # 🎒 학생 화면 및 관리자 로그인 대기 화면용 컴팩트 500px 박스 스타일
     st.markdown("""
         <style>
             .main { background-color: #f8fafc; }
             div[data-testid="stHeader"] { height: 0px !important; display:none; }
             
-            /* 대화상자 잔상 버그 영역 완전 소멸 처리 */
+            /* 팝업 관련 레이어가 임의로 투명 사각형을 채우는 현상 완전 파괴 */
             div[data-testid="stDialog"] { display: none !important; opacity: 0 !important; }
             iframe { display: none !important; }
             
-            /* 🎯 [요청 반영] 모든 카드 레이아웃 본체를 정확히 가로 600px로 묶어 정중앙 정렬 */
-            .compact-center-layout {
-                max-width: 600px !important;
-                margin: 50px auto 0 auto !important;
+            /* 🎯 학생 화면 전체 컴포넌트를 정확히 가로 500px 박스로 구속 및 정중앙 배치 */
+            .student-centered-card {
+                max-width: 500px !important;
+                margin: 70px auto 0 auto !important;
                 background-color: #ffffff !important;
                 padding: 35px !important;
                 border-radius: 14px !important;
@@ -183,43 +178,15 @@ else:
                 box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
             }
             
-            /* 컴팩트 프레임 내부 stForm 기본 테두리 무효화 */
-            .compact-center-layout div[data-testid="stForm"] {
+            /* Form 기본 외곽선 제거 */
+            .student-centered-card div[data-testid="stForm"] {
                 border: none !important;
                 padding: 0px !important;
                 box-shadow: none !important;
-                max-width: 100% !important;
             }
             
-            /* 💡 [요청 반영] 제어판 이동 단추 슬림화 및 우측 끝 밀착 정렬 */
-            div.stButton > button[key="go_to_admin_btn"] {
-                width: fit-content !important;
-                min-width: auto !important;
-                padding: 4px 14px !important;
-                font-size: 15px !important;
-                float: right !important;
-                border-radius: 6px !important;
-                border: 1px solid #cbd5e1 !important;
-                color: #475569 !important;
-                background-color: #ffffff !important;
-            }
-            div.stButton > button[key="go_to_admin_btn"]:hover {
-                background-color: #f1f5f9 !important;
-                border-color: #94a3b8 !important;
-            }
-            
-            /* 관리자 로그인 빨간색 버튼 커스텀 */
-            div.stButton > button[kind="primary"] {
-                background-color: #ef4444 !important;
-                color: white !important;
-                border: none !important;
-                font-weight: bold !important;
-                font-size: 16px !important;
-                padding: 10px 0px !important;
-            }
-            
-            /* 600px 안에서 타이틀-단추 수평 균형 정렬 Flex */
-            .header-flex-wrapper {
+            /* 💡 상단 타이틀과 우측 정렬 버튼의 수평 매칭용 Flex 프레임 */
+            .header-flex-box {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -227,30 +194,43 @@ else:
                 width: 100%;
             }
             
-            h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 23px !important; margin: 0 !important; padding: 0 !important; }
-            h3 { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; }
-            h4 { color: #334155 !important; }
+            /* 버튼 슬림화 및 정렬 가이드 밀착 */
+            div.stButton > button[key="toggle_admin_btn"] {
+                width: fit-content !important;
+                padding: 4px 12px !important;
+                font-size: 14px !important;
+                border-radius: 6px !important;
+                border: 1px solid #cbd5e1 !important;
+                color: #475569 !important;
+                background-color: #ffffff !important;
+            }
+            div.stButton > button[key="toggle_admin_btn"]:hover {
+                background-color: #f1f5f9 !important;
+                border-color: #94a3b8 !important;
+            }
+            
+            h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 21px !important; margin: 0 !important; padding: 0 !important; }
+            h3 { font-size: 17px !important; font-weight: 700 !important; color: #1e293b !important; }
         </style>
     """, unsafe_allow_html=True)
 
 
 # ==========================================
-# A. 선생님 관리자 화면 분리 영역
+# 구역 1. 교사용 제어 센터 제어 로직
 # ==========================================
-if is_teacher_mode:
-    # A-1. 교과 관리자 인증 로그인창 (🎯 가로 600px 미만 컴팩트 박스로 고정)
-    if not is_logged_in:
-        st.markdown("<div class='compact-center-layout'>", unsafe_allow_html=True)
-        
-        st.markdown('<div class="header-flex-wrapper"><h2>🛡️ 관리자 인증</h2>', unsafe_allow_html=True)
-        # 빽 버튼 장착
-        if st.button("🎒 학생 화면으로 돌아가기"):
-            st.session_state["view_page"] = "student_view"
+if st.session_state["current_page"] == "teacher":
+    
+    # [비로그인 상태] -> 500px 컴팩트 인증 창 출력
+    if not st.session_state["admin_logged_in"]:
+        st.markdown("<div class='student-centered-card'>", unsafe_allow_html=True)
+        st.markdown("<div class='header-flex-box'><h2>🛡️ 관리자 인증</h2>", unsafe_allow_html=True)
+        if st.button("🎒 학생화면", key="toggle_admin_btn"):
+            st.session_state["current_page"] = "student"
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         
         with st.form("admin_premium_login_form"):
-            st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-top:-10px; margin-bottom:20px;'>본인 교과의 성적 데이터를 관리하기 위해<br>인증 비밀번호를 입력해 주세요.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-top:-10px; margin-bottom:25px;'>성적 제어판 진입을 위해<br>인증 비밀번호를 입력해 주세요.</p>", unsafe_allow_html=True)
             admin_pw = st.text_input("비밀번호", type="password", placeholder="Password")
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             if st.form_submit_button("인증 및 로그인", use_container_width=True, type="primary"):
@@ -259,8 +239,8 @@ if is_teacher_mode:
                     st.rerun()
                 else: st.error("❌ 비밀번호가 틀렸습니다.")
         st.markdown("</div>", unsafe_allow_html=True)
-        
-    # A-2. 로그인 성공 시 교사용 통합 제어 센터 (원상태 대형 와이드 형태 100% 보장)
+
+    # [로그인 성공 상태] -> 제한 없는 대형 와이드 제어판 활성화
     else:
         t_col1, t_col2, t_col3 = st.columns([5, 1.4, 1.2])
         with t_col1: st.title("⚙️ 교과·학년 통합 제어 센터")
@@ -269,8 +249,8 @@ if is_teacher_mode:
             if st.button("🔐 암호 수정", use_container_width=True): password_update_dialog()
         with t_col3:
             st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
-            if st.button("🎒 학생 화면", use_container_width=True):
-                st.session_state["view_page"] = "student_view"
+            if st.button("🎒 학생 화면 로그아웃", use_container_width=True):
+                st.session_state["current_page"] = "student"
                 st.session_state["admin_logged_in"] = False
                 st.rerun()
 
@@ -352,22 +332,18 @@ if is_teacher_mode:
                     
                     st.button("🗑️ 전체 데이터 초기화", on_click=reset_all_data, use_container_width=True)
 
+
 # ==========================================
-# B. 학생 화면 분리 영역 (600px 카드 상자 고정)
+# 구역 2. 학생용 성적 조회 화면 (기본값)
 # ==========================================
 else:
-    # 🎯 학생 화면 본체를 정확히 가로 600px 상자 안에 격리 배치
-    st.markdown('<div class="compact-container-layout">', unsafe_allow_html=True)
-    
-    # 🎯 600px 안에서 타이틀과 단추가 절대로 밀려나지 않는 내부 무적 정렬 프레임
-    st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
-    
-    # 🎯 [버그 영원히 박멸] 인터넷 웹 주소를 이동하는 대신, 프로그램 내부 세션을 안전하게 토글!
-    if st.button("🔓 교사용 제어판", key="go_to_admin_btn"):
-        st.session_state["view_page"] = "teacher_view"
+    st.markdown("<div class='student-centered-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='header-flex-box'><h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
+    if st.button("🔓 교사용 제어판", key="toggle_admin_btn"):
+        st.session_state["current_page"] = "teacher"
         st.rerun()
-        
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
     st.markdown("### 📝 개인별 성적 조회")
     
     active_dbs = get_active_databases()
@@ -388,11 +364,14 @@ else:
                 
                 with st.form("login_form"):
                     classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
+                    
                     c1, c2, c3 = st.columns(3)
                     with c1: b_in = st.selectbox("반", classes)
                     with c2: n_in = st.number_input("번호", 1, 50, 1)
                     with c3: name_in = st.text_input("이름", placeholder="홍길동")
+                    
                     pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호")
+                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                     
                     if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True):
                         df_st = load_students(sf)
@@ -403,7 +382,6 @@ else:
                             if not res.empty:
                                 idx = res.index[0]
                                 
-                                # 순정 명렬 데이터 바인딩
                                 scores = {}
                                 for i in range(int(config['항목개수'])):
                                     h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
@@ -418,5 +396,5 @@ else:
                                     df_st.to_csv(sf, index=False)
                             else: 
                                 st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
-                                
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
