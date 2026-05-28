@@ -307,7 +307,7 @@ if st.session_state["page_status"] == "student_main":
                                     for i in range(int(config['항목개수'])):
                                         h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
                                         if h_name in df_st.columns:
-                                            val = df_st.loc[idx, h_name]
+                                            val = df_up = df_st.loc[idx, h_name]
                                             scores[h_name] = [val]
                                             
                                             try:
@@ -379,7 +379,7 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 💡 950px로 확 늘려서 줄바꿈 현상 완벽 해결!
+    # 💡 깔끔하게 1000px로 여유롭게 확장! 
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -388,7 +388,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 950px !important; 
+            max-width: 1000px !important; /* 900px -> 1000px 로 확대 */
             margin: 0px auto 20px auto !important; 
         }
         </style>
@@ -413,7 +413,8 @@ elif st.session_state["page_status"] == "teacher_main":
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
         
-        c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.1, 1.0])
+        # 1000px 너비에 맞춰 균형 잡힌 가로 배치 설정
+        c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.1, 0.9])
         
         with c1:
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 1단계: 교과군 분류</div>", unsafe_allow_html=True)
@@ -450,12 +451,9 @@ elif st.session_state["page_status"] == "teacher_main":
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
-        # 💡 "상단에서" 삭제 및 넓어진 가로폭에 맞춰 텍스트 정렬
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
         
-        # ==========================================
-        # 💡 🚀 과목 활성화 이후 나타나는 [파트 1], [파트 2] 구역 연동
-        # ==========================================
+        # 🚀 과목 활성화 이후 세부 작업 공간
         if "active_subject" in st.session_state and st.session_state.active_subject:
             sub, grd = st.session_state.active_subject, st.session_state.active_grade
             cf, sf = get_file_names(sub, grd)
@@ -464,7 +462,7 @@ elif st.session_state["page_status"] == "teacher_main":
             st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 2px dashed #e2e8f0;'>", unsafe_allow_html=True)
             st.markdown(f"<h3 style='text-align: center; color: #1e3a8a; margin-bottom: 25px;'>📍 현재 작업 중: <span style='color:#ef4444;'>[{sub}]</span> {grd}학년</h3>", unsafe_allow_html=True)
             
-            # 파트 1 (학기/평가 세팅)을 감싸는 컨테이너
+            # 파트 1 (학기/평가 세팅)
             with st.container(border=True):
                 st.markdown("<h4 style='color: #1e293b; margin-top: 5px; margin-bottom: 20px;'>📌 [파트 1] 학기 및 평가 세팅</h4>", unsafe_allow_html=True)
                 
@@ -493,7 +491,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         with cols_i[(i-1)%3]:
                             item_names.append(st.text_input(f"{i}번 이름", value=conf.get(f'항목{i}_이름', "") if conf else ""))
 
-            # 파트 2 (데이터 제어)를 감싸는 컨테이너
+            # 파트 2 (데이터 제어)
             with st.container(border=True):
                 st.markdown("<h4 style='color: #1e293b; margin-top: 5px; margin-bottom: 20px;'>📂 [파트 2] 데이터 제어</h4>", unsafe_allow_html=True)
                 ready = final_t != "학년도/학기를 선택하세요." and sel_cl and n_item > 0 and all(item_names)
@@ -513,13 +511,36 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.session_state.sel_group_idx = 0
                         st.rerun()
                 with c3:
-                    if st.button("🗑️ 전체 시스템 포맷", use_container_width=True): reset_all_data()
+                    # 💡 수정 포인트 1: 전체 시스템 포맷 단어를 직관적인 "초기화"로 변경
+                    if st.button("🗑️ 전체 시스템 초기화", use_container_width=True): reset_all_data()
 
                 st.markdown("<hr style='margin: 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-                up_f = st.file_uploader("📁 성적 CSV 업로드", type="csv")
-                if up_f:
-                    try:
-                        df_up = pd.read_csv(up_f, encoding='cp949')
-                        df_up.to_csv(sf, index=False)
-                        st.success("성적 데이터 연동 완료!")
-                    except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
+                
+                # 💡 수정 포인트 2: 성적 CSV 업로드 옆에 샘플 서식을 받아갈 수 있는 예시 파일 다운로드 기능 결합
+                up_col1, up_col2 = st.columns([3, 1.2])
+                with up_col1:
+                    up_f = st.file_uploader("📁 성적 CSV 업로드", type="csv")
+                    if up_f:
+                        try:
+                            df_up = pd.read_csv(up_f, encoding='cp949')
+                            df_up.to_csv(sf, index=False)
+                            st.success("성적 데이터 연동 완료!")
+                        except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
+                        
+                with up_col2:
+                    st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+                    # 현재 설정된 평가 항목 이름을 기반으로 동적인 예시 파일 구조 구성
+                    sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + (item_names if item_names else ["수행1", "수행2"])
+                    sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names if item_names else ["수행1", "수행2"])], columns=sample_columns)
+                    
+                    csv_buffer = io.StringIO()
+                    sample_df.to_csv(csv_buffer, index=False, encoding='cp949')
+                    csv_bytes = csv_buffer.getvalue().encode('cp949')
+                    
+                    st.download_button(
+                        label="📥 예시 파일 다운로드",
+                        data=csv_bytes,
+                        file_name=f"sample_students_{sub}.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
