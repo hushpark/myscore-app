@@ -43,7 +43,7 @@ st.markdown("""
         div[data-testid="stDialog"] { display: none !important; opacity: 0 !important; }
         iframe { display: none !important; }
         
-        /* 🎯 [선생님 요청 반영] 학생 화면 전체 컴포넌트를 가로 600px 중앙 집중형 카드로 구속 */
+        /* 🎯 학생 화면 전체 컴포넌트를 가로 600px 중앙 집중형 카드로 구속 */
         .student-container {
             max-width: 600px !important;
             margin: 60px auto 0 auto !important;
@@ -62,21 +62,23 @@ st.markdown("""
             max-width: 100% !important;
         }
         
-        /* 💡 [선생님 요청 반영] 교사용 제어판 이동 단추 슬림화 및 화면 우측 가이드라인 라인 완전 밀착 */
-        div.stButton > button[key="go_to_admin_btn"] {
-            width: fit-content !important;
-            min-width: auto !important;
-            padding: 4px 14px !important;
-            font-size: 15px !important; /* 조회할 과목 선택 글씨 스케일과 매칭 */
-            float: right !important;
-            border-radius: 6px !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #475569 !important;
-            background-color: #ffffff !important;
+        /* 💡 교사용 제어판 이동 단추 슬림화 및 화면 우측 가이드라인 라인 완전 밀착 */
+        .admin-link-btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 5px 14px;
+            font-size: 15px;
+            color: #475569;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
         }
-        div.stButton > button[key="go_to_admin_btn"]:hover {
-            background-color: #f1f5f9 !important;
-            border-color: #94a3b8 !important;
+        .admin-link-btn:hover {
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+            color: #1e293b;
         }
         
         /* 600px 박스 내부 수평 균형을 위한 상단 타이틀-버튼 묶음 Flex 정의 */
@@ -96,13 +98,11 @@ st.markdown("""
 # 🎯 학생용 600px HTML 카드 박스 레이어 시작
 st.markdown('<div class="student-container">', unsafe_allow_html=True)
 
-# 🎯 [버그 해결] 600px 박스 안에서 타이틀과 단추가 절대로 깨지거나 밀리지 않는 Flex 구조 정렬
+# 🎯 600px 박스 안에서 타이틀과 단추가 절대로 깨지거나 밀리지 않는 구조
 st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
 
-# 🎯 [부활 및 연동] 교사용 화면(app_teacher)으로 진입하는 버튼 코드 강제 장착 완료!
-if st.button("🔓 교사용 제어판", key="go_to_admin_btn"):
-    st.query_params.update(mode="admin")
-    st.rerun()
+# 🎯 [핵심 교정] 클릭하면 주소창 오류 없이 교사용 파일(app_teacher)로 다이렉트 순간이동하는 무적의 HTML 링크 버튼 장착!
+st.markdown('<a href="/app_teacher" target="_self" class="admin-link-btn">🔓 교사용 제어판</a>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -143,7 +143,6 @@ else:
                         res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
                         if not res.empty:
                             idx = res.index[0]
-                            scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_is_strong_password' if f'항목{i+1}_이름' not in df_st.columns else f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
                             
                             # 순정 명렬 데이터 바인딩
                             scores = {}
