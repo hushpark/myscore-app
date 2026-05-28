@@ -307,7 +307,7 @@ if st.session_state["page_status"] == "student_main":
                                     for i in range(int(config['항목개수'])):
                                         h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
                                         if h_name in df_st.columns:
-                                            val = df_up = df_st.loc[idx, h_name]
+                                            val = df_st.loc[idx, h_name]
                                             scores[h_name] = [val]
                                             
                                             try:
@@ -367,6 +367,7 @@ elif st.session_state["page_status"] == "teacher_auth":
                 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        # 💡 요청하신 대로 버튼 명칭을 수정했습니다.
         if st.button("🎒 학생 화면으로 돌아가기", key="outer_student_btn", use_container_width=True):
             st.session_state["page_status"] = "student_main"
             st.rerun()
@@ -379,7 +380,6 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 💡 깔끔하게 1000px로 여유롭게 확장! 
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -388,7 +388,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 1000px !important; /* 900px -> 1000px 로 확대 */
+            max-width: 1000px !important; /* 💡 1000px 스케일 유지 */
             margin: 0px auto 20px auto !important; 
         }
         </style>
@@ -413,8 +413,8 @@ elif st.session_state["page_status"] == "teacher_main":
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
         
-        # 1000px 너비에 맞춰 균형 잡힌 가로 배치 설정
-        c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.1, 0.9])
+        # 💡 [핵심 교정] 버튼이 절대 깨지거나 늘어나지 않도록 최적의 컬럼 비율(1.3, 1.3, 1.0, 1.3) 분배!
+        c1, c2, c3, c4 = st.columns([1.3, 1.3, 1.0, 1.3])
         
         with c1:
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 1단계: 교과군 분류</div>", unsafe_allow_html=True)
@@ -453,7 +453,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
         
-        # 🚀 과목 활성화 이후 세부 작업 공간
+        # 🚀 과목 활성화 이후 작업 구역
         if "active_subject" in st.session_state and st.session_state.active_subject:
             sub, grd = st.session_state.active_subject, st.session_state.active_grade
             cf, sf = get_file_names(sub, grd)
@@ -496,7 +496,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<h4 style='color: #1e293b; margin-top: 5px; margin-bottom: 20px;'>📂 [파트 2] 데이터 제어</h4>", unsafe_allow_html=True)
                 ready = final_t != "학년도/학기를 선택하세요." and sel_cl and n_item > 0 and all(item_names)
                 
-                c1, c2, c3 = st.columns([1.5, 1.5, 1])
+                c1, c2 = st.columns([1.5, 1.5])
                 with c1:
                     if ready:
                         if st.button(f"💾 [{sub}] 설정 저장", type="primary", use_container_width=True):
@@ -510,16 +510,14 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.session_state.active_subject = None
                         st.session_state.sel_group_idx = 0
                         st.rerun()
-                with c3:
-                    # 💡 수정 포인트 1: 전체 시스템 포맷 단어를 직관적인 "초기화"로 변경
-                    if st.button("🗑️ 전체 시스템 초기화", use_container_width=True): reset_all_data()
 
-                st.markdown("<hr style='margin: 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+                st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
                 
-                # 💡 수정 포인트 2: 성적 CSV 업로드 옆에 샘플 서식을 받아갈 수 있는 예시 파일 다운로드 기능 결합
-                up_col1, up_col2 = st.columns([3, 1.2])
+                # 💡 [구조 교정] 성적 CSV 업로드 영역과 예시 다운로드 버튼을 3번 그림 요구사항에 맞춰 동일 선상에 나란히 배치!
+                st.markdown("<div style='font-size:14px; font-weight:600; color:#475569; margin-bottom:8px;'>📁 성적 CSV 관리 및 업로드</div>", unsafe_allow_html=True)
+                up_col1, up_col2 = st.columns([3.5, 1.5])
                 with up_col1:
-                    up_f = st.file_uploader("📁 성적 CSV 업로드", type="csv")
+                    up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed")
                     if up_f:
                         try:
                             df_up = pd.read_csv(up_f, encoding='cp949')
@@ -528,8 +526,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
                         
                 with up_col2:
-                    st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
-                    # 현재 설정된 평가 항목 이름을 기반으로 동적인 예시 파일 구조 구성
+                    # 현재 설정 데이터 기준으로 동적인 다운로드 양식 빌드
                     sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + (item_names if item_names else ["수행1", "수행2"])
                     sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names if item_names else ["수행1", "수행2"])], columns=sample_columns)
                     
@@ -544,3 +541,8 @@ elif st.session_state["page_status"] == "teacher_main":
                         mime="text/csv",
                         use_container_width=True
                     )
+            
+            # 💡 [격리 조치] 위험 기능인 시스템 초기화 버튼은 선생님들이 혼동하여 누르지 않도록 카드 하단 맨 밑으로 격리 이동
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            if st.button("🗑️ 초기화 (모든 데이터 포맷)", use_container_width=True): 
+                reset_all_data()
