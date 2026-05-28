@@ -100,7 +100,6 @@ st.markdown("""
         h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin-bottom: 6px !important; }
         
         /* 테이블 내부 중앙 정렬 */
-        div[role="dialog"] table th, div[role="dialog"] table td,
         div.monitor-table table th, div.monitor-table table td {
             text-align: center !important;
         }
@@ -158,6 +157,7 @@ def load_admin_password():
 def save_admin_password(new_pw):
     pd.DataFrame([{"password": str(new_pw).strip()}]).to_csv(META_FILE, index=False)
 
+# 학기별 독립 파일 생성 함수
 def get_file_names(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
@@ -257,6 +257,7 @@ if "sel_semester_idx" not in st.session_state: st.session_state.sel_semester_idx
 
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
+# 학기 목록 리스트
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 CURRENT_ADMIN_PW = load_admin_password()
 
@@ -429,10 +430,9 @@ elif st.session_state["page_status"] == "teacher_main":
         frame_left, frame_right = st.columns([1.0, 2.0])
         
         # ==========================================
-        # 👈 [좌측 프레임]: 친절한 설명 텍스트 복원!
+        # 👈 [좌측 프레임 (설정 가이드 가시성 복원)]
         # ==========================================
         with frame_left:
-            # 💡 피드백 반영: 구역 구분을 주는 타이틀 설명을 세련되게 복원했습니다.
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
             
             g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
@@ -488,6 +488,8 @@ elif st.session_state["page_status"] == "teacher_main":
                 
             if st.button("➕ 다른 과목 추가하기", key="side_add_btn"):
                 st.session_state.active_subject = None
+                st.session_state.active_grade = None
+                st.session_state.active_semester = None
                 st.session_state.sel_group_idx = 0
                 st.session_state.sel_sub_idx = 0
                 st.session_state.sel_grade_idx = 0
@@ -497,7 +499,9 @@ elif st.session_state["page_status"] == "teacher_main":
 
             # 성적 CSV 관리 구역
             if has_active:
-                sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
+                sub = st.session_state.active_subject
+                grd = st.session_state.active_grade
+                sem = st.session_state.active_semester
                 cf, sf = get_file_names(sub, grd, sem)
                 conf = load_config(cf)
                 item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else ["수행1", "수행2"]
@@ -534,11 +538,11 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
-        # 👉 [우측 프레임]: 에러 버그 수정 완료 및 데이터 연동
+        # 👉 [우측 프레임 (버그 변수 완전 교정 및 데이터 복원)]
         # ==========================================
         with frame_right:
             if has_active:
-                # 💡 [핵심 교정]: 버그가 발생하던 다중 대입 오타 구역을 완벽히 교정하여 원천 해결 완료!
+                # 💡 [버그 교정 핵심]: 꼬여있던 세션 변수 할당 문법 오류를 깨끗하게 분리 교정했습니다.
                 sub = st.session_state.active_subject
                 grd = st.session_state.active_grade
                 sem = st.session_state.active_semester
@@ -577,7 +581,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         d = {"교과명":sub, "학년":grd, "학기통합명":sem, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
                         for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
                         pd.DataFrame([d]).to_csv(cf, index=False)
-                        st.success("🎉 년도 및 학기별 분리 설정 저장 완료!")
+                        st.success("🎉 학기별 설정 저장 완료!")
                         st.rerun()
                     else: st.error("❌ 학급(반) 선택 및 평가 항목 명칭을 채운 후 저장을 눌러주세요.")
 
