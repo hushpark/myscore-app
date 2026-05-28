@@ -135,7 +135,7 @@ st.markdown("""
         label div p { font-size: 14px !important; font-weight: 500 !important; color: #24292f !important; }
         div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 7px 10px !important; background-color: #ffffff !important; }
         
-        /* 🚨 빨간색 버튼 전용 스타일 강제 입히기 (스크린샷 싱크로율) */
+        /* 빨간색 버튼 전용 스타일 강제 입히기 */
         div.stButton > button[kind="primary"] {
             background-color: #ff0000 !important;
             color: white !important;
@@ -190,18 +190,75 @@ if is_admin_mode:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 🎯 [구조 교정] 메인 상단바 구성 (디자인 비대칭 예방을 위해 독립 분리)
-        col_main_title, col_main_student_btn = st.columns([6, 1.2])
+        # 🎯 [구조 변경] 세 번째 그림처럼 타이틀 우측 정단 끝에 버튼들이 배치되도록 설정
+        col_main_title, col_main_pw_btn, col_main_student_btn = st.columns([4.4, 1.4, 1.2])
         with col_main_title:
             st.title("⚙️ 교과·학년 통합 제어 센터")
+            
+        with col_main_pw_btn:
+            st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+            if "show_pw_panel" not in st.session_state:
+                st.session_state.show_pw_panel = False
+            # 버튼 클릭 시 바로 아래 미니 설정 대화상자 생성용 토글
+            if st.button("🔐 관리자 암호 변경", use_container_width=True, key="header_pw_btn"):
+                st.session_state.show_pw_panel = not st.session_state.show_pw_panel
+                st.rerun()
+                
         with col_main_student_btn:
             st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
-            if st.button("🎒 학생 화면", use_container_width=True):
+            if st.button("🎒 학생 화면", use_container_width=True, key="header_student_btn"):
                 st.query_params.clear()
                 st.session_state["admin_logged_in"] = False
                 st.rerun()
 
-        # 🎯 [요청 반영] 단계 1을 무조건 암호 창보다 위쪽에 고정 노출!
+        # 🎯 [요청 반영] 버튼 바로 하단 우측 영역에 독립 팝업처럼 열리는 암호 새 설정 대화상자 블록
+        if st.session_state.show_pw_panel:
+            p_space, p_container = st.columns([4.4, 2.6])
+            with p_container:
+                with st.container(border=True):
+                    st.markdown("<h4 style='margin-bottom:15px; font-weight:600; color:#24292f;'>관리자 암호 새 설정</h4>", unsafe_allow_html=True)
+                    
+                    new_pw = st.text_input("1. 새 암호 입력", type="password", key="panel_new_pw")
+                    confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="panel_confirm_pw")
+                    
+                    is_valid, msg = is_strong_password(new_pw)
+                    
+                    if new_pw:
+                        if new_pw == confirm_pw and is_valid:
+                            st.markdown("<div style='background-color:#E8F5E9; border-radius:4px; padding:10px; color:#2E7D32; font-weight:500; margin-bottom:10px;'>✅ 두 암호가 완벽하게 일치합니다.</div>", unsafe_allow_html=True)
+                        elif confirm_pw and new_pw != confirm_pw:
+                            st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
+                        else:
+                            st.warning(msg)
+                            
+                    st.markdown("""<div class="pw-guide">
+                    <b>[설정 규칙]</b><br>
+                    1. 최소 12자 이상 필수<br>
+                    2. 영문 + 숫자 + 특수기호 모두 포함<br><br>
+                    <b>[안전한 암호 예시]</b><br>
+                    - <span class="pw-example">teacher!@2026info</span><br>
+                    - <span class="pw-example">pass#$99grade!!</span><br>
+                    - <span class="pw-example">study**24safe##</span>
+                    </div>""", unsafe_allow_html=True)
+                    st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+
+                    can_submit = is_valid and (new_pw == confirm_pw)
+                    
+                    # 스크린샷 양식 맞춤 전용 버튼 제어판 (빨간색)
+                    b_col1, b_col2 = st.columns(2)
+                    with b_col1:
+                        if st.button("변경 사항 저장", disabled=not can_submit, use_container_width=True, type="primary", key="save_pw_btn"):
+                            save_admin_password(new_pw)
+                            st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
+                            st.session_state.show_pw_panel = False
+                            st.rerun()
+                    with b_col2:
+                        if st.button("❌ 변경 취소", use_container_width=True, key="cancel_pw_btn"):
+                            st.session_state.show_pw_panel = False
+                            st.rerun()
+            st.markdown("---")
+
+        # 메인 프로그램 [단계 1] 시작 영역 (언제나 맨 위 고정 배치 완료)
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
@@ -239,63 +296,7 @@ if is_admin_mode:
                     st.rerun()
                 else: st.error("과목/학년을 선택하세요.")
 
-        # 🎯 [요청 핵심] 단계 1 바로 밑에 배치되는 우측 정렬 암호 트리거 단추와 미니 독립 팝업창 구조
-        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-        col_trigger_L, col_trigger_R = st.columns([5.5, 1.7])
-        
-        with col_trigger_R:
-            if "show_pw_panel" not in st.session_state:
-                st.session_state.show_pw_panel = False
-            # 버튼을 누르면 바로 아래에 미니 창이 토글 오픈됩니다.
-            if st.button("🔐 관리자 암호 변경", use_container_width=True, key="trigger_btn"):
-                st.session_state.show_pw_panel = not st.session_state.show_pw_panel
-                st.rerun()
-                
-            # 🎯 버튼 바로 아래 소형 독립 구조로 생성되는 암호 새 설정 대화상자 (스크린샷 복사판)
-            if st.session_state.show_pw_panel:
-                with st.container(border=True):
-                    st.markdown("<h4 style='margin-bottom:15px; font-weight:600; color:#24292f;'>관리자 암호 새 설정</h4>", unsafe_allow_html=True)
-                    
-                    new_pw = st.text_input("1. 새 암호 입력", type="password", key="panel_new_pw")
-                    confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="panel_confirm_pw")
-                    
-                    is_valid, msg = is_strong_password(new_pw)
-                    
-                    if new_pw:
-                        if new_pw == confirm_pw and is_valid:
-                            st.markdown("<div style='background-color:#E8F5E9; border-radius:4px; padding:10px; color:#2E7D32; font-weight:500; margin-bottom:10px;'>✅ 두 암호가 완벽하게 일치합니다.</div>", unsafe_allow_html=True)
-                        elif confirm_pw and new_pw != confirm_pw:
-                            st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
-                        else:
-                            st.warning(msg)
-                            
-                    st.markdown("""<div class="pw-guide">
-                    <b>[설정 규칙]</b><br>
-                    1. 최소 12자 이상 필수<br>
-                    2. 영문 + 숫자 + 특수기호 모두 포함<br><br>
-                    <b>[안전한 암호 예시]</b> (복사 후 수정 가능)<br>
-                    - <span class="pw-example">teacher!@2026info</span><br>
-                    - <span class="pw-example">pass#$99grade!!</span><br>
-                    - <span class="pw-example">study**24safe##</span>
-                    </div>""", unsafe_allow_html=True)
-                    st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
-
-                    can_submit = is_valid and (new_pw == confirm_pw)
-                    
-                    # 스크린샷처럼 정렬된 버튼 제어판 (빨간색 적용 완료)
-                    b_col1, b_col2 = st.columns(2)
-                    with b_col1:
-                        if st.button("변경 사항 저장", disabled=not can_submit, use_container_width=True, type="primary", key="save_pw_btn"):
-                            save_admin_password(new_pw)
-                            st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
-                            st.session_state.show_pw_panel = False
-                            st.rerun()
-                    with b_col2:
-                        if st.button("❌ 변경 취소", use_container_width=True, key="cancel_pw_btn"):
-                            st.session_state.show_pw_panel = False
-                            st.rerun()
-
-        # 하위 파트 인터페이스 (영역 활성화 시 매끄럽게 하단 전개)
+        # 하위 파트 인터페이스 (영역 활성화 시 하단 전개)
         if "active_subject" in st.session_state and st.session_state.active_subject:
             sub, grd = st.session_state.active_subject, st.session_state.active_grade
             cf, sf = get_file_names(sub, grd)
