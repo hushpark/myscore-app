@@ -38,7 +38,7 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 교사용 제어판 및 상단 이동 버튼들 (암호변경 버튼 추가) */
+        /* 교사용 제어판 버튼 글씨 크기(12px) 및 패딩 축소 */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
         div.stButton > button[key="outer_logout_btn"],
@@ -378,60 +378,73 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 💡 상단 헤더, 암호 변경 버튼, 학생 화면(로그아웃) 버튼 배치
-    col_t1, col_t2, col_t3 = st.columns([4, 1.1, 1.1])
-    with col_t1:
-        st.markdown("<h2 style='margin-top:0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
-    with col_t2:
-        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-        # 💡 암호 변경 모달창 호출
+    # 💡 교사용 메인 화면을 위한 700px 넓이의 카드 스타일 정의
+    st.markdown("""
+        <style>
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            border: 1px solid #e2e8f0 !important;
+            padding: 35px 40px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+            background-color: #ffffff !important;
+            max-width: 700px !important;  /* 4개 요소를 위해 넉넉하게 700px 설정 */
+            margin: 0px auto 20px auto !important; 
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 상단 우측 버튼 영역 (컨테이너 밖으로 빼서 위쪽 정렬)
+    col_empty, col_pw, col_logout = st.columns([5, 1.2, 1.2])
+    with col_pw:
+        st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         if st.button("🔐 암호 변경", key="outer_pw_btn", use_container_width=True):
             password_update_dialog()
-    with col_t3:
-        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-        # 💡 학생 화면으로 문구 변경
+    with col_logout:
+        st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         if st.button("🎒 학생 화면", key="outer_logout_btn", use_container_width=True):
             st.session_state["page_status"] = "student_main"
             st.session_state["admin_logged_in"] = False
             st.rerun()
-            
-    st.markdown("<hr style='margin: 10px 0 25px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-    
-    st.markdown("<h4 style='color: #1e293b; margin-bottom: 20px;'>🛠️ [단계 1] 획기적인 교과군별 과목 지정</h4>", unsafe_allow_html=True)
-    
-    if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
-    
-    c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1])
-    
-    with c1:
-        st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 1단계: 교과군 분류</div>", unsafe_allow_html=True)
-        g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
-        sel_g = st.selectbox("교과군", options=g_opts, index=st.session_state.sel_group_idx, label_visibility="collapsed")
+
+    # 교사용 카드 컨테이너
+    with st.container(border=True):
+        st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; margin: 0px 0px 10px 0px; color: #475569;'>🛠️ [단계 1] 획기적인 교과군별 과목 지정</h4>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin: 15px 0 25px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
-    with c2:
-        st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🗂️ 2단계: 세부 과목 선택</div>", unsafe_allow_html=True)
-        final_sub = ""
-        if sel_g == "➕ 신규 과목 개설":
-            final_sub = st.text_input("새 과목명", placeholder="새 과목명을 입력하세요", label_visibility="collapsed").strip()
-        elif sel_g != "교과군 선택":
-            s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
-            sel_s = st.selectbox("세부과목", options=s_opts, label_visibility="collapsed")
-            if sel_s != "과목 선택": final_sub = sel_s
-        else: 
-            st.selectbox("세부과목", ["선택 대기"], disabled=True, label_visibility="collapsed")
-            
-    with c3:
-        st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🎓 3단계: 관리 학년 선택</div>", unsafe_allow_html=True)
-        sel_gr = st.selectbox("관리학년", options=GRADE_OPTIONS, label_visibility="collapsed")
-        final_gr = sel_gr.replace("학년", "") if sel_gr != "학년을 선택하세요." else ""
+        if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
         
-    with c4:
-        st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
-        if st.button("🔄 영역 활성화 및 로드", use_container_width=True):
-            if final_sub and final_gr:
-                st.session_state.active_subject, st.session_state.active_grade = final_sub, final_gr
-                st.rerun()
+        c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1])
+        
+        with c1:
+            st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 1단계: 교과군 분류</div>", unsafe_allow_html=True)
+            g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
+            sel_g = st.selectbox("교과군", options=g_opts, index=st.session_state.sel_group_idx, label_visibility="collapsed")
+            
+        with c2:
+            st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🗂️ 2단계: 세부 과목 선택</div>", unsafe_allow_html=True)
+            final_sub = ""
+            if sel_g == "➕ 신규 과목 개설":
+                final_sub = st.text_input("새 과목명", placeholder="새 과목명을 입력하세요", label_visibility="collapsed").strip()
+            elif sel_g != "교과군 선택":
+                s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
+                sel_s = st.selectbox("세부과목", options=s_opts, label_visibility="collapsed")
+                if sel_s != "과목 선택": final_sub = sel_s
             else: 
-                st.warning("모든 항목을 선택해 주세요.")
+                st.selectbox("세부과목", ["선택 대기"], disabled=True, label_visibility="collapsed")
                 
-    st.markdown("<div style='background-color:#eff6ff; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:14px;'>💡 상단에서 교과군과 과목을 지정하여 [영역 활성화]를 누르시면 기저장된 서식이 복원 및 표출됩니다.</div>", unsafe_allow_html=True)
+        with c3:
+            st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🎓 3단계: 관리 학년 선택</div>", unsafe_allow_html=True)
+            sel_gr = st.selectbox("관리학년", options=GRADE_OPTIONS, label_visibility="collapsed")
+            final_gr = sel_gr.replace("학년", "") if sel_gr != "학년을 선택하세요." else ""
+            
+        with c4:
+            st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+            if st.button("🔄 영역 활성화 및 로드", use_container_width=True):
+                if final_sub and final_gr:
+                    st.session_state.active_subject, st.session_state.active_grade = final_sub, final_gr
+                    st.rerun()
+                else: 
+                    st.warning("모든 항목을 선택해 주세요.")
+                    
+        st.markdown("<div style='background-color:#eff6ff; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:14px; text-align: center;'>💡 상단에서 교과군과 과목을 지정하여 [영역 활성화]를 누르시면 기저장된 서식이 복원 및 표출됩니다.</div>", unsafe_allow_html=True)
