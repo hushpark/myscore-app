@@ -151,10 +151,8 @@ def show_result_dialog(student_name, scores_dict):
     st.table(pd.DataFrame(scores_dict))
     
     if st.button("확인 후 닫기", use_container_width=True, type="primary"):
-        # 💡 핵심 로직: 창을 닫을 때 입력했던 정보를 완전히 삭제(초기화)합니다.
-        for key in ["login_b", "login_n", "login_name", "login_pw"]:
-            if key in st.session_state:
-                del st.session_state[key]
+        # 💡 핵심 해결책: 닫기 버튼을 누르면 폼 고유 ID를 변경하여 아예 폼을 초기화합니다.
+        st.session_state["login_form_key"] += 1
         st.rerun()
 
 # --- 내부 화면 페이지 제어 상태 초기화 ---
@@ -166,6 +164,10 @@ if "admin_logged_in" not in st.session_state:
 
 if "show_pw_edit_section" not in st.session_state:
     st.session_state["show_pw_edit_section"] = False
+
+# 💡 폼 초기화를 위한 카운터 변수 추가
+if "login_form_key" not in st.session_state:
+    st.session_state["login_form_key"] = 0
 
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
@@ -228,17 +230,17 @@ if st.session_state["page_status"] == "student_main":
                 if config:
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
-                    with st.form("login_form"):
+                    # 💡 동적 key를 부여받은 폼을 생성 (번호가 바뀌면 폼이 완전히 새로 그려짐)
+                    with st.form(f"login_form_{st.session_state['login_form_key']}"):
                         st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>2. 학생 정보 및 비밀번호 입력</div>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
                         
                         c1, c2, c3 = st.columns(3)
-                        # 💡 핵심 로직: 각각의 입력창에 고유한 key를 부여합니다.
-                        with c1: b_in = st.selectbox("반", classes, key="login_b")
-                        with c2: n_in = st.number_input("번호", 1, 50, 1, key="login_n")
-                        with c3: name_in = st.text_input("이름", placeholder="홍길동", key="login_name")
+                        with c1: b_in = st.selectbox("반", classes)
+                        with c2: n_in = st.number_input("번호", 1, 50, 1)
+                        with c3: name_in = st.text_input("이름", placeholder="홍길동")
                         
-                        pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", key="login_pw")
+                        pw_in = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력")
                         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                         
                         if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
