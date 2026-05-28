@@ -100,9 +100,6 @@ if "page_status" not in st.session_state:
 if "admin_logged_in" not in st.session_state:
     st.session_state["admin_logged_in"] = False
 
-if "show_pw_edit_section" not in st.session_state:
-    st.session_state["show_pw_edit_section"] = False
-
 is_teacher_layout = (st.session_state["page_status"] == "teacher_main")
 is_logged_in = st.session_state["admin_logged_in"]
 
@@ -112,18 +109,18 @@ CURRENT_ADMIN_PW = load_admin_password()
 
 
 # =========================================================================
-# 🎯 [스타일 결정판] 1번 화면 전용: 가로 600px 정중앙 구속 및 수평 Flex 정렬
+# 🎯 [스타일 완전 개편] 유령 사각형 상자 파괴 및 가로 600px 완벽 구속 CSS
 # =========================================================================
 st.markdown("""
     <style>
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { height: 0px !important; display:none !important; }
         
-        /* 💡 상단 유령 빈 사각형 공백 버그 원천 파괴 */
-        div[data-testid="stDialog"], div[role="dialog"] { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0px !important; }
+        /* 🚨 [범인 체포] 상단에 투명하게 유령 상자를 만들던 스트림릿 모달 기본 태그 완전 파괴 */
+        div[data-testid="stDialog"], div[role="dialog"], .stDialog { display: none !important; opacity: 0 !important; visibility: hidden !important; height: 0px !important; width: 0px !important; }
         iframe { display: none !important; }
         
-        /* 🎯 메인 상자 디자인 (가로 600px 고정 및 정중앙 정렬) */
+        /* 🎯 메인 상자 디자인을 가로 600px 카드로 완벽 구속 및 강제 중앙 정렬 */
         .independent-card-box {
             max-width: 600px !important;
             margin: 50px auto 40px auto !important;
@@ -141,7 +138,7 @@ st.markdown("""
             box-shadow: none !important;
         }
         
-        /* 💡 [1번 화면 핵심] 타이틀과 버튼이 절대로 깨지거나 밀리지 않는 HTML Flex 수평 정렬 */
+        /* 💡 타이틀과 버튼이 절대로 깨지지 않는 HTML Flex 수평 1줄 정렬 */
         .header-flex-wrapper {
             display: flex;
             justify-content: space-between;
@@ -150,7 +147,7 @@ st.markdown("""
             width: 100%;
         }
         
-        /* 교사용 제어판 버튼 슬림 스타일 및 우측 가이드 라인 완벽 밀착 */
+        /* 교사용 제어판 버튼 슬림 스타일 및 우측 정렬선 칼밀착 */
         div.stButton > button[key="outer_teacher_btn"] {
             width: fit-content !important;
             min-width: auto !important;
@@ -184,7 +181,7 @@ st.markdown("""
 
 
 # ==========================================
-# 화면 분기 제어부 (우선 1번 화면 최적화 안착)
+# 화면 분기 제어부 (1번 학생 화면 버그 클리어)
 # ==========================================
 
 # ------------------------------------------
@@ -192,10 +189,10 @@ st.markdown("""
 # ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    # 가로 600px 독립형 카드 상자 가동
+    # 가로 600px 독립형 카드 상자
     st.markdown("<div class='independent-card-box'>", unsafe_allow_html=True)
     
-    # 🎯 타이틀 내부 우측 끝 가이드라인에 단추를 칼같이 일치시켜 한 줄 정렬
+    # 🎯 타이틀 내부 우측 끝에 단추를 자석처럼 일치시켜 완벽한 한 줄 수평 정렬
     st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
     if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
         st.session_state["page_status"] = "teacher_auth"
