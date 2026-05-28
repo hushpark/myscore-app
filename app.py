@@ -38,7 +38,7 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 교사용 제어판 상단 버튼 스타일 */
+        /* 상단 우측 버튼 스타일 */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
         div.stButton > button[key="outer_logout_btn"],
@@ -54,7 +54,7 @@ st.markdown("""
             white-space: nowrap !important;
         }
         
-        /* 사이드 메뉴 전용 세로형 버튼 스타일 정의 */
+        /* 💡 사이드 메뉴(2구역) 세로형 버튼 스타일 */
         div.stButton > button[key^="side_"] {
             width: 100% !important;
             padding: 8px 12px !important;
@@ -68,12 +68,22 @@ st.markdown("""
             font-weight: 500 !important;
         }
         
-        /* 우측 정렬 유지 */
+        /* 💡 3구역 내 다운로드 버튼 글씨 크기를 "200MB..." 전용 크기로 축소 세팅 */
+        div.stButton > button[key="btn_download_sample"] {
+            width: 100% !important;
+            padding: 5px 10px !important;
+            font-size: 13px !important; 
+            color: #475569 !important;
+            background-color: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 4px !important;
+        }
+        
         div.stButton:has(button[key="outer_teacher_btn"]),
         div.stButton:has(button[key="outer_logout_btn"]),
         div.stButton:has(button[key="outer_pw_btn"]) {
             display: flex;
-            justify flex-end;
+            justify-content: flex-end;
         }
         
         div.stButton > button[kind="primary"] {
@@ -394,14 +404,13 @@ elif st.session_state["page_status"] == "teacher_auth":
             st.rerun()
 
 # ------------------------------------------
-# ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후) - [대시보드 프레임형 레이아웃]
+# ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후)
 # ------------------------------------------
 elif st.session_state["page_status"] == "teacher_main":
     if not st.session_state["admin_logged_in"]:
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 가로형 대시보드 구조를 위한 컨테이너 최대 폭 조정
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -432,16 +441,15 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 15px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 📐 [그림 4 레이아웃 적용] 대시보드 2분할 메인 프레임 구축
-        frame_left, frame_right = st.columns([1.2, 2.0])
+        # 💡 피드백 반영 1: 좌측메뉴 너비 비율을 1.0으로 다이어트 완료 (기존 1.2 -> 1.0)
+        frame_left, frame_right = st.columns([1.0, 2.0])
         
         # ==========================================
-        # 👈 [좌측 프레임]: 컨트롤 제어 센터 메뉴 구역
+        # 👈 [좌측 프레임 (1, 2구역 세로 배치)]
         # ==========================================
         with frame_left:
-            st.markdown("<h4 style='color: #475569; margin-bottom: 12px;'>📁 [그림 1] 과목 지정 및 활성화</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='color: #475569; margin-bottom: 12px;'>📁 1구역: 과목 지정</h4>", unsafe_allow_html=True)
             
-            # 드롭다운 메뉴들을 콤팩트하게 세로형으로 배치
             g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
             sel_g = st.selectbox("1단계: 교과군 분류", options=g_opts, index=st.session_state.sel_group_idx)
             
@@ -473,25 +481,21 @@ elif st.session_state["page_status"] == "teacher_main":
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
             
-            # 📂 [그림 2 구역]: 컨트롤 제어판 하단 세로형 버튼 메뉴들
+            # 📂 2구역: 데이터 제어판 메뉴 개편
             st.markdown("<hr style='margin: 20px 0 15px 0; border: none; border-top: 2px solid #e2e8f0;'>", unsafe_allow_html=True)
-            st.markdown("<h4 style='color: #475569; margin-bottom: 12px;'>📂 [그림 2] 데이터 제어판</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='color: #475569; margin-bottom: 12px;'>📂 2구역: 데이터 제어판</h4>", unsafe_allow_html=True)
             
-            # 세션 바인딩을 위한 세부 작업 상태값 체크 변수
             has_active = "active_subject" in st.session_state and st.session_state.active_subject
             
-            # 버튼 1: 설정 저장용 트리거 (파트1 입력 완료 여부에 따라 가변 버튼명 적용)
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미지정')}] 설정 저장" if has_active else "💾 설정 저장하기"
             if st.button(save_btn_label, key="side_save_btn", disabled=not has_active):
                 st.session_state["trigger_save_action"] = True
             
-            # 버튼 2 [신규 추가]: 데이터 연동 모니터를 출력/숨김 토글하는 스위치 버튼
             monitor_label = "👀 학생 입력 확인 닫기" if st.session_state["show_monitor_view"] else "👥 학생 입력 확인"
             if st.button(monitor_label, key="side_monitor_btn", disabled=not has_active):
                 st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]
                 st.rerun()
                 
-            # 버튼 3: 다른 과목 추가하기
             if st.button("➕ 다른 과목 추가하기", key="side_add_btn"):
                 st.session_state.active_subject = None
                 st.session_state.sel_group_idx = 0
@@ -500,23 +504,24 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state["show_monitor_view"] = False
                 st.rerun()
                 
-            # 버튼 4: 포맷 초기화
+            # 💡 피드백 반영 2: 위험 버튼인 '초기화'를 2구역의 가장 맨 밑바닥으로 안전하게 이동 고정!
+            st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"):
                 reset_all_data()
 
         # ==========================================
-        # 👉 [우측 프레임]: 조작에 따른 실시간 뷰어 창 구역
+        # 👉 [우측 프레임 (3, 4구역)]
         # ==========================================
         with frame_right:
             if has_active:
-                sub, grd = st.session_state.active_subject, st.session_state.active_grade
+                sub, grd = st.session_state.active_subject, st.session_state.grade = st.session_state.active_subject, st.session_state.active_grade
                 cf, sf = get_file_names(sub, grd)
                 conf = load_config(cf)
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:10px 15px; border-radius:6px; margin-bottom:15px; text-align:center; font-weight:600; color:#1e40af;'>📍 현재 활성화된 작업 구역: [{sub}] {grd}학년</div>", unsafe_allow_html=True)
                 
-                # 📌 [그림 3 구역]: 학기 및 평가 세팅 상세 패널
-                st.markdown("<h4 style='color: #1e293b; margin-top: 0px;'>📌 [그림 3] 학기 및 평가 상세 세팅</h4>", unsafe_allow_html=True)
+                # 📌 3구역 상단 세팅 공간 구동
+                st.markdown("<h4 style='color: #1e293b; margin-top: 0px;'>📌 3구역: 학기 및 평가 세팅</h4>", unsafe_allow_html=True)
                 
                 with st.container(border=True):
                     col_t, _ = st.columns([1.6, 1.4])
@@ -544,10 +549,10 @@ elif st.session_state["page_status"] == "teacher_main":
                             with cols_i[(i-1)%2]:
                                 item_names.append(st.text_input(f"{i}번 항목명", value=conf.get(f'항목{i}_이름', "") if conf else "", key=f"item_name_input_{i}"))
 
-                # 좌측 제어판 [설정 저장] 버튼 누를 시 연동 처리 로직
+                # 외부 트리거 저장 동작
                 ready = final_t != "학년도/학기를 선택하세요." and sel_cl and n_item > 0 and all(item_names)
                 if st.session_state.get("trigger_save_action", False):
-                    st.session_state["trigger_save_action"] = False # 로직 수행 직후 초기화
+                    st.session_state["trigger_save_action"] = False
                     if ready:
                         d = {"교과명":sub, "학년":grd, "학기통합명":final_t, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
                         for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
@@ -557,44 +562,47 @@ elif st.session_state["page_status"] == "teacher_main":
                     else:
                         st.error("❌ 학기, 반, 평가 항목 설정을 완벽히 기입한 후 저장을 눌러주세요.")
 
-                # 성적 CSV 업로드 관리창
+                # 💡 피드백 반영 3: 3구역 성적 CSV 컴팩트 수직 배치 교정 (다운로드 글씨크기 축소 및 수직 정렬 완료)
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    st.markdown("<div style='font-size:14px; font-weight:600; color:#475569; margin-bottom:8px;'>📁 성적 CSV 파일 업로드 및 양식 다운로드</div>", unsafe_allow_html=True)
-                    up_col1, up_col2 = st.columns([2.2, 1.8])
-                    with up_col1:
-                        up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="uploader_csv_file")
-                        if up_f:
-                            try:
-                                df_up = pd.read_csv(up_f, encoding='cp949')
-                                df_up.to_csv(sf, index=False)
-                                st.success("성적 데이터 연동 완료!")
-                                st.rerun()
-                            except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
-                            
-                    with up_col2:
-                        sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + (item_names if item_names else ["수행1", "수행2"])
-                        sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names if item_names else ["수행1", "수행2"])], columns=sample_columns)
-                        
-                        csv_buffer = io.StringIO()
-                        sample_df.to_csv(csv_buffer, index=False, encoding='cp949')
-                        csv_bytes = csv_buffer.getvalue().encode('cp949')
-                        
-                        st.download_button(
-                            label="📥 예시 파일 다운로드",
-                            data=csv_bytes,
-                            file_name=f"sample_students_{sub}.csv",
-                            mime="text/csv",
-                            use_container_width=True,
-                            key="btn_download_sample"
-                        )
+                    st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 성적 CSV 관리 및 업로드</div>", unsafe_allow_html=True)
+                    
+                    # 1. 200MB 캡션 스타일 폰트 크기 양식으로 타이틀 표출
+                    st.markdown("<div style='font-size: 13px; color: #64748b; margin-bottom: 10px;'>성적 CSV 파일 업로드 및 양식 다운로드</div>", unsafe_allow_html=True)
+                    
+                    # 2. 예시 파일 다운로드 버튼 (글씨 크기 축소 세팅)
+                    sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + (item_names if item_names else ["수행1", "수행2"])
+                    sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names if item_names else ["수행1", "수행2"])], columns=sample_columns)
+                    csv_buffer = io.StringIO()
+                    sample_df.to_csv(csv_buffer, index=False, encoding='cp949')
+                    csv_bytes = csv_buffer.getvalue().encode('cp949')
+                    
+                    st.download_button(
+                        label="📥 예시 파일 다운로드",
+                        data=csv_bytes,
+                        file_name=f"sample_students_{sub}.csv",
+                        mime="text/csv",
+                        key="btn_download_sample"
+                    )
+                    
+                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                    
+                    # 3. 그 아래로 완벽하게 떨어지는 업로드 창 배치
+                    up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="uploader_csv_file")
+                    if up_f:
+                        try:
+                            df_up = pd.read_csv(up_f, encoding='cp949')
+                            df_up.to_csv(sf, index=False)
+                            st.success("성적 데이터 연동 완료!")
+                            st.rerun()
+                        except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
 
                 # ==========================================
-                # 📊 [실시간 데이터 연동 모니터 구역]: 우측 하단 배치
+                # 📊 4구역: 실시간 데이터 연동 모니터
                 # ==========================================
                 if st.session_state["show_monitor_view"]:
                     st.markdown("<hr style='margin: 20px 0 15px 0; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
-                    st.markdown("<h4 style='color: #0f172a; margin-top: 0px;'>📊 실시간 데이터 연동 모니터</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color: #0f172a; margin-top: 0px;'>📊 4구역: 실시간 데이터 연동 모니터</h4>", unsafe_allow_html=True)
                     
                     with st.container(border=True):
                         if conf:
@@ -605,23 +613,19 @@ elif st.session_state["page_status"] == "teacher_main":
                                 <b>항목:</b> {conf.get('항목개수', 0)}개 완료
                             </div>
                             """, unsafe_allow_html=True)
-                        else:
-                            st.info("ℹ️ 설정 데이터를 먼저 저장해야 세팅 요약이 출력됩니다.")
                         
                         df_monitor = load_students(sf)
                         if not df_monitor.empty:
                             st.markdown("<div style='font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px;'>📋 현재 업로드된 학생 명렬표 (가운데 정렬)</div>", unsafe_allow_html=True)
                             
-                            # CSS 수식을 통한 강제 가운데 정렬 래퍼 클래스 적용
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
                         else:
                             st.warning("⚠️ 성적 CSV 파일이 아직 업로드되지 않았습니다.")
             else:
-                # 과목 활성화 이전 초기 대기 상태 안내 메시지 창
                 st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 교과군, 과목, 학년을 선택한 뒤 [🚀 과목 활성화] 버튼을 눌러주시면 세부 설정 프레임이 구동됩니다.")
 
-        # 대시보드 하단 최적화 문구 출력 (강제 일직선 한 줄 고정 기능 유지)
-        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:12px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
+        # 최하단 안내 바 (강제 한 줄 유지 속성 보존)
+        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:12px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500; white-space: nowrap !important;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
