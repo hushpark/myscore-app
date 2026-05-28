@@ -45,12 +45,12 @@ def save_new_subject_to_master(group, subject):
     if os.path.exists(CONFIG_FILE_MAIN):
         try:
             df = pd.read_csv(CONFIG_FILE_MAIN)
-            if not ((df['교군'] == group) & (df['과목명'] == subject)).any():
+            if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
                 pd.concat([df, new_data], ignore_index=True).to_csv(CONFIG_FILE_MAIN, index=False)
         except: new_data.to_csv(CONFIG_FILE_MAIN, index=False)
     else: new_data.to_csv(CONFIG_FILE_MAIN, index=False)
 
-# 💡 [필독] 서버가 리셋되어도 유지하고 싶은 고정 암호가 있다면 아래 "1234"를 원하는 암호로 미리 수정하세요!
+# 💡 고정해서 쓰고 싶으신 기본 암호가 있다면 아래 "1234"를 원하는 비밀번호로 변경하세요!
 def load_admin_password():
     if os.path.exists(META_FILE):
         try:
@@ -130,19 +130,20 @@ st.markdown("""
             margin-bottom: 24px; 
         }
         
-        .pw-guide { font-size: 11.5px; color: #57606a; line-height: 1.5; margin-top: 10px; margin-bottom: 15px; }
+        .pw-guide { font-size: 12px; color: #57606a; line-height: 1.5; margin-top: 10px; }
         .pw-example { font-family: monospace; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
         
         label div p { font-size: 14px !important; font-weight: 500 !important; color: #24292f !important; }
         div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 7px 10px !important; background-color: #ffffff !important; }
         
-        /* 💡 암호 변경 박스 영역 전용 테두리 스타일링 (div 분할 느낌 부여) */
-        .pw-container-box {
+        /* 💡 독립된 카드 컴포넌트 느낌을 주는 스타일 정의 */
+        .custom-card-box {
             border: 1px solid #d0d7de;
-            border-radius: 6px;
-            padding: 15px;
-            background-color: #ffffff;
-            margin-bottom: 10px;
+            border-radius: 8px;
+            padding: 25px;
+            background-color: #f6f8fa;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            margin-bottom: 20px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -186,52 +187,21 @@ if is_admin_mode:
                     st.error("❌ 비밀번호가 올바르지 않습니다.")
 
     else:
-        # 상단 타이틀 바 배치
-        col_title, col_btn_pw, col_btn_student = st.columns([5, 1.4, 1.1])
+        # 상단 제어 센터 레이아웃 정렬
+        col_title, col_btn_pw, col_btn_student = st.columns([4.8, 1.4, 1.1])
         with col_title:
             st.title("⚙️ 교과·학년 통합 제어 센터")
         
         with col_btn_pw:
             st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
-            
-            # 🎯 깔끔한 전용 레이어로 구현된 팝오버 메뉴
-            with st.popover("🔐 관리자 암호 변경", use_container_width=True):
-                st.markdown("<div class='pw-container-box'>", unsafe_allow_html=True)
-                st.subheader("🔐 암호 수정 대화상자")
+            if "show_pw_panel" not in st.session_state:
+                st.session_state.show_pw_panel = False
                 
-                new_pw = st.text_input("1. 새 암호 입력", type="password", key="pop_new_pw")
-                confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="pop_confirm_pw")
-                st.markdown("</div>", unsafe_allow_html=True)
+            # 토글 스위치 버튼 (누르면 카드 창이 나타나고 다시 누르면 닫힘)
+            if st.button("🔐 관리자 암호 변경", use_container_width=True):
+                st.session_state.show_pw_panel = not st.session_state.show_pw_panel
+                st.rerun()
                 
-                is_valid, msg = is_strong_password(new_pw)
-                
-                if new_pw:
-                    if new_pw == confirm_pw and is_valid:
-                        st.success("✅ 조건 통과! 변경 가능합니다.")
-                    elif confirm_pw and new_pw != confirm_pw:
-                        st.error("❌ 암호 확인이 일치하지 않습니다.")
-                    else:
-                        st.warning(msg)
-                        
-                st.markdown("""<div class="pw-guide">
-                <b>[설정 필수 규칙]</b><br>최소 12자 이상 + 영문, 숫자, 특수문자 조합<br>
-                <b>[안전 예시]</b> <span class="pw-example">teacher!@2026info</span>
-                </div>""", unsafe_allow_html=True)
-
-                can_submit = is_valid and (new_pw == confirm_pw)
-                
-                # 버튼을 가로로 두 개 배치 (즉시 변경 / 취소)
-                b_c1, b_c2 = st.columns(2)
-                with b_c1:
-                    if st.button("🔒 즉시 변경", disabled=not can_submit, use_container_width=True, type="primary"):
-                        save_admin_password(new_pw)
-                        st.success("변경 완료!")
-                        st.toast("🎉 암호가 성공적으로 변경되었습니다!")
-                        st.rerun() # 💡 실행 즉시 새로고침하여 창을 자동으로 완전 차단 및 닫기
-                with b_c2:
-                    if st.button("❌ 변경 취소", use_container_width=True):
-                        st.rerun() # 💡 즉시 새로고침하여 아무 변화 없이 레이어 팝업 닫기
-                    
         with col_btn_student:
             st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
             if st.button("🎒 학생 화면", use_container_width=True):
@@ -239,7 +209,49 @@ if is_admin_mode:
                 st.session_state["admin_logged_in"] = False
                 st.rerun()
 
-        # 메인 관리 인터페이스
+        # 🎯 [구조 복구] 드롭박스를 파괴하고 본래의 깔끔한 독단 분할 레이아웃 적용
+        if st.session_state.show_pw_panel:
+            st.markdown('<div class="custom-card-box">', unsafe_allow_html=True)
+            st.markdown("### 🔐 암호 수정 대화상자 (2중 교차 검증)")
+            
+            p_c1, p_c2, p_btn_area = st.columns([1.5, 1.5, 1.2])
+            with p_c1:
+                new_pw = st.text_input("1. 새 암호 입력", type="password", key="panel_new_pw")
+            with p_c2:
+                confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="panel_confirm_pw")
+                
+            is_valid, msg = is_strong_password(new_pw)
+            
+            if new_pw:
+                if new_pw == confirm_pw and is_valid:
+                    st.success("✅ 조건 통과! 변경 가능합니다.")
+                elif confirm_pw and new_pw != confirm_pw:
+                    st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
+                else:
+                    st.warning(msg)
+                    
+            st.markdown("""<div class="pw-guide" style="margin-bottom:15px;">
+            <b>[설정 규칙]</b> 최소 12자 이상 필수 & 영문, 숫자, 특수기호 조합 필수<br>
+            <b>[안전 암호 예시]</b> <span class="pw-example">teacher!@2026info</span>
+            </div>""", unsafe_allow_html=True)
+
+            with p_btn_area:
+                can_submit = is_valid and (new_pw == confirm_pw)
+                b_col1, b_col2 = st.columns(2)
+                with b_col1:
+                    if st.button("🔒 즉시 변경", disabled=not can_submit, use_container_width=True, type="primary"):
+                        save_admin_password(new_pw)
+                        st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
+                        st.session_state.show_pw_panel = False
+                        st.rerun()
+                with b_col2:
+                    if st.button("❌ 변경 취소", use_container_width=True):
+                        st.session_state.show_pw_panel = False
+                        st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("---")
+
+        # 메인 관리 인터페이스 시작
         st.markdown("#### 🛠️ [단계 1] 획기적인 교과군별 과목 지정")
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
