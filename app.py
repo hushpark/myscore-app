@@ -295,7 +295,7 @@ if st.session_state["page_status"] == "student_main":
                         if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
                             df_st = load_students(sf)
                             if df_st.empty: 
-                                st.error("성적 데이터가 아직 연동되지 않은 교과입니다.")
+                                st.error("성적 데이터가 아직 연동되지 교과입니다.")
                             else:
                                 res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
                                 if not res.empty:
@@ -379,7 +379,7 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 💡 교사용 메인 화면 너비를 850px로 시원하게 확장!
+    # 💡 교사용 메인 화면 너비를 900px로 시원하게 확장!
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -388,7 +388,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 850px !important;
+            max-width: 900px !important; /* 850px -> 900px 로 확대 */
             margin: 0px auto 20px auto !important; 
         }
         </style>
@@ -413,7 +413,6 @@ elif st.session_state["page_status"] == "teacher_main":
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
         
-        # 💡 넓어진 850px에 맞춰 버튼 공간을 넉넉히 분배
         c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.1, 1.0])
         
         with c1:
