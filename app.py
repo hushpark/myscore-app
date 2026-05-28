@@ -10,47 +10,25 @@ import re
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
-# --- 앱 기본 세팅 (가장 먼저 실행) ---
-st.set_page_config(page_title="수행평가 결과 시스템", layout="wide")
+# --- 🎯 [핵심 교정] layout을 centered로 변경하여 상단 와이드 유령 공백을 물리적으로 삭제 ---
+st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [순정 마스터 CSS] 상단 유령 박스 요소를 브라우저에서 물리적으로 완전 투명 삭제
+# 🎯 [스타일 교정] 불필요한 레이아웃 요소를 완전히 정리하는 순정 CSS
 # =========================================================================
 st.markdown("""
     <style>
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
-        div[data-testid="stHeader"] { display: none !important; background: transparent !important; }
+        div[data-testid="stHeader"] { display: none !important; }
         
-        /* 🚨 [강제 무력화] 서버에 남은 유령 상자 찌꺼기를 브라우저단에서 완전히 가려서 파괴 */
-        div[data-testid="stDialog"], div[role="dialog"], .stDialog, div.element-container:has(iframe) { 
-            display: none !important; 
-            opacity: 0 !important; 
-            visibility: hidden !important; 
-            height: 0px !important; 
-            width: 0px !important; 
-            margin: 0 !important; 
-            padding: 0 !important; 
-        }
-        iframe { display: none !important; height: 0px !important; }
-        
-        /* 🎯 메인 상자 디자인을 가로 550px 카드로 완벽 구속 및 강제 중앙 정렬 */
-        .independent-card-box {
-            max-width: 550px !important;
-            margin: 40px auto 40px auto !important;
-            background-color: #ffffff !important;
-            padding: 35px !important;
-            border-radius: 14px !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.04) !important;
-        }
-        
+        /* 내장 Form 기본 테두리 무효화 */
         div[data-testid="stForm"] {
             border: none !important;
             padding: 0px !important;
             box-shadow: none !important;
         }
         
-        /* 교사용 제어판 버튼 슬림 스타일 및 우측 정렬선 칼밀착 */
+        /* 교사용 제어판 슬림 버튼 스타일 */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
         div.stButton > button[key="outer_logout_btn"] {
@@ -64,7 +42,7 @@ st.markdown("""
             background-color: #ffffff !important;
         }
         
-        /* 빨간색 강조 확인 단추 스타일 */
+        /* 빨간색 확인 및 저장 단추 스타일 */
         div.stButton > button[kind="primary"] {
             background-color: #ef4444 !important;
             color: white !important;
@@ -74,8 +52,8 @@ st.markdown("""
             border-radius: 6px !important;
         }
         
-        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 0 0 10px 0 !important; }
-        h3 { font-size: 17px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 10px !important; }
+        h2 { font-size: 24px !important; color: #0f172a !important; font-weight: 800 !important; margin: 20px 0 10px 0 !important; }
+        <h3> { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 8px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -175,12 +153,14 @@ GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
 CURRENT_ADMIN_PW = load_admin_password()
 
 # ==========================================
-# 🔄 화면 스위칭 실행부
+# 🔄 화면 스위칭 실행부 (순정 콤팩트 카드 형태)
 # ==========================================
 
+# ------------------------------------------
+# 🎒 1. 학생용 개인 성적 조회 첫 화면
+# ------------------------------------------
 if st.session_state["page_status"] == "student_main":
     
-    st.markdown("<div class='independent-card-box'>", unsafe_allow_html=True)
     st.markdown("<h2>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
     
     if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
@@ -240,12 +220,14 @@ if st.session_state["page_status"] == "student_main":
                                     df_st.to_csv(sf, index=False)
                             else: 
                                 st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
-    st.markdown("</div>", unsafe_allow_html=True)
 
+# ------------------------------------------
+# 🛡️ 2. 교과 관리자 인증 화면 (로그인 전)
+# ------------------------------------------
 elif st.session_state["page_status"] == "teacher_auth":
-    st.markdown("<div class='independent-card-box'>", unsafe_allow_html=True)
     st.markdown("<h2>🛡️ 교과 관리자 인증</h2>", unsafe_allow_html=True)
     with st.form("admin_login_form"):
+        st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:20px;'>본인 교과의 성적 데이터를 관리하기 위해<br>인증 비밀번호를 입력해 주세요.</p>", unsafe_allow_html=True)
         admin_pw = st.text_input("비밀번호", type="password", placeholder="Password")
         if st.form_submit_button("인증 및 로그인", use_container_width=True, type="primary"):
             if admin_pw == CURRENT_ADMIN_PW:
@@ -256,13 +238,17 @@ elif st.session_state["page_status"] == "teacher_auth":
     if st.button("🎒 학생 화면", key="outer_student_btn", use_container_width=True):
         st.session_state["page_status"] = "student_main"
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
+# ------------------------------------------
+# ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후)
+# ------------------------------------------
 elif st.session_state["page_status"] == "teacher_main":
-    st.markdown("<div class='independent-card-box'>", unsafe_allow_html=True)
+    if not st.session_state["admin_logged_in"]:
+        st.session_state["page_status"] = "teacher_auth"
+        st.rerun()
+        
     st.markdown("<h2>⚙️ 교과 제어 센터</h2>", unsafe_allow_html=True)
     if st.button("🎒 학생 화면 (로그아웃)", key="outer_logout_btn", use_container_width=True):
         st.session_state["page_status"] = "student_main"
         st.session_state["admin_logged_in"] = False
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
