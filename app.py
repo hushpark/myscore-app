@@ -38,7 +38,7 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 교사용 제어판 버튼 글씨 크기(12px) 및 패딩 축소 */
+        /* 교사용 제어판 및 상단 이동 버튼들 */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
         div.stButton > button[key="outer_logout_btn"] {
@@ -52,7 +52,8 @@ st.markdown("""
             background-color: #ffffff !important;
         }
         
-        div.stButton:has(button[key="outer_teacher_btn"]) {
+        div.stButton:has(button[key="outer_teacher_btn"]),
+        div.stButton:has(button[key="outer_logout_btn"]) {
             display: flex;
             justify-content: flex-end;
         }
@@ -165,7 +166,6 @@ def show_result_dialog(student_name, scores_dict):
     st.table(pd.DataFrame(scores_dict))
     
     if st.button("확인 후 닫기", use_container_width=True, type="primary"):
-        # 사이트 세션을 완전히 지워 초기 화면으로 되돌림
         st.session_state.clear()
         st.rerun()
 
@@ -207,7 +207,6 @@ if st.session_state["page_status"] == "student_main":
         </style>
     """, unsafe_allow_html=True)
     
-    # 교사용 제어판 버튼
     col_empty, col_btn = st.columns([3, 1])
     with col_btn:
         st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
@@ -217,7 +216,6 @@ if st.session_state["page_status"] == "student_main":
             
     active_dbs = get_active_databases()
     
-    # 학생용 카드 컨테이너
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>🎒 수행평가 성적 확인 시스템</h2>", unsafe_allow_html=True)
         st.markdown("<h4 style='text-align: center; margin: 0px 0px 10px 0px; color: #475569;'>📝 개인별 성적 조회</h4>", unsafe_allow_html=True)
@@ -262,7 +260,7 @@ if st.session_state["page_status"] == "student_main":
                                     idx = res.index[0]
                                     
                                     scores = {}
-                                    total_sum = 0 # 💡 합계 계산을 위한 변수 추가
+                                    total_sum = 0
                                     
                                     for i in range(int(config['항목개수'])):
                                         h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
@@ -270,14 +268,12 @@ if st.session_state["page_status"] == "student_main":
                                             val = df_st.loc[idx, h_name]
                                             scores[h_name] = [val]
                                             
-                                            # 💡 숫자로 변환 가능한 값만 안전하게 더하기
                                             try:
                                                 if pd.notna(val):
                                                     total_sum += float(val)
                                             except:
                                                 pass
                                     
-                                    # 💡 총점을 깔끔하게 추가 (소수점이 .0으로 딱 떨어지면 정수로 표현)
                                     if float(total_sum).is_integer():
                                         scores['합계'] = [int(total_sum)]
                                     else:
@@ -341,8 +337,56 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    st.markdown("<h2>⚙️ 교과 제어 센터</h2>", unsafe_allow_html=True)
-    if st.button("🎒 학생 화면 (로그아웃)", key="outer_logout_btn", use_container_width=True):
-        st.session_state["page_status"] = "student_main"
-        st.session_state["admin_logged_in"] = False
-        st.rerun()
+    # 💡 상단 헤더 및 로그아웃 버튼 배치
+    col_t1, col_t2 = st.columns([5, 1])
+    with col_t1:
+        st.markdown("<h2 style='margin-top:0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
+    with col_t2:
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        if st.button("🎒 학생 화면 (로그아웃)", key="outer_logout_btn", use_container_width=True):
+            st.session_state["page_status"] = "student_main"
+            st.session_state["admin_logged_in"] = False
+            st.rerun()
+            
+    st.markdown("<hr style='margin: 10px 0 25px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+    
+    # 💡 첨부해주신 스크린샷 완벽 재현 부분!
+    st.markdown("<h4 style='color: #1e293b; margin-bottom: 20px;'>🛠️ [단계 1] 획기적인 교과군별 과목 지정</h4>", unsafe_allow_html=True)
+    
+    # 세션 상태 초기화 보호
+    if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
+    
+    c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1])
+    
+    with c1:
+        st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 1단계: 교과군 분류</div>", unsafe_allow_html=True)
+        g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
+        sel_g = st.selectbox("교과군", options=g_opts, index=st.session_state.sel_group_idx, label_visibility="collapsed")
+        
+    with c2:
+        st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🗂️ 2단계: 세부 과목 선택</div>", unsafe_allow_html=True)
+        final_sub = ""
+        if sel_g == "➕ 신규 과목 개설":
+            final_sub = st.text_input("새 과목명", placeholder="새 과목명을 입력하세요", label_visibility="collapsed").strip()
+        elif sel_g != "교과군 선택":
+            s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
+            sel_s = st.selectbox("세부과목", options=s_opts, label_visibility="collapsed")
+            if sel_s != "과목 선택": final_sub = sel_s
+        else: 
+            st.selectbox("세부과목", ["선택 대기"], disabled=True, label_visibility="collapsed")
+            
+    with c3:
+        st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🎓 3단계: 관리 학년 선택</div>", unsafe_allow_html=True)
+        sel_gr = st.selectbox("관리학년", options=GRADE_OPTIONS, label_visibility="collapsed")
+        final_gr = sel_gr.replace("학년", "") if sel_gr != "학년을 선택하세요." else ""
+        
+    with c4:
+        st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+        if st.button("🔄 영역 활성화 및 로드", use_container_width=True):
+            if final_sub and final_gr:
+                st.session_state.active_subject, st.session_state.active_grade = final_sub, final_gr
+                st.rerun()
+            else: 
+                st.warning("모든 항목을 선택해 주세요.")
+                
+    st.markdown("<div style='background-color:#eff6ff; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:14px;'>💡 상단에서 교과군과 과목을 지정하여 [영역 활성화]를 누르시면 기저장된 서식이 복원 및 표출됩니다.</div>", unsafe_allow_html=True)
