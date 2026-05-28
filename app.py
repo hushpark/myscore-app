@@ -136,14 +136,16 @@ st.markdown("""
         label div p { font-size: 14px !important; font-weight: 500 !important; color: #24292f !important; }
         div[data-testid="stTextInput"] input { font-size: 14px !important; padding: 7px 10px !important; background-color: #ffffff !important; }
         
-        /* 💡 독립된 카드 컴포넌트 느낌을 주는 스타일 정의 */
-        .custom-card-box {
-            border: 1px solid #d0d7de;
-            border-radius: 8px;
-            padding: 25px;
-            background-color: #f6f8fa;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            margin-bottom: 20px;
+        /* 💡 [핵심 추가] 암호 변경창 전용 - 아까 드롭박스(400px 마스터 카드)와 완전히 동일한 크기 및 스타일 강제 지정 */
+        .compact-pw-box {
+            max-width: 400px !important;
+            margin: 0 auto !important; /* 중앙 정렬 */
+            border: 1px solid #d0d7de !important;
+            border-radius: 8px !important;
+            padding: 30px !important;
+            background-color: #f6f8fa !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important;
+            text-align: left !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -197,7 +199,7 @@ if is_admin_mode:
             if "show_pw_panel" not in st.session_state:
                 st.session_state.show_pw_panel = False
                 
-            # 토글 스위치 버튼 (누르면 카드 창이 나타나고 다시 누르면 닫힘)
+            # 토글 스위치 버튼
             if st.button("🔐 관리자 암호 변경", use_container_width=True):
                 st.session_state.show_pw_panel = not st.session_state.show_pw_panel
                 st.rerun()
@@ -209,16 +211,14 @@ if is_admin_mode:
                 st.session_state["admin_logged_in"] = False
                 st.rerun()
 
-        # 🎯 [구조 복구] 드롭박스를 파괴하고 본래의 깔끔한 독단 분할 레이아웃 적용
+        # 🎯 [요청 완벽 반영] 드롭박스와 똑같이 컴팩트한 크기(400px 카드)로 열리는 암호수정 대화상자
         if st.session_state.show_pw_panel:
-            st.markdown('<div class="custom-card-box">', unsafe_allow_html=True)
-            st.markdown("### 🔐 암호 수정 대화상자 (2중 교차 검증)")
+            # 중앙 정렬 및 너비 제한을 위해 컴팩트 박스 HTML 주입
+            st.markdown('<div class="compact-pw-box">', unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align:center; margin-bottom:15px;'>🔐 암호 수정 대화상자</h3>", unsafe_allow_html=True)
             
-            p_c1, p_c2, p_btn_area = st.columns([1.5, 1.5, 1.2])
-            with p_c1:
-                new_pw = st.text_input("1. 새 암호 입력", type="password", key="panel_new_pw")
-            with p_c2:
-                confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="panel_confirm_pw")
+            new_pw = st.text_input("1. 새 암호 입력", type="password", key="panel_new_pw")
+            confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="panel_confirm_pw")
                 
             is_valid, msg = is_strong_password(new_pw)
             
@@ -230,25 +230,28 @@ if is_admin_mode:
                 else:
                     st.warning(msg)
                     
-            st.markdown("""<div class="pw-guide" style="margin-bottom:15px;">
+            st.markdown("""<div class="pw-guide" style="margin-bottom:20px;">
             <b>[설정 규칙]</b> 최소 12자 이상 필수 & 영문, 숫자, 특수기호 조합 필수<br>
-            <b>[안전 암호 예시]</b> <span class="pw-example">teacher!@2026info</span>
+            <b>[안전 예시]</b> <span class="pw-example">teacher!@2026info</span>
             </div>""", unsafe_allow_html=True)
 
-            with p_btn_area:
-                can_submit = is_valid and (new_pw == confirm_pw)
-                b_col1, b_col2 = st.columns(2)
-                with b_col1:
-                    if st.button("🔒 즉시 변경", disabled=not can_submit, use_container_width=True, type="primary"):
-                        save_admin_password(new_pw)
-                        st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
-                        st.session_state.show_pw_panel = False
-                        st.rerun()
-                with b_col2:
-                    if st.button("❌ 변경 취소", use_container_width=True):
-                        st.session_state.show_pw_panel = False
-                        st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+            can_submit = is_valid and (new_pw == confirm_pw)
+            
+            # 버튼 영역 배치
+            b_col1, b_col2 = st.columns(2)
+            with b_col1:
+                if st.button("🔒 즉시 변경", disabled=not can_submit, use_container_width=True, type="primary"):
+                    save_admin_password(new_pw)
+                    st.toast("🎉 관리자 암호가 성공적으로 변경되었습니다!")
+                    st.session_state.show_pw_panel = False
+                    st.rerun()
+            with b_col2:
+                if st.button("❌ 변경 취소", use_container_width=True):
+                    st.session_state.show_pw_panel = False
+                    st.rerun()
+                    
+            st.markdown('</div>', unsafe_allow_html=True) # 박스 닫기
+            st.markdown("<div style='height:20px;'></div>", unsafe_allow_html=True)
             st.markdown("---")
 
         # 메인 관리 인터페이스 시작
