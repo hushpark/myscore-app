@@ -295,7 +295,7 @@ if st.session_state["page_status"] == "student_main":
                         if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
                             df_st = load_students(sf)
                             if df_st.empty: 
-                                st.error("성적 데이터가 아직 연동되지 교과입니다.")
+                                st.error("성적 데이터가 아직 연동되지 않은 교과입니다.")
                             else:
                                 res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
                                 if not res.empty:
@@ -379,7 +379,7 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 💡 교사용 메인 화면 너비를 900px로 시원하게 확장!
+    # 💡 950px로 확 늘려서 줄바꿈 현상 완벽 해결!
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -388,7 +388,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 900px !important; /* 850px -> 900px 로 확대 */
+            max-width: 950px !important; 
             margin: 0px auto 20px auto !important; 
         }
         </style>
@@ -423,7 +423,9 @@ elif st.session_state["page_status"] == "teacher_main":
         with c2:
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🗂️ 2단계: 세부 과목 선택</div>", unsafe_allow_html=True)
             final_sub = ""
+            t_g = ""
             if sel_g == "➕ 신규 과목 개설":
+                t_g = st.selectbox("추가 위치", ["인문·사회군", "수리·과학군", "예체능군"], label_visibility="collapsed")
                 final_sub = st.text_input("새 과목명", placeholder="새 과목명을 입력하세요", label_visibility="collapsed").strip()
             elif sel_g != "교과군 선택":
                 s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
@@ -441,9 +443,83 @@ elif st.session_state["page_status"] == "teacher_main":
             st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
             if st.button("🚀 과목 활성화", use_container_width=True):
                 if final_sub and final_gr:
+                    if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
                     st.session_state.active_subject, st.session_state.active_grade = final_sub, final_gr
+                    st.session_state.sel_group_idx = g_opts.index(sel_g)
                     st.rerun()
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
+        # 💡 "상단에서" 삭제 및 넓어진 가로폭에 맞춰 텍스트 정렬
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
+        
+        # ==========================================
+        # 💡 🚀 과목 활성화 이후 나타나는 [파트 1], [파트 2] 구역 연동
+        # ==========================================
+        if "active_subject" in st.session_state and st.session_state.active_subject:
+            sub, grd = st.session_state.active_subject, st.session_state.active_grade
+            cf, sf = get_file_names(sub, grd)
+            conf = load_config(cf)
+            
+            st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 2px dashed #e2e8f0;'>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align: center; color: #1e3a8a; margin-bottom: 25px;'>📍 현재 작업 중: <span style='color:#ef4444;'>[{sub}]</span> {grd}학년</h3>", unsafe_allow_html=True)
+            
+            # 파트 1 (학기/평가 세팅)을 감싸는 컨테이너
+            with st.container(border=True):
+                st.markdown("<h4 style='color: #1e293b; margin-top: 5px; margin-bottom: 20px;'>📌 [파트 1] 학기 및 평가 세팅</h4>", unsafe_allow_html=True)
+                
+                col_t, _ = st.columns([1.5, 1.5])
+                with col_t:
+                    y_opts = ["학년도/학기를 선택하세요."] + [f"{y}학년도 {t}학기" for y in range(2024, 2030) for t in [1, 2]] + ["➕ 직접 입력"]
+                    saved_s = conf['학기통합명'] if conf else "학년도/학기를 선택하세요."
+                    idx_t = y_opts.index(saved_s) if saved_s in y_opts else y_opts.index("➕ 직접 입력") if saved_s != "학년도/학기를 선택하세요." else 0
+                    sel_t = st.selectbox("대상 학기", y_opts, index=idx_t)
+                    final_t = st.text_input("✏️ 직접 입력", value=saved_s if idx_t == len(y_opts)-1 else "") if sel_t == "➕ 직접 입력" else sel_t
+
+                st.markdown("<div style='margin-top:15px; margin-bottom:5px; font-weight:600;'>🏫 담당 학급(반)</div>", unsafe_allow_html=True)
+                saved_cl = [int(x) for x in str(conf['선택된반 목록']).split(",")] if conf else []
+                sel_cl = []
+                cols_cl = st.columns(6)
+                for i in range(1, 13):
+                    with cols_cl[(i-1)%6]:
+                        if st.checkbox(f"{i}반", value=i in saved_cl): sel_cl.append(i)
+
+                st.markdown("<div style='margin-top:15px; margin-bottom:5px; font-weight:600;'>✍️ 평가 항목</div>", unsafe_allow_html=True)
+                n_item = st.number_input("평가 항목 개수", 0, 10, int(conf['항목개수']) if conf else 0)
+                item_names = []
+                if n_item > 0:
+                    cols_i = st.columns(3)
+                    for i in range(1, n_item + 1):
+                        with cols_i[(i-1)%3]:
+                            item_names.append(st.text_input(f"{i}번 이름", value=conf.get(f'항목{i}_이름', "") if conf else ""))
+
+            # 파트 2 (데이터 제어)를 감싸는 컨테이너
+            with st.container(border=True):
+                st.markdown("<h4 style='color: #1e293b; margin-top: 5px; margin-bottom: 20px;'>📂 [파트 2] 데이터 제어</h4>", unsafe_allow_html=True)
+                ready = final_t != "학년도/학기를 선택하세요." and sel_cl and n_item > 0 and all(item_names)
+                
+                c1, c2, c3 = st.columns([1.5, 1.5, 1])
+                with c1:
+                    if ready:
+                        if st.button(f"💾 [{sub}] 설정 저장", type="primary", use_container_width=True):
+                            d = {"교과명":sub, "학년":grd, "학기통합명":final_t, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
+                            for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
+                            pd.DataFrame([d]).to_csv(cf, index=False)
+                            st.success("저장 완료!")
+                    else: st.button("⚠️ 설정 미완료", disabled=True, use_container_width=True)
+                with c2:
+                    if st.button("➕ 다른 과목 추가하기", use_container_width=True):
+                        st.session_state.active_subject = None
+                        st.session_state.sel_group_idx = 0
+                        st.rerun()
+                with c3:
+                    if st.button("🗑️ 전체 시스템 포맷", use_container_width=True): reset_all_data()
+
+                st.markdown("<hr style='margin: 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+                up_f = st.file_uploader("📁 성적 CSV 업로드", type="csv")
+                if up_f:
+                    try:
+                        df_up = pd.read_csv(up_f, encoding='cp949')
+                        df_up.to_csv(sf, index=False)
+                        st.success("성적 데이터 연동 완료!")
+                    except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
