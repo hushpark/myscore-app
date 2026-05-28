@@ -1,4 +1,4 @@
-import streamlit st
+import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
@@ -109,14 +109,14 @@ CURRENT_ADMIN_PW = load_admin_password()
 
 
 # =========================================================================
-# 🎯 [스타일 강제 정렬] 상단 유령 공백 사각형 완벽 봉인 + 가로 600px 구속 CSS
+# 🎯 [스타일 제어] 상단 유령 공백 완전 소멸 + 가로 600px 구속 CSS
 # =========================================================================
 st.markdown("""
     <style>
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { height: 0px !important; display:none !important; background: transparent !important; }
         
-        /* 🚨 [강제 무력화] 상단 사각형 투명 유령 박스 요소를 브라우저에서 물리적으로 완전 투명 삭제 */
+        /* 🚨 상단에 투명하게 유령 상자를 만들던 스트림릿 모달 기본 태그 완전 파괴 */
         div[data-testid="stDialog"], div[role="dialog"], .stDialog, div.element-container:has(iframe) { 
             display: none !important; 
             opacity: 0 !important; 
@@ -187,14 +187,14 @@ st.markdown("""
 
 
 # ==========================================
-# 화면 분기 제어부 (1번 학생 화면 버그 클리어)
+# 화면 분기 제어부
 # ==========================================
 
 if st.session_state["page_status"] == "student_main":
     
     st.markdown("<div class='independent-card-box'>", unsafe_allow_html=True)
     
-    # 타이틀 내부 우측 끝 가이드라인 한 줄 정렬 매핑
+    # 타이틀 내부 우측 끝 가이드라인 한 줄 정렬
     st.markdown('<div class="header-flex-wrapper"><h2>🎒 수행평가 성적 확인 시스템</h2>', unsafe_allow_html=True)
     if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
         st.session_state["page_status"] = "teacher_auth"
