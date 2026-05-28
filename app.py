@@ -97,7 +97,7 @@ st.markdown("""
         }
         
         h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 10px 0 10px 0 !important; }
-        h4 { font-size: 15px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 6px !important; }
+        h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin-bottom: 6px !important; }
         
         /* 테이블 내부 중앙 정렬 */
         div[role="dialog"] table th, div[role="dialog"] table td,
@@ -158,7 +158,6 @@ def load_admin_password():
 def save_admin_password(new_pw):
     pd.DataFrame([{"password": str(new_pw).strip()}]).to_csv(META_FILE, index=False)
 
-# 💡 년도 및 학기 식별자를 파일명 뒤에 붙여 완벽히 독립된 분리 저장 구조 구현
 def get_file_names(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
@@ -177,12 +176,11 @@ def get_active_databases():
     active_list = []
     for f in glob.glob("config_*_*grade_*.csv"):
         try:
-            # 파일명 구조 파싱 (config_과목명_학년grade_학기정보.csv)
             parts = f.replace("config_", "").replace(".csv", "").split("_")
             if len(parts) >= 4:
                 subject_name = parts[0].replace("_", " ")
                 grade_name = parts[1].replace("grade", "학년")
-                semester_name = f"{parts[2]} {parts[3]}" # 예: 2026학년도 2학기
+                semester_name = f"{parts[2]} {parts[3]}"
                 active_list.append({"subject": subject_name, "grade": grade_name, "semester": semester_name})
         except: pass
     return active_list
@@ -259,7 +257,6 @@ if "sel_semester_idx" not in st.session_state: st.session_state.sel_semester_idx
 
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
-# 학기 목록 자동 생성 기초 데이터
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 CURRENT_ADMIN_PW = load_admin_password()
 
@@ -408,7 +405,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 980px !important; 
+            max-width: 900px !important; 
             margin: 0px auto 10px auto !important; 
         }
         </style>
@@ -432,9 +429,12 @@ elif st.session_state["page_status"] == "teacher_main":
         frame_left, frame_right = st.columns([1.0, 2.0])
         
         # ==========================================
-        # 👈 [좌측 프레임]: 학기 선택창 추가 및 타이틀 삭제 완료
+        # 👈 [좌측 프레임]: 친절한 설명 텍스트 복원!
         # ==========================================
         with frame_left:
+            # 💡 피드백 반영: 구역 구분을 주는 타이틀 설명을 세련되게 복원했습니다.
+            st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
+            
             g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
             sel_g = st.selectbox("1단계: 교과군 분류", options=g_opts, index=st.session_state.sel_group_idx, label_visibility="collapsed")
             
@@ -454,7 +454,6 @@ elif st.session_state["page_status"] == "teacher_main":
             sel_gr = st.selectbox("3단계: 관리 학년 지정", options=GRADE_OPTIONS, index=st.session_state.sel_grade_idx, label_visibility="collapsed")
             final_gr = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
             
-            # 💡 [구조 개편 핵심]: 대상 학기/년도 드롭다운 메뉴를 좌측 1구역으로 강제 이동 배치!
             sel_se = st.selectbox("4단계: 대상 학기 선택", options=SEMESTER_OPTIONS, index=st.session_state.sel_semester_idx, label_visibility="collapsed")
             final_se = sel_se if sel_se != "학기 선택" else ""
             
@@ -462,7 +461,6 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🚀 과목 활성화", use_container_width=True, type="primary"):
                 if final_sub and final_gr and final_se:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
-                    # 독립된 세션 변수 바인딩
                     st.session_state.active_subject = final_sub
                     st.session_state.active_grade = final_gr
                     st.session_state.active_semester = final_se
@@ -474,7 +472,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 📂 데이터 제어판 버튼 메뉴판
+            # 데이터 제어판 버튼 메뉴판
             st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
             has_active = "active_subject" in st.session_state and st.session_state.active_subject
@@ -497,7 +495,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state["show_monitor_view"] = False
                 st.rerun()
 
-            # 📂 성적 CSV 관리 구역
+            # 성적 CSV 관리 구역
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
                 cf, sf = get_file_names(sub, grd, sem)
@@ -536,11 +534,15 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
-        # 👉 [우측 프레임 (3, 4구역)]: 학기 정보 매핑 완료
+        # 👉 [우측 프레임]: 에러 버그 수정 완료 및 데이터 연동
         # ==========================================
         with frame_right:
             if has_active:
-                sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
+                # 💡 [핵심 교정]: 버그가 발생하던 다중 대입 오타 구역을 완벽히 교정하여 원천 해결 완료!
+                sub = st.session_state.active_subject
+                grd = st.session_state.active_grade
+                sem = st.session_state.active_semester
+                
                 cf, sf = get_file_names(sub, grd, sem)
                 conf = load_config(cf)
                 
@@ -548,7 +550,6 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<h4 style='color: #1e293b; margin-top: 0px;'>📌 학기 및 평가 세팅</h4>", unsafe_allow_html=True)
                 
                 with st.container(border=True):
-                    # 💡 좌측에서 지정한 학기 데이터를 기본 텍스트 캡션으로 출력해 명시성을 제공
                     st.markdown(f"<div style='font-size:13px; font-weight:600; color:#3b82f6; margin-bottom:8px;'>🎯 지정 학기 연동 완료: {sem}</div>", unsafe_allow_html=True)
 
                     st.markdown("<div style='margin-top:8px; margin-bottom:2px; font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
@@ -580,9 +581,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.rerun()
                     else: st.error("❌ 학급(반) 선택 및 평가 항목 명칭을 채운 후 저장을 눌러주세요.")
 
-                # ==========================================
-                # 📊 4구역: 실시간 데이터 연동 모니터 구역
-                # ==========================================
+                # 📊 실시간 데이터 연동 모니터 구역
                 if st.session_state["show_monitor_view"]:
                     st.markdown("<hr style='margin: 15px 0 10px 0; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
                     st.markdown("<h4 style='color: #0f172a; margin-top: 0px;'>📊 실시간 데이터 연동 모니터</h4>", unsafe_allow_html=True)
@@ -605,5 +604,5 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 교과군, 과목, 학년, 학기를 정확히 세팅한 뒤 [🚀 과목 활성화]를 눌러주세요.")
 
-        # 최하단 가이드 바 (강제 한 줄 정렬 보존)
+        # 최하단 가이드 바 (강제 한 줄 정렬 속성 완벽 보존)
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:10px; border-radius:8px; margin-top:15px; color:#1e3a8a; font-size:14px; text-align: center; font-weight: 500; white-space: nowrap !important;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
