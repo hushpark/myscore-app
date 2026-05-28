@@ -51,6 +51,7 @@ st.markdown("""
             border: 1px solid #cbd5e1 !important;
             color: #475569 !important;
             background-color: #ffffff !important;
+            white-space: nowrap !important; /* 버튼 글씨가 두 줄로 깨지지 않도록 방지 */
         }
         
         /* 우측 정렬 유지 */
@@ -221,7 +222,8 @@ if "show_pw_edit_section" not in st.session_state:
     st.session_state["show_pw_edit_section"] = False
 
 SUBJECT_MAP = load_master_subjects()
-GRADE_OPTIONS = ["학년을 선택하세요.", "1학년", "2학년", "3학년"]
+# 💡 학년 선택 문구를 짧게 변경하여 UI 잘림 현상 해결
+GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
 CURRENT_ADMIN_PW = load_admin_password()
 
 
@@ -366,7 +368,8 @@ elif st.session_state["page_status"] == "teacher_auth":
                 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🎒 학생 화면", key="outer_student_btn", use_container_width=True):
+        # 💡 학생 화면 돌아가기 명확하게 문구 수정
+        if st.button("🎒 학생 화면으로 돌아가기", key="outer_student_btn", use_container_width=True):
             st.session_state["page_status"] = "student_main"
             st.rerun()
 
@@ -378,7 +381,7 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
-    # 💡 교사용 메인 화면을 위한 700px 넓이의 카드 스타일 정의
+    # 💡 교사용 메인 화면 너비를 800px로 확장하여 요소들이 답답하지 않도록 수정
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -387,14 +390,14 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 700px !important;  /* 4개 요소를 위해 넉넉하게 700px 설정 */
+            max-width: 800px !important;
             margin: 0px auto 20px auto !important; 
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # 상단 우측 버튼 영역 (컨테이너 밖으로 빼서 위쪽 정렬)
-    col_empty, col_pw, col_logout = st.columns([5, 1.2, 1.2])
+    # 💡 상단 우측 버튼 영역을 살짝 넓혀 글자가 찌그러지지 않게 조정
+    col_empty, col_pw, col_logout = st.columns([5, 1.4, 1.4])
     with col_pw:
         st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         if st.button("🔐 암호 변경", key="outer_pw_btn", use_container_width=True):
@@ -414,7 +417,8 @@ elif st.session_state["page_status"] == "teacher_main":
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
         
-        c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1])
+        # 💡 긴 버튼 텍스트가 잘 들어갈 수 있도록 컬럼 비율 재조정
+        c1, c2, c3, c4 = st.columns([1.1, 1.1, 0.9, 1.3])
         
         with c1:
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>📁 1단계: 교과군 분류</div>", unsafe_allow_html=True)
@@ -436,15 +440,16 @@ elif st.session_state["page_status"] == "teacher_main":
         with c3:
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🎓 3단계: 관리 학년 선택</div>", unsafe_allow_html=True)
             sel_gr = st.selectbox("관리학년", options=GRADE_OPTIONS, label_visibility="collapsed")
-            final_gr = sel_gr.replace("학년", "") if sel_gr != "학년을 선택하세요." else ""
+            final_gr = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
             
         with c4:
             st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
-            if st.button("🔄 영역 활성화 및 로드", use_container_width=True):
+            # 💡 버튼 문구를 직관적으로 변경
+            if st.button("🔄 과목 만들기 및 불러오기", use_container_width=True):
                 if final_sub and final_gr:
                     st.session_state.active_subject, st.session_state.active_grade = final_sub, final_gr
                     st.rerun()
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
-        st.markdown("<div style='background-color:#eff6ff; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:14px; text-align: center;'>💡 상단에서 교과군과 과목을 지정하여 [영역 활성화]를 누르시면 기저장된 서식이 복원 및 표출됩니다.</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#eff6ff; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:14px; text-align: center;'>💡 상단에서 교과군과 과목을 지정하여 [과목 만들기 및 불러오기]를 누르시면 기저장된 서식이 복원 및 표출됩니다.</div>", unsafe_allow_html=True)
