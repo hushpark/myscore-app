@@ -287,4 +287,140 @@ if is_admin_mode:
                 st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
                 if st.button("🔄 영역 활성화", use_container_width=True):
                     if final_sub and final_gr:
-                        if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(
+                        if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
+                        st.session_state.active_subject, st.session_state.active_grade = final_sub, final_gr
+                        st.rerun()
+                    else:
+                        st.warning("과목과 학년을 명확히 선택하세요.")
+
+        # 설정 및 데이터 제어 하위 가로 분할 보드
+        if "active_subject" in st.session_state and st.session_state.active_subject:
+            sub, grd = st.session_state.active_subject, st.session_state.active_grade
+            cf, sf = get_file_names(sub, grd)
+            conf = load_config(cf)
+            
+            st.markdown(f"### 📍 현재 편집 활성화 영역: <span style='color:#ef4444;'>[{sub}] {grd}학년</span>", unsafe_allow_html=True)
+            col_l, col_r = st.columns(2)
+            
+            with col_l:
+                with st.container(border=True):
+                    st.markdown("#### 📌 [파트 1] 학기 및 평가 세팅")
+                    y_opts = ["학년도/학기를 선택하세요."] + [f"{y}학년도 {t}학기" for y in range(2024, 2029) for t in [1, 2]]
+                    saved_s = conf['학기통합명'] if conf else "학년도/학기를 선택하세요."
+                    idx_t = y_opts.index(saved_s) if saved_s in y_opts else 0
+                    sel_t = st.selectbox("대상 학기", y_opts, index=idx_t)
+                    
+                    st.write("**🏫 담당 학급(반)**")
+                    saved_cl = [int(x) for x in str(conf['선택된반 목록']).split(",")] if conf else []
+                    sel_cl = []
+                    cols_cl = st.columns(6)
+                    for i in range(1, 13):
+                        with cols_cl[(i-1)%6]:
+                            if st.checkbox(f"{i}반", value=i in saved_cl): sel_cl.append(i)
+                            
+                    n_item = st.number_input("평가 항목 개수", 0, 10, int(conf['항목개수']) if conf else 0)
+                    item_names = []
+                    if n_item > 0:
+                        for i in range(n_item):
+                            item_names.append(st.text_input(f"{i+1}번 항목 이름", value=conf.get(f'항목{i+1}_이름', "") if conf else ""))
+
+            with col_r:
+                with st.container(border=True):
+                    st.markdown("#### 📂 [파트 2] 데이터 제어 판넬")
+                    up_f = st.file_uploader("📁 성적 명렬표 CSV 등록", type="csv")
+                    if up_f:
+                        try:
+                            pd.read_csv(up_f, encoding='cp949').to_csv(sf, index=False)
+                            st.success("🎯 학생 성적 데이터가 원격 연동되었습니다!")
+                        except: 
+                            st.error("파일 인코딩 형식을 확인하세요. (CP949 권장)")
+                            
+                    st.markdown("---")
+                    ready = sel_t != "학년도/학기를 선택하세요." and sel_cl and n_item > 0 and all(item_names)
+                    if ready:
+                        if st.button("💾 이 교과 설정 최종 저장", use_container_width=True, type="primary"):
+                            d = {"교과명":sub, "학년":grd, "학기통합명":sel_t, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
+                            for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
+                            pd.DataFrame([d]).to_csv(cf, index=False)
+                            st.success("🎉 과목 데이터베이스 동기화 완료!")
+                    else:
+                        st.button("⚠️ 설정 조건 미완료 (저장 불가)", use_container_width=True, disabled=True)
+                        
+                    st.button("🗑️ 데이터베이스 전체 포맷", on_click=reset_all_data, use_container_width=True)
+
+
+# ==========================================
+# B. 학생 화면 분리 영역 -> 500px 독립형 중앙 카드 양식 고정
+# ==========================================
+else:
+    # 전용 500px HTML 카드 박스 래퍼 레이어 전개
+    st.markdown('<div class="student-card-layout">', unsafe_allow_html=True)
+    
+    # B-1. 헤더 레이아웃 (타이틀 폰트와 교사용 정렬 버튼 일치화)
+    h_col1, h_col2 = st.columns([3.3, 1.7])
+    with h_col1:
+        st.markdown("<h2 style='text-align:left; margin:0;'>🎒 성적 확인 시스템</h2>", unsafe_allow_html=True)
+    with h_col2:
+        # 글자 폭에 딱 맞고 아담하게 우측 정렬을 유지하는 교사용 단추
+        if st.button("🔓 교사용 제어판", key="go_to_admin_btn"):
+            st.query_params.update(mode="admin")
+            st.rerun()
+            
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+    st.markdown("### 📝 개인별 성적 조회")
+    
+    # B-2. 학생용 실시간 과목 스위칭 셀렉트박스
+    active_dbs = get_active_databases()
+    if not active_dbs:
+        st.info("현재 등록된 성적 조회용 데이터베이스가 존재하지 않습니다.")
+    else:
+        opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
+        sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        
+        # 과목이 올바르게 선택되었을 때, 콤팩트 박스 내부 로그인 인풋 창 가동
+        if sel_s != "과목을 선택하세요.":
+            db = active_dbs[opts_s.index(sel_s)-1]
+            cf, sf = get_file_names(db['subject'], db['grade'].replace("학년",""))
+            config = load_config(cf)
+            
+            st.success(f"🧬 **{db['subject']}** | **{config['학기통합명'] if config else '설정 미완료'}**")
+            
+            # B-3. 3분할 콤팩트 성적 확인 인풋 폼
+            with st.form("student_query_secure_form"):
+                classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if config else ["1반"]
+                
+                c1, c2, c3 = st.columns(3)
+                with c1: b_in = st.selectbox("반 선택", classes)
+                with c2: n_in = st.number_input("번호 입력", 1, 50, 1)
+                with c3: name_in = st.text_input("이름 입력", placeholder="홍길동")
+                
+                pw_in = st.text_input("개인 비밀번호 입력", type="password", placeholder="비밀번호")
+                st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+                
+                # 순정 확인용 가로 꽉 찬 서브밋 단추 (파란색 계열 매칭)
+                btn_query_submit = st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True)
+                
+                # 🎯 [순정 복구] 유실되었던 데이터 매칭 및 학생 결과 확인 핵심 알고리즘 가동
+                if btn_query_submit:
+                    df_st = load_students(sf)
+                    if df_st.empty:
+                        st.error("성적 데이터 세팅이 진행 중인 과목입니다. 교과 선생님께 문의하세요.")
+                    else:
+                        # 4가지 크로스 조건 검증 (반, 번호, 이름, 비밀번호 일치 판정)
+                        res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
+                        if not res.empty:
+                            idx = res.index[0]
+                            # config 개수에 알맞게 항목 점수들만 추출해서 표로 맵핑
+                            scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
+                            st.success(f"🎉 인증 성공! {name_in} 학생의 수행평가 상세 점수입니다.")
+                            st.table(pd.DataFrame(scores))
+                            
+                            # 실시간 확인 도장 마킹 및 원격 csv 업데이트
+                            if df_st.loc[idx, '확인여부'] != "확인 완료":
+                                df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                df_st.to_csv(sf, index=False)
+                        else:
+                            st.error("입력한 정보와 일치하는 학생 성적 데이터가 없습니다. 값을 정확히 입력하세요.")
+                            
+    st.markdown('</div>', unsafe_allow_html=True) # 전용 HTML 래퍼 레이어 닫기
