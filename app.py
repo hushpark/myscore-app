@@ -367,7 +367,6 @@ elif st.session_state["page_status"] == "teacher_auth":
                 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # 💡 요청하신 대로 버튼 명칭을 수정했습니다.
         if st.button("🎒 학생 화면으로 돌아가기", key="outer_student_btn", use_container_width=True):
             st.session_state["page_status"] = "student_main"
             st.rerun()
@@ -388,7 +387,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 1000px !important; /* 💡 1000px 스케일 유지 */
+            max-width: 1000px; 
             margin: 0px auto 20px auto !important; 
         }
         </style>
@@ -413,7 +412,6 @@ elif st.session_state["page_status"] == "teacher_main":
         
         if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
         
-        # 💡 [핵심 교정] 버튼이 절대 깨지거나 늘어나지 않도록 최적의 컬럼 비율(1.3, 1.3, 1.0, 1.3) 분배!
         c1, c2, c3, c4 = st.columns([1.3, 1.3, 1.0, 1.3])
         
         with c1:
@@ -451,7 +449,8 @@ elif st.session_state["page_status"] == "teacher_main":
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
-        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
+        # 💡 [핵심 교정 포인트] white-space: nowrap 속성을 주입하여 강제로 한 줄 유지를 보장합니다!
+        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500; white-space: nowrap !important;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
         
         # 🚀 과목 활성화 이후 작업 구역
         if "active_subject" in st.session_state and st.session_state.active_subject:
@@ -513,7 +512,6 @@ elif st.session_state["page_status"] == "teacher_main":
 
                 st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
                 
-                # 💡 [구조 교정] 성적 CSV 업로드 영역과 예시 다운로드 버튼을 3번 그림 요구사항에 맞춰 동일 선상에 나란히 배치!
                 st.markdown("<div style='font-size:14px; font-weight:600; color:#475569; margin-bottom:8px;'>📁 성적 CSV 관리 및 업로드</div>", unsafe_allow_html=True)
                 up_col1, up_col2 = st.columns([3.5, 1.5])
                 with up_col1:
@@ -526,7 +524,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         except: st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
                         
                 with up_col2:
-                    # 현재 설정 데이터 기준으로 동적인 다운로드 양식 빌드
                     sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + (item_names if item_names else ["수행1", "수행2"])
                     sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names if item_names else ["수행1", "수행2"])], columns=sample_columns)
                     
@@ -542,7 +539,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         use_container_width=True
                     )
             
-            # 💡 [격리 조치] 위험 기능인 시스템 초기화 버튼은 선생님들이 혼동하여 누르지 않도록 카드 하단 맨 밑으로 격리 이동
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             if st.button("🗑️ 초기화 (모든 데이터 포맷)", use_container_width=True): 
                 reset_all_data()
