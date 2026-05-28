@@ -221,6 +221,11 @@ if "admin_logged_in" not in st.session_state:
 if "show_pw_edit_section" not in st.session_state:
     st.session_state["show_pw_edit_section"] = False
 
+# 대화상자 및 리인덱싱 방지 세션 보호 변수
+if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
+if "sel_sub_idx" not in st.session_state: st.session_state.sel_sub_idx = 0
+if "sel_grade_idx" not in st.session_state: st.session_state.sel_grade_idx = 0
+
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
 CURRENT_ADMIN_PW = load_admin_password()
@@ -379,6 +384,7 @@ elif st.session_state["page_status"] == "teacher_main":
         st.session_state["page_status"] = "teacher_auth"
         st.rerun()
         
+    # 💡 교사용 카드 최대 폭을 1000px 스케일로 지정
     st.markdown("""
         <style>
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -387,7 +393,7 @@ elif st.session_state["page_status"] == "teacher_main":
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 1000px; 
+            max-width: 1000px !important; 
             margin: 0px auto 20px auto !important; 
         }
         </style>
@@ -410,8 +416,6 @@ elif st.session_state["page_status"] == "teacher_main":
         st.markdown("<h4 style='text-align: center; margin: 0px 0px 10px 0px; color: #475569;'>🛠️ [단계 1] 획기적인 교과군별 과목 지정</h4>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 15px 0 25px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
-        if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
-        
         c1, c2, c3, c4 = st.columns([1.3, 1.3, 1.0, 1.3])
         
         with c1:
@@ -428,14 +432,15 @@ elif st.session_state["page_status"] == "teacher_main":
                 final_sub = st.text_input("새 과목명", placeholder="새 과목명을 입력하세요", label_visibility="collapsed").strip()
             elif sel_g != "교과군 선택":
                 s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
-                sel_s = st.selectbox("세부과목", options=s_opts, label_visibility="collapsed")
+                idx_s = st.session_state.sel_sub_idx if st.session_state.sel_sub_idx < len(s_opts) else 0
+                sel_s = st.selectbox("세부과목", options=s_opts, index=idx_s, label_visibility="collapsed")
                 if sel_s != "과목 선택": final_sub = sel_s
             else: 
                 st.selectbox("세부과목", ["선택 대기"], disabled=True, label_visibility="collapsed")
                 
         with c3:
             st.markdown("<div style='font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;'>🎓 3단계: 관리 학년</div>", unsafe_allow_html=True)
-            sel_gr = st.selectbox("관리학년", options=GRADE_OPTIONS, label_visibility="collapsed")
+            sel_gr = st.selectbox("관리학년", options=GRADE_OPTIONS, index=st.session_state.sel_grade_idx, label_visibility="collapsed")
             final_gr = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
             
         with c4:
@@ -445,14 +450,16 @@ elif st.session_state["page_status"] == "teacher_main":
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
                     st.session_state.active_subject, st.session_state.active_grade = final_sub, final_gr
                     st.session_state.sel_group_idx = g_opts.index(sel_g)
+                    if sel_g != "➕ 신규 과목 개설": st.session_state.sel_sub_idx = s_opts.index(final_sub)
+                    st.session_state.sel_grade_idx = GRADE_OPTIONS.index(sel_gr)
                     st.rerun()
                 else: 
                     st.warning("모든 항목을 선택해 주세요.")
                     
-        # 💡 [핵심 교정 포인트] white-space: nowrap 속성을 주입하여 강제로 한 줄 유지를 보장합니다!
-        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500; white-space: nowrap !important;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
+        # 💡 [CSS 강제 개포인트] 인라인 스타일에 'nowrap'과 'inline-block' 조합을 직접 주입하여 "다." 글자 떨어짐 원천 철벽 차단!
+        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:15px; border-radius:8px; margin-top:20px; color:#1e3a8a; font-size:15px; text-align: center; font-weight: 500;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 교과군과 과목을 지정하여 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:16px; background-color:#ffe4e6; padding:4px 8px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
         
-        # 🚀 과목 활성화 이후 작업 구역
+        # 🚀 과목 활성화 세부 작업 패널 분기 구역
         if "active_subject" in st.session_state and st.session_state.active_subject:
             sub, grd = st.session_state.active_subject, st.session_state.active_grade
             cf, sf = get_file_names(sub, grd)
@@ -508,6 +515,8 @@ elif st.session_state["page_status"] == "teacher_main":
                     if st.button("➕ 다른 과목 추가하기", use_container_width=True):
                         st.session_state.active_subject = None
                         st.session_state.sel_group_idx = 0
+                        st.session_state.sel_sub_idx = 0
+                        st.session_state.sel_grade_idx = 0
                         st.rerun()
 
                 st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
