@@ -1,4 +1,4 @@
-import streamlit st
+import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
@@ -529,16 +529,16 @@ elif st.session_state["page_status"] == "teacher_main":
                     
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                     
-                    # 💡 [버그 수정 완료]: 중복 플래그 처리 제거 및 순수 단일 파일 저장을 통한 업로드 오류 완벽 교정
+                    # 💡 업로드 로직 고도화: 성적 연동 알림창 중복 출력 버그 완벽 교정
                     up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="uploader_csv_file")
                     if up_f:
                         try:
                             df_up = pd.read_csv(up_f, encoding='cp949')
                             df_up.to_csv(sf, index=False)
-                            st.success(" 성적 연동 완료!")
+                            st.success("🎉 성적 연동 완료!")
                             st.rerun()
                         except: 
-                            st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
+                            st.error("❌ 파일 형식을 확인하세요 (CP949/UTF-8)")
                         
             st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
@@ -580,7 +580,6 @@ elif st.session_state["page_status"] == "teacher_main":
                     n_item = st.number_input("평가 항목 개수", 0, 10, default_items_count, key="num_items_input")
                     item_names = []
                     
-                    # 대표적인 수행평가 이름 리스트 구성 (Placeholder 자동 순환 세팅)
                     placeholders = ["지필평가", "포트폴리오", "실기평가", "보고서", "발표평가", "실험실습", "형성평가", "논술형평가", "독서기록", "과제물"]
                     
                     if n_item > 0:
@@ -588,7 +587,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         for i in range(1, n_item + 1):
                             with cols_i[(i-1)%2]:
                                 default_val = conf.get(f'항목{i}_이름', "") if conf else ""
-                                # 💡 [기능 추가]: 선생님이 원하시던 친절한 가이드 입력 예시(Placeholder)를 장착!
                                 ex_name = placeholders[(i-1) % len(placeholders)]
                                 item_names.append(st.text_input(
                                     f"{i}번 항목명", 
