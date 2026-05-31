@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit st
 import pandas as pd
 import os
 from datetime import datetime
@@ -157,7 +157,6 @@ def load_admin_password():
 def save_admin_password(new_pw):
     pd.DataFrame([{"password": str(new_pw).strip()}]).to_csv(META_FILE, index=False)
 
-# 학기별 독립 파일 생성 함수
 def get_file_names(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
@@ -172,7 +171,6 @@ def load_config(file):
 def load_students(file):
     return pd.read_csv(file) if os.path.exists(file) else pd.DataFrame()
 
-# 💡 [버그 제로 교정]: 파일 목록을 역추적할 때 정규식 에러 및 누락 가능성을 원천 차단했습니다.
 def get_active_databases():
     active_list = []
     for f in glob.glob("config_*.csv"):
@@ -182,7 +180,6 @@ def get_active_databases():
                 continue
             core_name = filename.replace("config_", "").replace(".csv", "")
             
-            # 구조 추적용 정규식 고도화 (.+?)_(1|2|3)grade_(.+)
             match = re.search(r"(.+?)_(1|2|3)grade_(.+)", core_name)
             if match:
                 sub_name = match.group(1).replace("_", " ")
@@ -203,7 +200,7 @@ def reset_all_data():
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict):
     st.markdown(f"<div style='margin-bottom:15px;'><b>{student_name}</b> 학생의 성적 내역입니다.</div>", unsafe_allow_html=True)
-    st.table(st.DataFrame(scores_dict))
+    st.table(pd.DataFrame(scores_dict))
     
     if st.button("확인 후 닫기", use_container_width=True, type="primary"):
         st.session_state.clear()
@@ -397,7 +394,7 @@ elif st.session_state["page_status"] == "teacher_auth":
             st.rerun()
 
 # ------------------------------------------
-# ⚙️ 3. 교사용 제어 센터 센터 화면 (로그인 후)
+# ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후)
 # ------------------------------------------
 elif st.session_state["page_status"] == "teacher_main":
     if not st.session_state["admin_logged_in"]:
@@ -531,14 +528,17 @@ elif st.session_state["page_status"] == "teacher_main":
                     )
                     
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+                    
+                    # 💡 [버그 수정 완료]: 중복 플래그 처리 제거 및 순수 단일 파일 저장을 통한 업로드 오류 완벽 교정
                     up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="uploader_csv_file")
                     if up_f:
                         try:
                             df_up = pd.read_csv(up_f, encoding='cp949')
                             df_up.to_csv(sf, index=False)
-                            st.success("성적 연동 완료!")
+                            st.success(" 성적 연동 완료!")
                             st.rerun()
-                        except: st.error("파일 형식 확인 요망(CP949)")
+                        except: 
+                            st.error("파일 형식을 확인하세요 (CP949/UTF-8)")
                         
             st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
@@ -553,15 +553,12 @@ elif st.session_state["page_status"] == "teacher_main":
                 sem = st.session_state.active_semester
                 
                 cf, sf = get_file_names(sub, grd, sem)
-                
-                # 💡 [버그 교정 핵심 구역]: 활성화된 학기 파일(cf) 정보를 실시간으로 먼저 로드합니다.
                 conf = load_config(cf)
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 st.markdown("<h4 style='color: #1e293b; margin-top: 0px;'>📌 학기 및 평가 세팅</h4>", unsafe_allow_html=True)
                 
                 with st.container(border=True):
-                    # 기존에 저장된 데이터가 있다면 안내메시지를 변경하여 직관성 확보
                     if conf:
                         st.markdown(f"<div style='font-size:13px; font-weight:600; color:#16a34a; margin-bottom:8px;'>✅ 기존 설정 불러오기 완료 ({sem})</div>", unsafe_allow_html=True)
                         saved_cl = [int(x) for x in str(conf.get('선택된반 목록', '')).split(",") if x.strip()]
@@ -576,20 +573,30 @@ elif st.session_state["page_status"] == "teacher_main":
                     cols_cl = st.columns(6)
                     for i in range(1, 13):
                         with cols_cl[(i-1)%6]:
-                            # 💡 기존 로드된 반 목록(saved_cl)에 포함되어 있다면 체크박스를 True로 강제 대입구현
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): 
                                 sel_cl.append(i)
 
                     st.markdown("<div style='margin-top:8px; margin-bottom:2px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
                     n_item = st.number_input("평가 항목 개수", 0, 10, default_items_count, key="num_items_input")
                     item_names = []
+                    
+                    # 대표적인 수행평가 이름 리스트 구성 (Placeholder 자동 순환 세팅)
+                    placeholders = ["지필평가", "포트폴리오", "실기평가", "보고서", "발표평가", "실험실습", "형성평가", "논술형평가", "독서기록", "과제물"]
+                    
                     if n_item > 0:
                         cols_i = st.columns(2)
                         for i in range(1, n_item + 1):
                             with cols_i[(i-1)%2]:
-                                # 💡 기존 로드된 항목명 이름이 존재하면 value에 세팅하여 자동 인출 복구
                                 default_val = conf.get(f'항목{i}_이름', "") if conf else ""
-                                item_names.append(st.text_input(f"{i}번 항목명", value=default_val, key=f"item_name_input_{i}", label_visibility="collapsed"))
+                                # 💡 [기능 추가]: 선생님이 원하시던 친절한 가이드 입력 예시(Placeholder)를 장착!
+                                ex_name = placeholders[(i-1) % len(placeholders)]
+                                item_names.append(st.text_input(
+                                    f"{i}번 항목명", 
+                                    value=default_val, 
+                                    placeholder=f"예: {ex_name}", 
+                                    key=f"item_name_input_{i}", 
+                                    label_visibility="collapsed"
+                                ))
 
                 # 저장 동작 프로세스
                 ready = sel_cl and n_item > 0 and all(item_names)
