@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 해결판] 다운로드 버튼 텍스트까지 완벽하게 강제 한 줄 고정 세팅
+# 🎯 [CSS 최종 교정판] 자동 버튼 스타일 복원 및 파일 업로더 2줄 자동 개행 처리
 # =========================================================================
 st.markdown("""
     <style>
@@ -24,13 +24,13 @@ st.markdown("""
         /* 하단 잉여 공간(푸터) 완전 제거 */
         footer { display: none !important; }
         
-        /* 상단 여백 리튜닝 */
+        /* 상단 잘림 방지 위쪽 패딩 최적화 */
         .block-container {
             padding-top: 2.0rem !important; 
             padding-bottom: 1.0rem !important; 
         }
         
-        /* max-width를 1450px로 확장 */
+        /* 전체 가로폭 카드 크기를 1450px로 넉넉하게 확장 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
             padding: 20px 25px !important; 
@@ -48,78 +48,34 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 상단 우측 학생인증 관련 버튼 스타일 */
-        div.stButton > button[key="outer_teacher_btn"],
-        div.stButton > button[key="outer_student_btn"],
-        div.stButton > button[key="outer_logout_btn"],
-        div.stButton > button[key="outer_pw_btn"] {
-            width: fit-content !important;
-            min-width: auto !important;
-            padding: 3px 12px !important;
-            font-size: 12px !important;
-            border-radius: 6px !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #475569 !important;
-            background-color: #ffffff !important;
+        /* 💡 [교정 핵심 1]: 인위적인 크기 조절 CSS를 걷어내고 스트림릿 순수 자동 스타일로 롤백 */
+        /* 기본적으로 단정하고 깔끔한 크기를 유지하며 두 줄 깨짐을 원천 방지합니다. */
+        div.stButton > button, div.stDownloadButton > button {
             white-space: nowrap !important;
-        }
-        
-        /* 💡 좌측 세로형 제어판 버튼들 가로 길이 100% 통일 */
-        div[data-testid="stHorizontalBlock"] div.stButton button,
-        div[data-testid="stHorizontalBlock"] div.stButton button:disabled,
-        div[data-testid="stHorizontalBlock"] div.stButton button[disabled] {
-            width: 100% !important;
-            min-width: 100% !important;
-            max-width: 100% !important;
-            display: block !important;
-            box-sizing: border-box !important;
-            padding: 8px 12px !important;
-            font-size: 13px !important;
-            border-radius: 6px !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #334155 !important;
-            background-color: #ffffff !important;
-            text-align: center !important;
-            margin-bottom: 2px !important;
-            font-weight: 500 !important;
-            white-space: nowrap !important; 
-        }
-        
-        /* 💡 [교정 핵심]: 예시 파일 다운로드 버튼과 내부 글자까지 예외 없이 통째로 한 줄 강제 고정 */
-        div.stDownloadButton button,
-        div.stDownloadButton button:disabled,
-        div.stDownloadButton button div,
-        div.stDownloadButton button p,
-        div.stDownloadButton button span,
-        div.stDownloadButton button[data-testid="stMarkdownContainer"] p {
-            width: 100% !important;             
-            min-width: 100% !important;
-            max-width: 100% !important;
-            display: block !important;
-            padding: 6px 5px !important;         
-            font-size: 13px !important;          
-            color: #475569 !important;
-            background-color: #ffffff !important;
-            border-radius: 5px !important;
-            line-height: 1.3 !important;
-            white-space: nowrap !important; /* 👈 절대 줄바꿈 타파 */
             word-break: keep-all !important;
         }
         
-        div.stButton:has(button[key="outer_teacher_btn"]),
-        div.stButton:has(button[key="outer_logout_btn"]),
-        div.stButton:has(button[key="outer_pw_btn"]) {
-            display: flex;
-            justify-content: flex-end;
+        /* 💡 [교정 핵심 2]: Upload 밑의 200MB 안내 문구가 잘리지 않고 2줄로 이쁘게 개행되도록 제어 */
+        div[data-testid="stFileUploader"] section small {
+            white-space: normal !important;
+            word-break: break-all !important;
+            display: block !important;
+            line-height: 1.3 !important;
+            color: #64748b !important;
         }
         
+        /* 💡 [교정 핵심 3]: 오직 [🚀 과목 활성화] 버튼만 독점적으로 강렬한 빨간색 강조 효과 부여 */
         div.stButton > button[kind="primary"] {
             background-color: #ef4444 !important;
             color: white !important;
             border: none !important;
             font-weight: bold !important;
-            padding: 8px 0px !important;
             border-radius: 6px !important;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2) !important;
+        }
+        div.stButton > button[kind="primary"]:hover {
+            background-color: #dc2626 !important;
+            color: white !important;
         }
         
         h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 10px 0 10px 0 !important; white-space: nowrap !important; }
@@ -478,6 +434,8 @@ elif st.session_state["page_status"] == "teacher_main":
             final_se = sel_se if sel_se != "학기 선택" else ""
             
             st.markdown("<div style='height: 3px;'></div>", unsafe_allow_html=True)
+            
+            # 💡 [교정 핵심]: 과목 활성화 버튼에 type="primary"를 부여하여 강력한 빨간색 강조 지정
             if st.button("🚀 과목 활성화", use_container_width=True, type="primary"):
                 if final_sub and final_gr and final_se:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
@@ -528,7 +486,7 @@ elif st.session_state["page_status"] == "teacher_main":
 
                 st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    # 💡 [피드백 적용 1]: 문구를 "성적 일괄 업로드"로 최종 교정
+                    # 타이틀 문구 교정
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드</div>", unsafe_allow_html=True)
                     
                     sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + item_names
@@ -537,7 +495,6 @@ elif st.session_state["page_status"] == "teacher_main":
                     sample_df.to_csv(csv_buffer, index=False, encoding='cp949')
                     csv_bytes = csv_buffer.getvalue().encode('cp949')
                     
-                    # 💡 [피드백 적용 2]: 예시 파일 다운로드 컴포넌트가 한 줄로 깨끗하게 표현됨
                     st.download_button(
                         label="📥 예시 파일 다운로드",
                         data=csv_bytes,
