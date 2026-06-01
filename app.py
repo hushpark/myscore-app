@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit st
 import pandas as pd
 import os
 from datetime import datetime
@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 버튼 간격 반으로 축소 + 삭제 센터 확실한 블루 색상 강제 지정
+# 🎯 [CSS 최종 완결판] 상단 잘림 버그 완치 + 버튼 간격 극단적 축소 + 삭제 버튼 블루 강제 주입
 # =========================================================================
 st.markdown("""
     <style>
@@ -24,21 +24,21 @@ st.markdown("""
         /* 하단 잉여 공간(푸터) 완전 제거 */
         footer { display: none !important; }
         
-        /* 상단 패딩 최적화 */
+        /* 💡 [교정 1]: 상단 잘림 버그 원천 차단 - 위쪽 여백을 안정적으로 배치 */
         .block-container {
-            padding-top: 1.2rem !important; 
+            padding-top: 2.5rem !important; 
             padding-bottom: 0.5rem !important; 
         }
         
         /* 전체 가로폭 카드 크기를 1450px로 설정 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
-            padding: 15px 25px 30px 25px !important; 
+            padding: 20px 25px 30px 25px !important; 
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
             max-width: 1450px !important; 
-            margin: 0px auto 10px auto !important; 
+            margin: 0px auto !important; /* 상단 마진 꼬임 리셋 */
         }
         
         div[data-testid="stForm"] {
@@ -72,27 +72,30 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 💡 [교정 핵심 1]: 모든 버튼 간의 세로 유격(간격)을 기존의 반(2px)으로 대폭 축소하여 초밀착 */
-        div.stButton {
-            margin-bottom: 2px !important;
-            margin-top: 0px !important;
+        /* 💡 [교정 3]: 모든 버튼과 요소 간의 세로 간격을 극단적으로 절반 더 줄여 촘촘하게 밀착 */
+        div[data-testid="stVerticalBlock"] > div:has(div.stButton) {
+            padding-bottom: 0px !important;
+            margin-bottom: -2px !important;
+        }
+        div.stButton button {
+            margin: 0px auto !important;
+            padding-top: 4px !important;
+            padding-bottom: 4px !important;
         }
         
-        /* 💡 [교정 핵심 2]: "데이터 삭제 센터" 토글 버튼에 확실한 파란색 단독 강조 및 그림자 주입 (!important 보완) */
-        div.stButton > button[key="side_toggle_delete_btn"],
-        div.stButton > button[key="side_toggle_delete_btn"]:focus,
-        div.stButton > button[key="side_toggle_delete_btn"]:active {
+        /* 💡 [교정 2]: 내부 간섭을 깨부수고 "데이터 삭제 센터" 버튼에 파란색 강제 염색 */
+        div.stButton:has(button[key="side_toggle_delete_btn"]) button {
             background-color: #2563eb !important;
             color: white !important;
             border: 1px solid #1d4ed8 !important;
             font-weight: 700 !important;
             border-radius: 6px !important;
-            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3) !important;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3) !important;
+            text-shadow: none !important;
         }
-        div.stButton > button[key="side_toggle_delete_btn"]:hover {
+        div.stButton:has(button[key="side_toggle_delete_btn"]) button:hover {
             background-color: #1d4ed8 !important;
             color: white !important;
-            border: 1px solid #1e40af !important;
         }
         
         /* 다운로드 버튼 폰트 및 스타일 미니멀화 */
@@ -145,9 +148,6 @@ st.markdown("""
             background-color: #dc2626 !important;
             color: white !important;
         }
-        
-        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 5px 0 10px 0 !important; white-space: nowrap !important; }
-        h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin-bottom: 6px !important; white-space: nowrap !important; }
         
         /* 최하단 가이드 바 바닥선 정렬 여백 */
         div.custom-guide-bar {
@@ -553,7 +553,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 파란색 데이터 삭제 센터 단추 (과목 활성화 밑으로 정렬 이동)
+            # 파란색 데이터 삭제 센터 단추 (간격 축소 및 파란색 디자인 완결 주입)
             del_panel_label = "🛠️ 데이터 삭제 센터 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제 센터"
             if st.button(del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
                 st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
@@ -638,7 +638,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<h4 style='color: #ef4444; margin-top: 0px;'>⚙️ 데이터 삭제 및 청소 관리 센터</h4>", unsafe_allow_html=True)
                 st.markdown("<p style='font-size:13px; color:#64748b;'>선택 과목의 CSV 데이터 파괴 및 마스터 연동 삭제를 선별 관리합니다.</p>", unsafe_allow_html=True)
                 
-                # 💡 [교정 핵심 3]: 불필요한 인덱스 번호를 제거하고 요구하신 직관적인 명칭으로 개정 완수!
+                # 탭 명칭에서 인덱스 번호를 제거하고 완성도 있게 변경
                 tab_del_sem, tab_del_sub = st.tabs(["학기 및 학년별 삭제", "과목 일괄 삭제"])
                 
                 # 1) 학기 및 학년별 삭제 모드
