@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 왼쪽 제어판 컴팩트 밀착 정렬 레이아웃
+# 🎯 [CSS 최종 완결판] 우측 제어판 확장 및 삭제 센터 컴포넌트 최적화
 # =========================================================================
 st.markdown("""
     <style>
@@ -72,7 +72,6 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 💡 [정밀 교정]: 각 버튼들의 기본 하단 마진을 줄여 틈새 방지 */
         div.stButton {
             margin-bottom: 4px !important;
         }
@@ -92,7 +91,7 @@ st.markdown("""
             margin-bottom: -15px !important; 
         }
         
-        /* 💡 [정밀 교정]: 성적 일괄 업로드 테두리 박스 내부 공백을 콤팩트하게 다듬기 */
+        /* 성적 일괄 업로드 테두리 박스 내부 공백을 콤팩트하게 다듬기 */
         div.compact-upload-box {
             padding: 8px 10px !important;
             margin-top: 4px !important;
@@ -236,6 +235,23 @@ def get_active_databases():
         except: pass
     return active_list
 
+# 💡 [교정 핵심 로직]: 2번 문항 요구사항 반영 - 과목 완전히 들어낼 때 하위 학년/학기 파일 자동 추적 연쇄 삭제(Cascade Delete)
+def remove_subject_completely_from_disk(sub_name):
+    if os.path.exists(CONFIG_FILE_MAIN):
+        try:
+            df = pd.read_csv(CONFIG_FILE_MAIN)
+            df = df[df["과목명"] != sub_name]
+            df.to_csv(CONFIG_FILE_MAIN, index=False)
+        except: pass
+    
+    # 해당 과목명을 공유하는 하위의 모든 자식 파일(*_과목명_*.csv) 완전 폐기
+    safe_sub = sub_name.replace(" ", "_")
+    all_targets = glob.glob(f"config_{safe_sub}_*.csv") + glob.glob(f"students_{safe_sub}_*.csv")
+    for f in all_targets:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except: pass
+
 def reset_all_data():
     targets = glob.glob("config_*.csv") + glob.glob("students_*.csv") + [CONFIG_FILE_MAIN, META_FILE]
     for f in targets:
@@ -302,6 +318,10 @@ if "admin_logged_in" not in st.session_state:
 
 if "show_monitor_view" not in st.session_state:
     st.session_state["show_monitor_view"] = False
+
+# 삭제 센터 뷰 토글 상태 바인딩
+if "show_delete_panel" not in st.session_state:
+    st.session_state["show_delete_panel"] = False
 
 if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
 if "sel_sub_idx" not in st.session_state: st.session_state.sel_sub_idx = 0
@@ -460,6 +480,7 @@ elif st.session_state["page_status"] == "teacher_main":
             st.session_state["page_status"] = "student_main"
             st.session_state["admin_logged_in"] = False
             st.session_state["show_monitor_view"] = False
+            st.session_state["show_delete_panel"] = False
             st.rerun()
 
     with st.container(border=True):
@@ -471,7 +492,7 @@ elif st.session_state["page_status"] == "teacher_main":
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
         
         # ==========================================
-        # 👈 [1구역 - 왼쪽]
+        # 👈 [1구역 - 왼쪽 제어 메뉴]
         # ==========================================
         with frame_left:
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
@@ -511,6 +532,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     if sel_g != "➕ 신규 과목 개설": st.session_state.sel_sub_idx = s_opts.index(final_sub)
                     st.session_state.sel_grade_idx = GRADE_OPTIONS.index(sel_gr)
                     st.session_state.sel_semester_idx = SEMESTER_OPTIONS.index(sel_se)
+                    st.session_state["show_delete_panel"] = False # 활성화 시 삭제 패널 닫기
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
@@ -537,9 +559,18 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state.sel_grade_idx = 0
                 st.session_state.sel_semester_idx = 0
                 st.session_state["show_monitor_view"] = False
+                st.session_state["show_delete_panel"] = False
                 st.rerun()
 
-            # 💡 성적 CSV 관리 및 업로드 구역 (전용 컴팩트 스타일 클래스 부여)
+            # 💡 [질문 1 기반 추가]: 데이터 삭제 및 관리 전용 제어 단추
+            del_panel_label = "🛠️ 삭제 제어 센터 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제 센터"
+            if st.button(del_panel_label, key="side_toggle_delete_btn"):
+                st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
+                if st.session_state["show_delete_panel"]:
+                    st.session_state["show_monitor_view"] = False # 모니터 뷰와 공존 불가 처리
+                st.rerun()
+
+            # 성적 CSV 관리 및 업로드 구역
             if has_active:
                 sub = st.session_state.active_subject
                 grd = st.session_state.active_grade
@@ -549,7 +580,6 @@ elif st.session_state["page_status"] == "teacher_main":
                 item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else ["수행1", "수행2"]
 
                 with st.container(border=True):
-                    # HTML 내부 래퍼를 씌워 여백 강제 축소
                     st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드</div>", unsafe_allow_html=True)
                     
@@ -580,14 +610,77 @@ elif st.session_state["page_status"] == "teacher_main":
                             st.error("❌ 파일 형식을 확인하세요 (CP949/UTF-8)")
                     st.markdown('</div>', unsafe_allow_html=True)
                         
-            # 4. 시스템 초기화 버튼 (중간 공백 없이 바로 밀착 연동)
+            # 4. 시스템 초기화 버튼
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
-        # 👉 [2구역 - 오른쪽]
+        # 👉 [2구역 - 오른쪽 세팅 및 기능 모니터 모듈]
         # ==========================================
         with frame_right:
-            if has_active:
+            # 💡 [질문 1, 2, 3 구현 핵심]: 데이터 개별 및 일괄 파괴 관리 센터 인터페이스 구동 구역
+            if st.session_state["show_delete_panel"]:
+                st.markdown("<h4 style='color: #ef4444; margin-top: 0px;'>⚙️ 데이터 삭제 및 청소 관리 센터</h4>", unsafe_allow_html=True)
+                st.markdown("<p style='font-size:13px; color:#64748b;'>구축된 마스터 데이터베이스 및 특정 분기의 CSV 파일을 선별 관리합니다.</p>", unsafe_allow_html=True)
+                
+                tab_del_sem, tab_del_sub = st.tabs(["🔒 3번: 학기/학년별 정밀 삭제", "🚨 2번: 과목 및 하위 파일 일괄 삭제"])
+                
+                # 🛠️ 분기 3: 특정 과목의 특정 학년/학기 구성 파일만 정밀 타격하여 제거
+                with tab_del_sem:
+                    existing_dbs = get_active_databases()
+                    if not existing_dbs:
+                        st.info("현재 디스크에 저장된 학기별 성적 데이터베이스가 존재하지 않습니다.")
+                    else:
+                        st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;'>1. 폐기할 표적 학기 데이터베이스 선택</div>", unsafe_allow_html=True)
+                        sem_opts = [f"📚 {d['subject']} | {d['grade']} | {d['semester']}" for d in existing_dbs]
+                        selected_sem_str = st.selectbox("삭제 대상 선택", options=sem_opts, label_visibility="collapsed", key="sb_delete_target_sem")
+                        
+                        target_idx = sem_opts.index(selected_sem_str)
+                        t_db = existing_dbs[target_idx]
+                        
+                        # 안전인증 문자열 생성
+                        verify_code_sem = f"{t_db['subject']}_{t_db['grade'].replace('학년','')}_{t_db['semester'].replace('학년도','').replace(' ', '')}"
+                        
+                        st.markdown(f"""<div style="background-color:#fff3cd; padding:10px; border-radius:6px; font-size:12px; color:#664d03; margin-bottom:10px;">
+                        ⚠️ <b>경고:</b> 이 작업은 해당 과목의 틀은 보존하되, <b>[{t_db['subject']} - {t_db['grade']} {t_db['semester']}]</b>의 평가 환경 세팅과 연동된 성적 CSV 원본 데이터를 완전히 영구 삭제합니다.
+                        </div>""", unsafe_allow_html=True)
+                        
+                        st.markdown(f"<div style='font-size:12px; margin-bottom:4px;'>오작동 방지를 위해 아래 인증 코드를 똑같이 입력하세요.<br>👉 인증코드: <code style='background:#f1f5f9; padding:2px 4px; border-radius:4px; font-weight:bold; color:#ef4444;'>{verify_code_sem}</code></div>", unsafe_allow_html=True)
+                        user_confirm_sem = st.text_input("인증코드 입력창", placeholder="인증코드를 대소문자/공백 없이 정확히 치세요", label_visibility="collapsed", key="ti_verify_sem_code")
+                        
+                        btn_disabled_sem = (user_confirm_sem != verify_code_sem)
+                        if st.button("🔒 선택 학기 데이터 영구 폐기", disabled=btn_disabled_sem, type="primary", use_container_width=True, key="btn_execute_delete_sem"):
+                            cf, sf = get_file_names(t_db['subject'], t_db['grade'].replace("학년",""), t_db['semester'])
+                            if os.path.exists(cf): os.remove(cf)
+                            if os.path.exists(sf): os.remove(sf)
+                            st.toast("🎉 해당 학기 성적 데이터 파일 청소 완료!")
+                            st.rerun()
+
+                # 🚨 분기 2: 부모가 죽으면 자식까지 연쇄 폭파하는 과목 마스터 일괄 제거 프로세스
+                with tab_del_sub:
+                    raw_subjects = load_master_subjects()
+                    flat_subs = sorted(list(set([sub for list_sub in raw_subjects.values() for sub in list_sub])))
+                    
+                    if not flat_subs:
+                        st.info("개설된 마스터 교과목 목록이 비어 있습니다.")
+                    else:
+                        st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;'>1. 마스터에서 삭제할 메인 과목 지정</div>", unsafe_allow_html=True)
+                        selected_sub_to_del = st.selectbox("과목명 선택", options=flat_subs, label_visibility="collapsed", key="sb_delete_target_sub")
+                        
+                        st.markdown(f"""<div style="background-color:#f8d7da; padding:10px; border-radius:6px; font-size:12px; color:#721c24; margin-bottom:10px;">
+                        🚫 <b>치명적 경고 (Cascade Delete):</b> 과목 자체를 소멸시키면 마스터 목록 데이터가 제거됨과 동시에, 현재 디스크에 분산 보관 중인 <b>해당 과목의 모든 학년, 모든 학기 성적 CSV 원본 파일까지 일괄 정산되어 영구 소멸</b>됩니다!
+                        </div>""", unsafe_allow_html=True)
+                        
+                        st.markdown(f"<div style='font-size:12px; margin-bottom:4px;'>오작동 방지를 위해 삭제할 과목명을 대공백 없이 정확히 치세요.<br>👉 과목명 확인: <code style='background:#f1f5f9; padding:2px 4px; border-radius:4px; font-weight:bold; color:#ef4444;'>{selected_sub_to_del}</code></div>", unsafe_allow_html=True)
+                        user_confirm_sub = st.text_input("과목명 재입력창", placeholder="위 과목명을 똑같이 타이핑하세요", label_visibility="collapsed", key="ti_verify_sub_code")
+                        
+                        btn_disabled_sub = (user_confirm_sub != selected_sub_to_del)
+                        if st.button("🚨 마스터 교과 및 하위 데이터 전체 일괄 삭제 연동", disabled=btn_disabled_sub, type="primary", use_container_width=True, key="btn_execute_delete_sub"):
+                            remove_subject_completely_from_disk(selected_sub_to_del)
+                            st.session_state.active_subject = None # 활성 캐시 리셋
+                            st.toast(f"🎉 [{selected_sub_to_del}] 및 하위 성적 원본 데이터베이스 연쇄 삭제 완료!")
+                            st.rerun()
+
+            elif has_active:
                 sub = st.session_state.active_subject
                 grd = st.session_state.active_grade
                 sem = st.session_state.active_semester
@@ -669,7 +762,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         else: st.warning("⚠️ 해당 학기의 성적 CSV 파일이 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
-                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
+                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 [🛠️ 데이터 삭제 센터]를 눌러주세요.")
 
         # 최하단 가이드 바
         st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
