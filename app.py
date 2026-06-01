@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 데이터 삭제 센터와 설정 저장 사이 간격 강제 초밀착 튜닝
+# 🎯 [CSS 최종 완결판] 데이터 삭제 단독 레드 지정 및 컴팩트 마진 튜닝
 # =========================================================================
 st.markdown("""
     <style>
@@ -76,7 +76,7 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 모든 버튼과 컴포넌트 간의 세로 유격을 최소화하여 촘촘하게 배치 */
+        /* 모든 버튼과 컴포넌트 간의 세로 유격을 최소화 */
         div[data-testid="stVerticalBlock"] > div:has(div.stButton),
         div[data-testid="stVerticalBlock"] > div:has(div.stSelectbox) {
             padding-bottom: 0px !important;
@@ -88,26 +88,26 @@ st.markdown("""
             padding-bottom: 4px !important;
         }
         
-        /* 데이터 삭제 센터 버튼 밑에 생기는 숨은 공백 요소를 강제로 짓눌러 설정 저장 버튼을 바짝 당겨 붙임 */
+        /* 데이터 삭제 버튼과 설정 저장 버튼 사이 세로 유격 초밀착 고정 */
         div[data-testid="stVerticalBlock"] > div:has(button[key="side_toggle_delete_btn"]) {
             margin-bottom: -15px !important;
         }
         
-        /* 데이터 삭제 센터 버튼의 우측 쏠림 현상을 강제 진압하고 완벽하게 정중앙 조율 */
-        div.stButton > button[key="side_toggle_delete_btn"] {
+        /* 💡 [교정 핵심]: 고유 키값을 정밀 타격하여 '데이터 삭제' 버튼에 세련된 빨간색(#ef4444) 염색 및 중앙 고정 */
+        div.stButton > button[key="side_toggle_delete_btn"],
+        div.stButton > button[key="side_toggle_delete_btn"]:hover,
+        div.stButton > button[key="side_toggle_delete_btn"]:focus,
+        div.stButton > button[key="side_toggle_delete_btn"]:active {
+            background-color: #ef4444 !important;
+            color: white !important;
+            border: 1px solid #dc2626 !important;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2) !important;
+            font-weight: 700 !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             text-align: center !important;
             width: 100% !important;
-            padding-left: 4px !important;
-            padding-right: 4px !important;
-        }
-        div.stButton > button[key="side_toggle_delete_btn"] div,
-        div.stButton > button[key="side_toggle_delete_btn"] p {
-            justify-content: center !important;
-            text-align: center !important;
-            margin: 0 auto !important;
         }
         
         /* 다운로드 버튼 폰트 및 스타일 미니멀화 */
@@ -256,7 +256,6 @@ def remove_subject_completely_from_disk(sub_name):
     if os.path.exists(CONFIG_FILE_MAIN):
         try:
             df = pd.read_csv(CONFIG_FILE_MAIN)
-            # 💡 [문법 에러 교정 완료]: 대괄호 누락 버그 완치하여 정상 연동 적용
             df = df[df["과목명"] != sub_name]
             df.to_csv(CONFIG_FILE_MAIN, index=False)
         except: pass
@@ -534,7 +533,7 @@ elif st.session_state["page_status"] == "teacher_main":
             sel_se = st.selectbox("4단계: 대상 학기 선택", options=SEMESTER_OPTIONS, index=st.session_state.sel_semester_idx, label_visibility="collapsed")
             final_se = sel_se if sel_se != "학기 선택" else ""
             
-            # 과목 활성화 버튼
+            # 과목 활성화 버튼 (파란색 고정)
             if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn"):
                 if final_sub and final_gr and final_se:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
@@ -550,8 +549,8 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 데이터 삭제 센터 단추
-            del_panel_label = "🛠️ 데이터 삭제 센터 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제 센터"
+            # 💡 [문구 변경]: 센터를 제거하고 "🛠️ 데이터 삭제" 및 "🛠️ 데이터 삭제 닫기"로 아담하게 수정
+            del_panel_label = "🛠️ 데이터 삭제 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제"
             if st.button(del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
                 st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
                 if st.session_state["show_delete_panel"]:
@@ -772,7 +771,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         else: st.warning("⚠️ 해당 학기의 성적 CSV 파일이 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
-                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 [🛠️ 데이터 삭제 센터]를 클릭해 주세요.")
+                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 [🛠️ 데이터 삭제]를 클릭해 주세요.")
 
         # 최하단 가이드 바
         st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
