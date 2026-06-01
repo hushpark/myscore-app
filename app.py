@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최적화] 전체폭 1400px 최종 가로 확장 및 1구역 내부 한 줄 정렬 보장
+# 🎯 [CSS 최적화] 전체폭 1450px 대폭 확장 및 1구역 메뉴판 시각적 안정성 확보
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,14 +30,14 @@ st.markdown("""
             padding-bottom: 0.5rem !important; 
         }
         
-        /* 💡 [교정 핵심]: 2구역 표가 가려지지 않도록 전체 max-width를 1400px로 최종 확장 */
+        /* 💡 [교정 핵심]: 요청사항을 반영하여 max-width를 1450px로 시원하게 확장 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
             padding: 15px 20px !important; 
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 1400px !important; 
+            max-width: 1450px !important; 
             margin: 0px auto 10px auto !important; 
         }
         
@@ -431,8 +431,8 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 💡 [가로 분할 비율 미세 조정]: 좌우 배율을 [1.1, 4.3]으로 고정하여 1구역의 시각적 안정감을 확립
-        frame_left, frame_right = st.columns([1.1, 4.3])
+        # 💡 [황금 분할 배율 적용]: 1구역 메뉴판을 1.3으로 듬직하게 넓히고, 2구역 표를 4.3으로 세팅
+        frame_left, frame_right = st.columns([1.3, 4.3])
         
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
         
@@ -491,7 +491,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]
                 st.rerun()
                 
-            # 💡 피드백 반영: 버튼 캡션을 "과목 추가"로 한결 컴팩트하게 축소 조정 완료!
+            # "과목 추가" 컴팩트 메뉴 명칭 적용
             if st.button("➕ 과목 추가", key="side_add_btn"):
                 st.session_state.active_subject = None
                 st.session_state.active_grade = None
@@ -627,8 +627,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         
                         df_monitor = load_students(sf)
                         if not df_monitor.empty:
-                            # 💡 [핵심 버그 수정]: hide_index=True 옵션을 전격 주입하여, 왼쪽 가림을 유발하던 유령 인덱스 행을 완벽 차단!
-                            # 가로폭 확장과 맞물려 이제 아무리 긴 데이터도 스크롤바 없이 한눈에 들어옵니다.
+                            # 💡 hide_index=True 및 여유 가로폭 매칭으로 가로 스크롤바 없는 쾌적한 테이블 구현
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
