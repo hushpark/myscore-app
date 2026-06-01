@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 프레임 상단 버그 완치 및 컴포넌트 세로 간격 촘촘하게 압축
+# 🎯 [CSS 최종 완결판] 데이터 삭제 센터와 설정 저장 사이 간격 강제 초밀착 튜닝
 # =========================================================================
 st.markdown("""
     <style>
@@ -76,15 +76,24 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 💡 모든 버튼과 컴포넌트 간의 세로 유격을 절반 이하로 줄여 촘촘하게 배치 */
-        div[data-testid="stVerticalBlock"] > div:has(div.stButton) {
+        /* 💡 모든 버튼과 컴포넌트 간의 세로 유격을 최소화 */
+        div[data-testid="stVerticalBlock"] > div:has(div.stButton),
+        div[data-testid="stVerticalBlock"] > div:has(div.stSelectbox) {
             padding-bottom: 0px !important;
-            margin-bottom: -6px !important; /* 👈 세로 틈새 마진을 음수값으로 끌어올림 */
+            margin-bottom: -4px !important;
         }
         div.stButton button {
             margin: 0px auto !important;
             padding-top: 4px !important;
             padding-bottom: 4px !important;
+        }
+        
+        /* 💡 [교정 핵심]: 데이터 삭제 센터 밑에 생기는 숨은 공백 요소를 강제로 짓눌러 설정 저장 버튼을 바짝 당겨 붙임 */
+        div[data-testid="stVerticalBlock"] > div:has(button[key="side_toggle_delete_btn"]) {
+            margin-bottom: -14px !important;
+        }
+        div[data-testid="stVerticalBlock"] > div:has(button[key="side_save_btn"]) {
+            margin-top: -14px !important;
         }
         
         /* 다운로드 버튼 폰트 및 스타일 미니멀화 */
@@ -201,12 +210,6 @@ def get_file_names(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
     return f"config_{safe_subject}_{grade}grade_{safe_semester}.csv", f"students_{safe_subject}_{grade}grade_{safe_semester}.csv"
-
-def load_config(file):
-    if os.path.exists(file):
-        try: return pd.read_csv(file).iloc[0].to_dict()
-        except: return None
-    return None
 
 def load_config(file):
     if os.path.exists(file):
@@ -540,8 +543,8 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.session_state["show_monitor_view"] = False
                 st.rerun()
                 
-            # 💡 [교정 핵심]: 데이터 삭제 센터와 설정 저장 사이의 틈새 가로선 마진을 압축하여 공간 반으로 축소 완수
-            st.markdown("<hr style='margin: 1px 0 2px 0 !important; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+            # 💡 [정밀 교정]: 레이아웃 꼬임 방지를 위해 hr 태그 유격을 0으로 박아 압축 유도
+            st.markdown("<hr style='margin: 0px !important; padding: 0px !important; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
             # 설정 저장 버튼
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
@@ -757,7 +760,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         else: st.warning("⚠️ 해당 학기의 성적 CSV 파일이 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
-                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 [🛠️ 데이터 삭제 센터]를 클릭해 주세요.")
+                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 파란색 [🛠️ 데이터 삭제 센터]를 클릭해 주세요.")
 
         # 최하단 가이드 바
         st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
