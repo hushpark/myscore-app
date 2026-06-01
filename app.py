@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 스트림릿 시스템 테마 간섭을 차단하고 고유 색상 강제 지정
+# 🎯 [CSS 최종 완결판] 글씨 크기 고정 + 버튼 간격 극단적 밀착 튜닝
 # =========================================================================
 st.markdown("""
     <style>
@@ -24,7 +24,7 @@ st.markdown("""
         /* 하단 잉여 공간(푸터) 완전 제거 */
         footer { display: none !important; }
         
-        /* 상단 패딩 최적화 */
+        /* 상단 잘림 버그 완치 */
         .block-container {
             padding-top: 2.5rem !important; 
             padding-bottom: 0.5rem !important; 
@@ -48,7 +48,7 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 타이틀 및 서브 타이틀 글씨 크기 고정 */
+        /* 타이틀 및 서브 타이틀 글씨 크기 원래대로 단정하게 고정 */
         h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 5px 0 10px 0 !important; white-space: nowrap !important; text-align: center; }
         h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin-top: 0px !important; margin-bottom: 2px !important; white-space: nowrap !important; }
         
@@ -76,10 +76,10 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 모든 버튼과 요소 간의 세로 간격을 극단적으로 절반 더 줄여 촘큼하게 밀착 */
+        /* 💡 [교정 완료]: 모든 버튼과 요소 간의 세로 간격을 절반 이하로 극단적 축소 밀착 */
         div[data-testid="stVerticalBlock"] > div:has(div.stButton) {
             padding-bottom: 0px !important;
-            margin-bottom: -2px !important;
+            margin-bottom: -4px !important;
         }
         div.stButton button {
             margin: 0px auto !important;
@@ -87,32 +87,10 @@ st.markdown("""
             padding-bottom: 4px !important;
         }
         
-        /* 💡 [교정 핵심 1]: 시스템 테마 침범을 차단하기 위해 고유 Key값을 추적하여 "과목 활성화" 버튼만 단독 파란색 지정 */
-        div.stButton:has(button[key="side_activate_btn"]) button {
-            background-color: #2563eb !important;
-            color: white !important;
-            border: 1px solid #1d4ed8 !important;
-            font-weight: 700 !important;
-            border-radius: 6px !important;
-            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
-        }
-        div.stButton:has(button[key="side_activate_btn"]) button:hover {
-            background-color: #1d4ed8 !important;
-            color: white !important;
-        }
-        
-        /* 💡 [교정 핵심 2]: 고유 Key값을 추적하여 "데이터 삭제 센터" 버튼만 독점적 빨간색 강제 고정 */
-        div.stButton:has(button[key="side_toggle_delete_btn"]) button {
-            background-color: #ef4444 !important;
-            color: white !important;
-            border: 1px solid #dc2626 !important;
-            font-weight: 700 !important;
-            border-radius: 6px !important;
-            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.25) !important;
-        }
-        div.stButton:has(button[key="side_toggle_delete_btn"]) button:hover {
-            background-color: #dc2626 !important;
-            color: white !important;
+        /* 데이터 삭제 센터 밑의 회색 가로 구분선(hr) 유격 최소화 */
+        div[data-testid="stHorizontalBlock"] hr {
+            margin-top: 2px !important;
+            margin-bottom: 2px !important;
         }
         
         /* 다운로드 버튼 폰트 및 스타일 미니멀화 */
@@ -538,8 +516,8 @@ elif st.session_state["page_status"] == "teacher_main":
             sel_se = st.selectbox("4단계: 대상 학기 선택", options=SEMESTER_OPTIONS, index=st.session_state.sel_semester_idx, label_visibility="collapsed")
             final_se = sel_se if sel_se != "학기 선택" else ""
             
-            # 💡 [교정 고정 1]: 테마 간섭을 차단하기 위해 고유 key="side_activate_btn" 장착
-            if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn"):
+            # 💡 [교정 고정 1]: 과목 활성화 버튼 (Primary 테마 기반 블루 고정)
+            if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn", type="primary"):
                 if final_sub and final_gr and final_se:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
                     st.session_state.active_subject = final_sub
@@ -554,7 +532,8 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 데이터 삭제 센터 단추 (key="side_toggle_delete_btn" 유지)
+            # 💡 [교정 고정 2]: 인라인 CSS 스크립트 강제 우회 주입형 독점 빨간색 데이터 삭제 센터 버튼
+            st.markdown("<style>div:has(> button[key='side_toggle_delete_btn']) button { background-color: #ef4444 !important; color: white !important; border: 1px solid #dc2626 !important; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2) !important; font-weight: 700 !important; }</style>", unsafe_allow_html=True)
             del_panel_label = "🛠️ 데이터 삭제 센터 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제 센터"
             if st.button(del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
                 st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
@@ -562,7 +541,8 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.session_state["show_monitor_view"] = False
                 st.rerun()
                 
-            st.markdown("<hr style='margin: 6px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+            # 💡 [교정 고정 3]: 삭제 센터 바로 밑 구분선 유격을 절반(3px)으로 조밀 축소
+            st.markdown("<hr style='margin: 3px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
             # 설정 저장 버튼
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
@@ -778,7 +758,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         else: st.warning("⚠️ 해당 학기의 성적 CSV 파일이 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
-                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 파란색 [🛠️ 데이터 삭제 센터]를 클릭해 주세요.")
+                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 [🛠️ 데이터 삭제 센터]를 클릭해 주세요.")
 
         # 최하단 가이드 바
         st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
