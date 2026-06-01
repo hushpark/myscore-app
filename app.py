@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 교정판] 자동 버튼 스타일 복원 + 다운로드-업로더 초밀착 세팅
+# 🎯 [CSS 최종 완결판] 다운로드 버튼 내부 글자 파격 축소 및 업로더 초밀착 봉인
 # =========================================================================
 st.markdown("""
     <style>
@@ -26,14 +26,14 @@ st.markdown("""
         
         /* 상단 패딩 최적화 */
         .block-container {
-            padding-top: 2.0rem !important; 
-            padding-bottom: 1.0rem !important; 
+            padding-top: 0.8rem !important; 
+            padding-bottom: 0.5rem !important; 
         }
         
         /* 전체 가로폭 카드 크기를 1450px로 설정 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
-            padding: 20px 25px !important; 
+            padding: 15px 25px 30px 25px !important; 
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
@@ -72,31 +72,28 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 💡 다운로드 버튼 글씨 크기를 콤팩트하게 줄여 테두리 안으로 강제 안착 */
-        div.stDownloadButton button,
-        div.stDownloadButton button:disabled,
-        div.stDownloadButton button div,
-        div.stDownloadButton button p,
-        div.stDownloadButton button span,
-        div.stDownloadButton button[data-testid="stMarkdownContainer"] p {
-            padding: 4px 8px !important;         
-            font-size: 11.5px !important; 
+        /* 💡 [초강력 교정 1]: stDownloadButton과 관련된 하위 모든 태그의 폰트 크기를 11px 미니형으로 강제 일괄 축소 */
+        div.stDownloadButton, div.stDownloadButton button, div.stDownloadButton button * {
+            font-size: 11px !important; /* 👈 글자 크기를 확 줄여서 뚫고 나오지 못하게 함 */
             white-space: nowrap !important;
             word-break: keep-all !important;
         }
-        
-        /* 💡 예시 파일 다운로드 버튼 하단의 여백을 제거하여 업로더와 딱 붙임 */
-        div.stDownloadButton {
-            margin-bottom: -8px !important; 
+        div.stDownloadButton button {
+            padding: 4px 6px !important;
         }
         
-        /* 💡 파일 업로드 컴포넌트 상단의 과도한 공백 제거 */
+        /* 💡 [초강력 교정 2]: 다운로드 버튼 밑바닥 마진을 대폭 위로 밀어올려 업로더 박스와 밀착 */
+        div.stDownloadButton {
+            margin-bottom: -15px !important; 
+        }
+        
+        /* 💡 [초강력 교정 3]: 파일 업로드 영역의 내부 상단 여백을 극단적으로 줄여 딱 붙임 */
         div[data-testid="stFileUploader"] {
             padding-top: 0px !important;
-            margin-top: -5px !important; 
+            margin-top: -10px !important; 
         }
         
-        /* Upload 밑의 200MB 안내 문구 가독성 및 2줄 처리 튜닝 */
+        /* Upload 밑의 200MB 안내 문구 가독성 튜닝 */
         div[data-testid="stFileUploader"] section small {
             white-space: normal !important;
             word-break: break-all !important;
@@ -105,7 +102,7 @@ st.markdown("""
             color: #64748b !important;
         }
         
-        /* 💡 오직 [🚀 과목 활성화] 버튼만 독점적으로 강렬한 빨간색 강조 효과 부여 */
+        /* 오직 [🚀 과목 활성화] 버튼만 독점적으로 강렬한 빨간색 강조 효과 부여 */
         div.stButton > button[kind="primary"] {
             background-color: #ef4444 !important;
             color: white !important;
@@ -119,8 +116,23 @@ st.markdown("""
             color: white !important;
         }
         
-        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 10px 0 10px 0 !important; white-space: nowrap !important; }
+        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 5px 0 10px 0 !important; white-space: nowrap !important; }
         h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin-bottom: 6px !important; white-space: nowrap !important; }
+        
+        /* 최하단 가이드 바 바닥선 정렬 여백 */
+        div.custom-guide-bar {
+            background-color: #eff6ff !important; 
+            border: 2px dashed #93c5fd !important; 
+            padding: 10px !important; 
+            border-radius: 8px !important; 
+            margin-top: 15px !important; 
+            margin-bottom: 10px !important; 
+            color: #1e3a8a !important; 
+            font-size: 14px !important; 
+            text-align: center !important; 
+            font-weight: 500 !important; 
+            white-space: nowrap !important;
+        }
         
         /* 테이블 내부 완전 중앙 정렬 */
         div.monitor-table table th, div.monitor-table table td {
@@ -476,7 +488,6 @@ elif st.session_state["page_status"] == "teacher_main":
             
             st.markdown("<div style='height: 3px;'></div>", unsafe_allow_html=True)
             
-            # 💡 [문법 버그 완벽 수정]: 자바스크립트 기호(&&)를 파이썬 표준 기호(and)로 교정 완료!
             if st.button("🚀 과목 활성화", use_container_width=True, type="primary"):
                 if final_sub and final_gr and final_se:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
@@ -649,4 +660,4 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
 
         # 최하단 가이드 바
-        st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:10px; border-radius:8px; margin-top:15px; color:#1e3a8a; font-size:14px; text-align: center; font-weight: 500; white-space: nowrap !important;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
