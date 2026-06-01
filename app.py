@@ -24,13 +24,13 @@ st.markdown("""
         /* 하단 잉여 공간(푸터) 완전 제거 및 전체 화면 위로 끌어올리기 */
         footer { display: none !important; }
         
-        /* 💡 아래쪽 높이와 스크롤바 방지 여백은 기존 그대로 유지 */
+        /* 아래쪽 높이와 스크롤바 방지 여백은 기존 그대로 유지 */
         .block-container {
             padding-top: 1.5rem !important; 
             padding-bottom: 0.5rem !important; 
         }
         
-        /* 💡 전체 가로폭 카드 크기만 기존보다 딱 100px 더 넓게 확장 */
+        /* 전체 가로폭 카드 크기만 기존보다 딱 100px 더 넓게 확장 (1000px) */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
             padding: 15px 25px !important;
@@ -429,12 +429,14 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 💡 [교정 적용 구역]: 전체 1000px 커스텀 배치 연동 완료
-        # 1구역(왼쪽)의 크기는 이전 그대로 단단하게 묶어두고, 오직 2구역(오른쪽)만 가로로 100px 늘어나도록 배율을 [1.0, 3.2]로 정교하게 맞췄습니다!
+        # 💡 [핵심 교정 포인트]: 1구역의 크기는 철벽 고정하고, 2구역의 비율만 3.2로 보정하여 가로폭 대화면 확장 성공!
         frame_left, frame_right = st.columns([1.0, 3.2])
         
+        # 세션 보호 변수 상태 체크
+        has_active = "active_subject" in st.session_state and st.session_state.active_subject
+        
         # ==========================================
-        # 👈 [1구역 - 왼쪽]: 크기 철벽 고정 구역
+        # 👈 [1구역 - 왼쪽]: 크기 철벽 고정 구역 (순서 교정 완료)
         # ==========================================
         with frame_left:
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
@@ -479,6 +481,7 @@ elif st.session_state["page_status"] == "teacher_main":
             # 데이터 제어판 버튼 메뉴판
             st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
+            # 💡 [버그 제로 교정]: NameError를 일으키던 라벨 정의 순서를 최상단 변수 체크 직후로 전격 재조정 완료!
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
             if st.button(save_btn_label, key="side_save_btn", disabled=not has_active):
                 st.session_state["trigger_save_action"] = True
@@ -542,7 +545,7 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
-        # 👉 [2구역 - 오른쪽]: 가로방향으로만 100px 순수 연장 완료!
+        # 👉 [2구역 - 오른쪽]: 순수 가로방향 대화면 연동
         # ==========================================
         with frame_right:
             if has_active:
@@ -621,7 +624,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         
                         df_monitor = load_students(sf)
                         if not df_monitor.empty:
-                            # 💡 우측 가로 너비만 늘어났기 때문에 가림 현상 없이 일직선으로 표출됩니다.
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
