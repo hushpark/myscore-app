@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 상단 여백 복원 + 삭제 버튼 위치/디자인 단독 강조 튜닝
+# 🎯 [CSS 최종 완결판] 버튼 간격 반으로 축소 + 삭제 센터 확실한 블루 색상 강제 지정
 # =========================================================================
 st.markdown("""
     <style>
@@ -24,7 +24,7 @@ st.markdown("""
         /* 하단 잉여 공간(푸터) 완전 제거 */
         footer { display: none !important; }
         
-        /* 💡 [교정 핵심 1]: 맨 위 화면 잘림 현상을 해결하기 위해 상단 패딩을 안정적인 1.2rem으로 복원 */
+        /* 상단 패딩 최적화 */
         .block-container {
             padding-top: 1.2rem !important; 
             padding-bottom: 0.5rem !important; 
@@ -72,22 +72,27 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
+        /* 💡 [교정 핵심 1]: 모든 버튼 간의 세로 유격(간격)을 기존의 반(2px)으로 대폭 축소하여 초밀착 */
         div.stButton {
-            margin-bottom: 4px !important;
+            margin-bottom: 2px !important;
+            margin-top: 0px !important;
         }
         
-        /* 💡 [교정 핵심 2]: "데이터 삭제 센터" 토글 버튼에 단독 컬러(세련된 블루) 및 그림자 효과 부여 */
-        div.stButton > button[key="side_toggle_delete_btn"] {
+        /* 💡 [교정 핵심 2]: "데이터 삭제 센터" 토글 버튼에 확실한 파란색 단독 강조 및 그림자 주입 (!important 보완) */
+        div.stButton > button[key="side_toggle_delete_btn"],
+        div.stButton > button[key="side_toggle_delete_btn"]:focus,
+        div.stButton > button[key="side_toggle_delete_btn"]:active {
             background-color: #2563eb !important;
             color: white !important;
-            border: none !important;
+            border: 1px solid #1d4ed8 !important;
             font-weight: 700 !important;
             border-radius: 6px !important;
-            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.25) !important;
+            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3) !important;
         }
         div.stButton > button[key="side_toggle_delete_btn"]:hover {
             background-color: #1d4ed8 !important;
             color: white !important;
+            border: 1px solid #1e40af !important;
         }
         
         /* 다운로드 버튼 폰트 및 스타일 미니멀화 */
@@ -107,9 +112,9 @@ st.markdown("""
         
         /* 성적 일괄 업로드 테두리 박스 내부 공백을 콤팩트하게 다듬기 */
         div.compact-upload-box {
-            padding: 8px 10px !important;
-            margin-top: 4px !important;
-            margin-bottom: 4px !important;
+            padding: 6px 10px !important;
+            margin-top: 2px !important;
+            margin-bottom: 2px !important;
         }
         
         /* 파일 업로드 영역의 내부 상단 여백을 극단적으로 줄여 딱 붙임 */
@@ -503,7 +508,7 @@ elif st.session_state["page_status"] == "teacher_main":
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
         
         # ==========================================
-        # 👈 [1구역 - 왼쪽 제어 판넬 메뉴]
+        # 👈 [1구역 - 왼쪽 제어 메뉴]
         # ==========================================
         with frame_left:
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
@@ -548,7 +553,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 💡 [교정 핵심 1]: 요청에 의거하여 "데이터 삭제 센터" 토글 버튼을 과목 활성화 바로 밑으로 재배치 완료! (CSS 단독 파란색 장착)
+            # 파란색 데이터 삭제 센터 단추 (과목 활성화 밑으로 정렬 이동)
             del_panel_label = "🛠️ 데이터 삭제 센터 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제 센터"
             if st.button(del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
                 st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
@@ -629,12 +634,11 @@ elif st.session_state["page_status"] == "teacher_main":
         # 👉 [2구역 - 오른쪽 메인 기능 판넬 및 모니터 창]
         # ==========================================
         with frame_right:
-            # 데이터 삭제 센터 탭 및 기능 활성화 구역
             if st.session_state["show_delete_panel"]:
                 st.markdown("<h4 style='color: #ef4444; margin-top: 0px;'>⚙️ 데이터 삭제 및 청소 관리 센터</h4>", unsafe_allow_html=True)
                 st.markdown("<p style='font-size:13px; color:#64748b;'>선택 과목의 CSV 데이터 파괴 및 마스터 연동 삭제를 선별 관리합니다.</p>", unsafe_allow_html=True)
                 
-                # 💡 [교정 핵심 2]: 탭 제목에서 지저분한 번호("2번", "3번")를 전격 제거하고 직관적으로 개명 완수!
+                # 💡 [교정 핵심 3]: 불필요한 인덱스 번호를 제거하고 요구하신 직관적인 명칭으로 개정 완수!
                 tab_del_sem, tab_del_sub = st.tabs(["학기 및 학년별 삭제", "과목 일괄 삭제"])
                 
                 # 1) 학기 및 학년별 삭제 모드
@@ -653,7 +657,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         verify_code_sem = f"{t_db['subject']}_{t_db['grade'].replace('학년','')}_{t_db['semester'].replace('학년도','').replace(' ', '')}"
                         
                         st.markdown(f"""<div style="background-color:#fff3cd; padding:10px; border-radius:6px; font-size:12px; color:#664d03; margin-bottom:10px;">
-                        ⚠️ <b>경고:</b> 과목의 대분류 틀은 안전히 보존하되, <b>[{t_db['subject']} - {t_db['grade']} {t_db['semester']}]</b> 분기에 종속된 환경 세팅 파일 및 업로드된 성적 기록 원본을 완전 파괴합니다.
+                        ⚠️ <b>경고:</b> 과목의 대분류 틀은 안전히 보존하되, <b>[{t_db['subject']} - {t_db['grade']} {t_db['semester']}]</b>에 구성된 데이터 원본을 완전 파괴합니다.
                         </div>""", unsafe_allow_html=True)
                         
                         st.markdown(f"<div style='font-size:12px; margin-bottom:4px;'>데이터 오작동 전면 방지를 위해 아래 코드를 똑같이 입력해 주세요.<br>👉 인증코드: <code style='background:#f1f5f9; padding:2px 4px; border-radius:4px; font-weight:bold; color:#ef4444;'>{verify_code_sem}</code></div>", unsafe_allow_html=True)
@@ -679,7 +683,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         selected_sub_to_del = st.selectbox("과목명 선택", options=flat_subs, label_visibility="collapsed", key="sb_delete_target_sub")
                         
                         st.markdown(f"""<div style="background-color:#f8d7da; padding:10px; border-radius:6px; font-size:12px; color:#721c24; margin-bottom:10px;">
-                        🚫 <b>치명적 경고 (Cascade 연쇄 삭제):</b> 과목 마스터 데이터를 소멸시키면 과목 목록 자체에서 완전 증발함과 동시에, 현재 서버 디스크에 백업 보관 중인 <b>해당 과목의 모든 학년, 모든 분기 학기 성적 CSV 원본 파일이 연쇄 추적되어 흔적 없이 일괄 파괴</b>됩니다!
+                        🚫 <b>치명적 경고 (연쇄 삭제):</b> 과목 마스터 데이터를 소멸시키면 과목 목록 자체에서 완전 증발함과 동시에, 현재 서버 디스크에 백업 보관 중인 <b>해당 과목의 모든 학년, 모든 분기 학기 성적 CSV 원본 파일이 연쇄 추적되어 흔적 없이 일괄 파괴</b>됩니다!
                         </div>""", unsafe_allow_html=True)
                         
                         st.markdown(f"<div style='font-size:12px; margin-bottom:4px;'>대형 사고 전면 방지를 위해 삭제할 교과목 명칭을 정확히 타이핑하세요.<br>👉 과목명 확인: <code style='background:#f1f5f9; padding:2px 4px; border-radius:4px; font-weight:bold; color:#ef4444;'>{selected_sub_to_del}</code></div>", unsafe_allow_html=True)
