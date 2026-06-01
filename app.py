@@ -1,26 +1,3 @@
-선생님, 보내주신 캡처 화면을 보니 어떤 부분이 불편하셨는지 단번에 확인했습니다!
-
-1구역(왼쪽) 버튼 글자가 두 줄로 떨어지던 현상과, 2구역(오른쪽) 모니터 표 맨 왼쪽에 뜬금없이 나타난 인덱스 열(`1`, `1`) 때문에 표가 오른쪽으로 밀려서 가려졌던 것이었군요. 질문하신 내용과 버그 요소를 깔끔하게 짚어드리겠습니다.
-
----
-
-### 1. 💡 전체 크기를 넓히면 표 크기도 자동으로 변하나요? 고정되어 있나요?
-
-**"자동으로 변하는 구조가 맞습니다!"** 현재 코드의 표(`st.dataframe`)는 고정된 크기가 아니라 우측 2구역의 가로 폭에 맞춰 자동으로 늘어나는 `use_container_width=True` 옵션이 들어가 있습니다.
-
-그럼에도 불구하고 화면이 가려졌던 진짜 이유는 **우측 2구역의 폭 배율이 좁았던 탓도 있지만, 표 맨 왼쪽에 Streamlit이 기본으로 제공하는 '유령 인덱스 열(숫자 1, 1)'이 자리를 차지하고 있었기 때문**입니다. 이 유령 열이 공간을 빼앗아 정작 중요한 수행 점수들이 오른쪽으로 밀려 가려졌던 것입니다.
-
-따라서 전체 가로 폭을 `1400px`로 최종 확장하면서, 배율을 `[1.0, 4.3]`으로 정밀 조정하고, **표의 유령 인덱스 열을 흔적도 없이 숨기도록(`hide_index=True`)** 완벽하게 조치했습니다. 이렇게 하면 표 전체가 스크롤바 없이 완벽하게 한눈에 들어옵니다.
-
-### 2. ✂️ "다른 과목 추가하기" ➡️ "과목 추가"로 콤팩트하게 변경
-
-요청하신 대로 1구역의 세 번째 버튼 명칭을 깔끔하게 `➕ 과목 추가`로 수정했습니다. 글자 수가 확 줄어들어 이제 1구역 안에서 글자가 밑으로 찌그러지거나 두 줄로 떨어지지 않고 한 줄로 이쁘게 들어옵니다.
-
----
-
-가로 가림 현상을 유발하던 유령 인덱스 열을 제거하고, 버튼명을 심플하게 다듬은 **최종 완정판 통합 전체 코드**입니다. 통째로 복사해서 덮어씌워 보세요. 정말 반듯하고 완벽한 화면을 보실 수 있습니다! 😎
-
-```python
 import streamlit as st
 import pandas as pd
 import os
@@ -662,4 +639,3 @@ elif st.session_state["page_status"] == "teacher_main":
 
         # 최하단 가이드 바 (강제 한 줄 정렬 속성 완벽 보존)
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:10px; border-radius:8px; margin-top:15px; color:#1e3a8a; font-size:14px; text-align: center; font-weight: 500; white-space: nowrap !important;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
-
