@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 교정판] 1450px 전체폭 + 1구역 1.4 확장 + 비활성 버튼까지 가로 폭 100% 완전 일치
+# 🎯 [CSS 최종 교정판] 1450px 전체폭 + 1구역 1.4 확장 + 비활성 버튼 강제 100% 일치
 # =========================================================================
 st.markdown("""
     <style>
@@ -24,7 +24,7 @@ st.markdown("""
         /* 하단 잉여 공간(푸터) 완전 제거 및 전체 화면 위로 끌어올리기 */
         footer { display: none !important; }
         
-        /* 💡 상단 잘림 느낌을 지우기 위해 위쪽 패딩과 여백을 스탠다드하게 리튜닝 */
+        /* 상단 잘림 느낌을 지우기 위해 위쪽 패딩과 여백을 스탠다드하게 리튜닝 */
         .block-container {
             padding-top: 2.0rem !important; 
             padding-bottom: 1.0rem !important; 
@@ -64,11 +64,10 @@ st.markdown("""
             white-space: nowrap !important;
         }
         
-        /* 💡 [교정 핵심]: 활성 상태든, 비활성(disabled) 상태든 예외 없이 가로 길이를 100% 똑같이 맞춤 */
-        div.stButton > button[key^="side_"],
-        div.stButton > button[key^="side_"]:disabled,
-        div.stButton > button[key^="side_"]:hover,
-        div.stButton > button[key^="side_"]:active {
+        /* 💡 [교정 핵심]: 좌측 블록 내부에 있는 모든 버튼(비활성 포함)의 가로 길이를 강제로 100% 일치시킴 */
+        div[data-testid="stHorizontalBlock"] div.stButton button,
+        div[data-testid="stHorizontalBlock"] div.stButton button:disabled,
+        div[data-testid="stHorizontalBlock"] div.stButton button[disabled] {
             width: 100% !important;
             min-width: 100% !important;
             max-width: 100% !important;
@@ -81,7 +80,7 @@ st.markdown("""
             color: #334155 !important;
             background-color: #ffffff !important;
             text-align: center !important;
-            margin-bottom: 6px !important;
+            margin-bottom: 2px !important;
             font-weight: 500 !important;
             white-space: nowrap !important; 
         }
@@ -438,7 +437,7 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 💡 좌우 분할 비율 1.4 : 4.2 매칭
+        # 좌우 분할 비율 1.4 : 4.2 매칭
         frame_left, frame_right = st.columns([1.4, 4.2])
         
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
@@ -488,7 +487,7 @@ elif st.session_state["page_status"] == "teacher_main":
             
             st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
-            # 1. 설정 저장 버튼
+            # 1. 설정 저장 버튼 (식별을 위한 키 수치 연동 적용)
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
             if st.button(save_btn_label, key="side_save_btn", disabled=not has_active):
                 st.session_state["trigger_save_action"] = True
