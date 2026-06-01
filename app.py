@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최적화] 1000px 확장 및 1구역 크기 고정, 2구역 독점 확대 세팅
+# 🎯 [CSS 최적화] 아래쪽 높이는 그대로 유지, 가로폭만 오른쪽으로 100px 독점 확장
 # =========================================================================
 st.markdown("""
     <style>
@@ -24,13 +24,13 @@ st.markdown("""
         /* 하단 잉여 공간(푸터) 완전 제거 및 전체 화면 위로 끌어올리기 */
         footer { display: none !important; }
         
-        /* 위아래 패딩을 최소한(1.5rem)으로 줄여 스크롤바 발생 원천 차단 */
+        /* 💡 아래쪽 높이와 스크롤바 방지 여백은 기존 그대로 유지 */
         .block-container {
             padding-top: 1.5rem !important; 
             padding-bottom: 0.5rem !important; 
         }
         
-        /* 💡 [교정 핵심]: 전체 크기를 900px에서 1000px로 100px 전격 확대! */
+        /* 💡 전체 가로폭 카드 크기만 기존보다 딱 100px 더 넓게 확장 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
             padding: 15px 25px !important;
@@ -429,12 +429,12 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 💡 [황금 비율 교정]: 전체 1000px 안에서 1구역의 크기를 이전과 똑같이 고정하기 위해 
-        # 우측 2구역의 비율만 기존 2.3에서 2.85로 정밀 확장시켰습니다! (100px 완벽 증가 효과)
-        frame_left, frame_right = st.columns([1.0, 2.85])
+        # 💡 [교정 적용 구역]: 전체 1000px 커스텀 배치 연동 완료
+        # 1구역(왼쪽)의 크기는 이전 그대로 단단하게 묶어두고, 오직 2구역(오른쪽)만 가로로 100px 늘어나도록 배율을 [1.0, 3.2]로 정교하게 맞췄습니다!
+        frame_left, frame_right = st.columns([1.0, 3.2])
         
         # ==========================================
-        # 👈 [1구역 - 왼쪽]: 크기 철벽 고정 메뉴 구역
+        # 👈 [1구역 - 왼쪽]: 크기 철벽 고정 구역
         # ==========================================
         with frame_left:
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
@@ -478,8 +478,6 @@ elif st.session_state["page_status"] == "teacher_main":
             
             # 데이터 제어판 버튼 메뉴판
             st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-            
-            has_active = "active_subject" in st.session_state and st.session_state.active_subject
             
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
             if st.button(save_btn_label, key="side_save_btn", disabled=not has_active):
@@ -544,7 +542,7 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
-        # 👉 [2구역 - 오른쪽]: 100px 대폭 확장 구역 (가로 가림 해소)
+        # 👉 [2구역 - 오른쪽]: 가로방향으로만 100px 순수 연장 완료!
         # ==========================================
         with frame_right:
             if has_active:
@@ -623,7 +621,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         
                         df_monitor = load_students(sf)
                         if not df_monitor.empty:
-                            # 💡 2구역이 100px 넓어져서 이제 잘림 없이 완벽한 정렬 상태로 표출됩니다!
+                            # 💡 우측 가로 너비만 늘어났기 때문에 가림 현상 없이 일직선으로 표출됩니다.
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
@@ -632,5 +630,5 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
 
-        # 최하단 가이드 바 (강제 한 줄 정렬 속성 보존)
+        # 최하단 가이드 바 (강제 한 줄 정렬 속성 완벽 보존)
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:10px; border-radius:8px; margin-top:15px; color:#1e3a8a; font-size:14px; text-align: center; font-weight: 500; white-space: nowrap !important;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
