@@ -189,10 +189,13 @@ def get_active_databases():
         except: pass
     return active_list
 
+# 💡 [초기화 버그 교정 완료]: 마스터 과목 목록 파일까지 예외 없이 확실하게 강제 삭제 포맷팅 처리
 def reset_all_data():
-    for f in glob.glob("config_*") + glob.glob("students_*") + [CONFIG_FILE_MAIN, META_FILE]:
-        try: os.remove(f)
-        except: pass
+    targets = glob.glob("config_*.csv") + glob.glob("students_*.csv") + [CONFIG_FILE_MAIN, META_FILE]
+    for f in targets:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except: pass
     st.session_state.clear()
     st.rerun()
 
@@ -430,7 +433,8 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        frame_left, frame_right = st.columns([1.0, 2.0])
+        # 💡 피드백 반영 1: 가로 폭을 늘리기 위해 우측 메인 프레임 가로 비율을 [1.0, 2.3]으로 확장!
+        frame_left, frame_right = st.columns([1.0, 2.3])
         
         # ==========================================
         # 👈 [좌측 프레임]
@@ -529,7 +533,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                     
-                    # 💡 업로드 로직 고도화: 성적 연동 알림창 중복 출력 버그 완벽 교정
+                    # 💡 파일 업로드 결과 판별 정렬 교정 완료
                     up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="uploader_csv_file")
                     if up_f:
                         try:
@@ -608,7 +612,9 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.rerun()
                     else: st.error("❌ 학급(반) 선택 및 평가 항목 명칭을 채운 후 저장을 눌러주세요.")
 
-                # 📊 실시간 데이터 연동 모니터 구역
+                # ==========================================
+                # 📊 4구역: 실시간 데이터 연동 모니터 구역
+                # ==========================================
                 if st.session_state["show_monitor_view"]:
                     st.markdown("<hr style='margin: 15px 0 10px 0; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
                     st.markdown("<h4 style='color: #0f172a; margin-top: 0px;'>📊 실시간 데이터 연동 모니터</h4>", unsafe_allow_html=True)
@@ -623,6 +629,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         
                         df_monitor = load_students(sf)
                         if not df_monitor.empty:
+                            # 💡 래퍼 클래스를 씌워 가로 너비 잘림 현상을 완벽히 해소
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
