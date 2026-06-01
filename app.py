@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최적화] 가로폭 1150px 확장 및 2구역 추가 50px 독점 확대 세팅
+# 🎯 [CSS 최적화] 가로폭 1200px 최종 확장 및 2구역 독점 확대 세팅 (아래쪽 높이는 보존)
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,14 +30,14 @@ st.markdown("""
             padding-bottom: 0.5rem !important; 
         }
         
-        /* 💡 [교정 핵심]: 전체 가로폭 카드 크기를 1100px에서 1150px로 50px 추가 확대! */
+        /* 💡 [교정 핵심]: 전체 가로폭 카드 크기를 1150px에서 1200px로 최종 확대! */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
             padding: 15px 25px !important;
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
-            max-width: 1150px !important; 
+            max-width: 1200px !important; 
             margin: 0px auto 10px auto !important; 
         }
         
@@ -429,8 +429,8 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 💡 [정밀 가로 확장 배율]: 왼쪽 1구역은 그대로 고정한 채 우측 2구역만 50px 순수 연장하도록 배율을 [1.0, 4.15]로 매칭 완료!
-        frame_left, frame_right = st.columns([1.0, 4.15])
+        # 💡 [황금 비율 최종 고정]: 1200px 대화면에 맞게 우측 2구역 비율을 [1.0, 4.45]로 대폭 세팅 완료!
+        frame_left, frame_right = st.columns([1.0, 4.45])
         
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
         
@@ -543,7 +543,7 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
-        # 👉 [2구역 - 오른쪽]: 가로 50px 추가 순수 독점 확장
+        # 👉 [2구역 - 오른쪽]: 1200px 맞춤 초대형 안착 구역
         # ==========================================
         with frame_right:
             if has_active:
@@ -622,7 +622,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         
                         df_monitor = load_students(sf)
                         if not df_monitor.empty:
-                            # 💡 1150px 와이드 레이아웃 세팅으로 테이블이 정갈하고 시원하게 배치됩니다.
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
