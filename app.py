@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 스트림릿 테마 엔진을 무력화하는 초강력 버튼 컬러 락(Lock)
+# 🎯 [CSS 최종 완결판] 데이터 삭제 센터와 설정 저장 사이 간격 강제 초밀착 튜닝
 # =========================================================================
 st.markdown("""
     <style>
@@ -76,8 +76,9 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 💡 모든 버튼과 요소 간의 세로 간격을 절반 이하로 극단적 축소 밀착 */
-        div[data-testid="stVerticalBlock"] > div:has(div.stButton) {
+        /* 모든 버튼과 컴포넌트 간의 세로 유격을 최소화하여 촘촘하게 배치 */
+        div[data-testid="stVerticalBlock"] > div:has(div.stButton),
+        div[data-testid="stVerticalBlock"] > div:has(div.stSelectbox) {
             padding-bottom: 0px !important;
             margin-bottom: -4px !important;
         }
@@ -87,31 +88,26 @@ st.markdown("""
             padding-bottom: 4px !important;
         }
         
-        /* 💡: 과목 활성화 블루 버튼 색상 완전 박음질 */
-        div.stButton > button[key="side_activate_btn"] {
-            background-color: #2563eb !important;
-            color: white !important;
-            border: 1px solid #1d4ed8 !important;
-            font-weight: 700 !important;
-            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
+        /* 데이터 삭제 센터 버튼 밑에 생기는 숨은 공백 요소를 강제로 짓눌러 설정 저장 버튼을 바짝 당겨 붙임 */
+        div[data-testid="stVerticalBlock"] > div:has(button[key="side_toggle_delete_btn"]) {
+            margin-bottom: -15px !important;
         }
         
-        /* 💡: 시스템 테마 간섭을 무조건 무력화하고 강제로 새빨간 색상을 때려 넣는 절대 고유 규칙 */
-        div.stButton > button[key="side_toggle_delete_btn"],
-        div.stButton > button[key="side_toggle_delete_btn"]:hover,
-        div.stButton > button[key="side_toggle_delete_btn"]:focus,
-        div.stButton > button[key="side_toggle_delete_btn"]:active {
-            background-color: #ef4444 !important;
-            color: white !important;
-            border: 1px solid #dc2626 !important;
-            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.25) !important;
-            font-weight: 700 !important;
+        /* 데이터 삭제 센터 버튼의 우측 쏠림 현상을 강제 진압하고 완벽하게 정중앙 조율 */
+        div.stButton > button[key="side_toggle_delete_btn"] {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            width: 100% !important;
+            padding-left: 4px !important;
+            padding-right: 4px !important;
         }
-        
-        /* 데이터 삭제 센터 밑의 회색 가로 구분선(hr) 유격 최소화 및 마진 절반 압축 */
-        div[data-testid="stHorizontalBlock"] hr {
-            margin-top: 2px !important;
-            margin-bottom: 2px !important;
+        div.stButton > button[key="side_toggle_delete_btn"] div,
+        div.stButton > button[key="side_toggle_delete_btn"] p {
+            justify-content: center !important;
+            text-align: center !important;
+            margin: 0 auto !important;
         }
         
         /* 다운로드 버튼 폰트 및 스타일 미니멀화 */
@@ -173,43 +169,43 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 암호 복잡도 검사 함수 ---
+# --- [보안] 암호 복잡도 검사 함수 ---
 def is_strong_password(pw):
     if len(pw) < 12:
         return False, "❌ 최소 12자리 이상이어야 합니다."
-    if not re.search("", pw):
+    if not re.search("[a-zA-Z]", pw):
         return False, "❌ 영문자가 포함되어야 합니다."
-    if not re.search("", pw):
+    if not re.search("[0-9]", pw):
         return False, "❌ 숫자가 포함되어야 합니다."
-    if not re.search("", pw):
+    if not re.search("[!@#$%^&*(),.?\":{}|<>]", pw):
         return False, "❌ 특수문자가 포함되어야 합니다."
     return True, "✅ 사용 가능한 안전한 암호 조건입니다."
 
 # --- 데이터 로드/저장 함수 ---
 def load_master_subjects():
     default_structure = {
-        "인문·사회군":,
-        "수리·과학군":,
-        "예체능군":
+        "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
+        "수리·과학군": ["수학", "과학", "기술·가정", "정보"],
+        "예체능군": ["음악", "미술", "체육"]
     }
     if os.path.exists(CONFIG_FILE_MAIN):
         try:
             df = pd.read_csv(CONFIG_FILE_MAIN)
             for _, row in df.iterrows():
-                group = row
-                sub = row
-                if group in default_structure and sub not in default_structure:
-                    default_structure.append(sub)
+                group = row['교과군']
+                sub = row['과목명']
+                if group in default_structure and sub not in default_structure[group]:
+                    default_structure[group].append(sub)
         except: pass
     return default_structure
 
 def save_new_subject_to_master(group, subject):
-    new_data = pd.DataFrame()
+    new_data = pd.DataFrame([{"교과군": group, "과목명": subject}])
     if os.path.exists(CONFIG_FILE_MAIN):
         try:
             df = pd.read_csv(CONFIG_FILE_MAIN)
-            if not ((df == group) & (df == subject)).any():
-                pd.concat(, ignore_index=True).to_csv(CONFIG_FILE_MAIN, index=False)
+            if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
+                pd.concat([df, new_data], ignore_index=True).to_csv(CONFIG_FILE_MAIN, index=False)
         except: new_data.to_csv(CONFIG_FILE_MAIN, index=False)
     else: new_data.to_csv(CONFIG_FILE_MAIN, index=False)
 
@@ -217,21 +213,21 @@ def load_admin_password():
     if os.path.exists(META_FILE):
         try:
             df = pd.read_csv(META_FILE)
-            return str(df.iloc['password']).strip()
+            return str(df.iloc[0]['password']).strip()
         except: pass
     return "1234"
 
 def save_admin_password(new_pw):
-    pd.DataFrame().to_csv(META_FILE, index=False)
+    pd.DataFrame([{"password": str(new_pw).strip()}]).to_csv(META_FILE, index=False)
 
 def get_file_names(subject, grade, semester_str):
-    safe_subject = "".join().strip().replace(" ", "_")
+    safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
     return f"config_{safe_subject}_{grade}grade_{safe_semester}.csv", f"students_{safe_subject}_{grade}grade_{safe_semester}.csv"
 
 def load_config(file):
     if os.path.exists(file):
-        try: return pd.read_csv(file).iloc.to_dict()
+        try: return pd.read_csv(file).iloc[0].to_dict()
         except: return None
     return None
 
@@ -249,9 +245,9 @@ def get_active_databases():
             
             match = re.search(r"(.+?)_(1|2|3)grade_(.+)", core_name)
             if match:
-                sub_name = match.group(cite: 1).replace("_", " ")
+                sub_name = match.group(1).replace("_", " ")
                 grd_name = f"{match.group(2)}학년"
-                sem_name = match.group(cite: 3).replace("_", " ")
+                sem_name = match.group(3).replace("_", " ")
                 active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
         except: pass
     return active_list
@@ -260,7 +256,8 @@ def remove_subject_completely_from_disk(sub_name):
     if os.path.exists(CONFIG_FILE_MAIN):
         try:
             df = pd.read_csv(CONFIG_FILE_MAIN)
-            df = df != sub_name]
+            # 💡 [문법 에러 교정 완료]: 대괄호 누락 버그 완치하여 정상 연동 적용
+            df = df[df["과목명"] != sub_name]
             df.to_csv(CONFIG_FILE_MAIN, index=False)
         except: pass
     
@@ -272,7 +269,7 @@ def remove_subject_completely_from_disk(sub_name):
             except: pass
 
 def reset_all_data():
-    targets = glob.glob("config_*.csv") + glob.glob("students_*.csv") +
+    targets = glob.glob("config_*.csv") + glob.glob("students_*.csv") + [CONFIG_FILE_MAIN, META_FILE]
     for f in targets:
         if os.path.exists(f):
             try: os.remove(f)
@@ -308,7 +305,7 @@ def password_update_dialog():
             st.warning(msg)
             
     st.markdown("""<div style="font-size: 13px; color: #57606a; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px;">
-    <b></b><br>
+    <b>[안전 암호 규칙]</b><br>
     - 최소 12자 이상 필수<br>
     - 영문 + 숫자 + 특수기호 조합<br>
     - 예시: <code style='background:#eee; padding:2px 4px;'>teacher!@2026info</code>
@@ -317,7 +314,7 @@ def password_update_dialog():
 
     can_submit = is_valid and (new_pw == confirm_pw)
     
-    b_col1, b_col2 = st.columns(cite: 2)
+    b_col1, b_col2 = st.columns(2)
     with b_col1:
         if st.button("저장 후 적용", disabled=not can_submit, use_container_width=True, type="primary"):
             save_admin_password(new_pw)
@@ -330,16 +327,16 @@ def password_update_dialog():
 
 # --- 내부 화면 페이지 제어 상태 초기화 ---
 if "page_status" not in st.session_state:
-    st.session_state = "student_main"
+    st.session_state["page_status"] = "student_main"
 
 if "admin_logged_in" not in st.session_state:
-    st.session_state = False
+    st.session_state["admin_logged_in"] = False
 
 if "show_monitor_view" not in st.session_state:
-    st.session_state = False
+    st.session_state["show_monitor_view"] = False
 
 if "show_delete_panel" not in st.session_state:
-    st.session_state = False
+    st.session_state["show_delete_panel"] = False
 
 if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
 if "sel_sub_idx" not in st.session_state: st.session_state.sel_sub_idx = 0
@@ -347,8 +344,8 @@ if "sel_grade_idx" not in st.session_state: st.session_state.sel_grade_idx = 0
 if "sel_semester_idx" not in st.session_state: st.session_state.sel_semester_idx = 0
 
 SUBJECT_MAP = load_master_subjects()
-GRADE_OPTIONS =
-SEMESTER_OPTIONS = +]
+GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
+SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 CURRENT_ADMIN_PW = load_admin_password()
 
 
@@ -356,7 +353,7 @@ CURRENT_ADMIN_PW = load_admin_password()
 # 🔄 독점 화면 분기 구동 영역
 # ==========================================
 
-if st.session_state == "student_main":
+if st.session_state["page_status"] == "student_main":
     
     st.markdown("""
         <style>
@@ -372,11 +369,11 @@ if st.session_state == "student_main":
         </style>
     """, unsafe_allow_html=True)
     
-    col_empty, col_btn = st.columns()
+    col_empty, col_btn = st.columns([3, 1])
     with col_btn:
         st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         if st.button("🔓 교사용 제어판", key="outer_teacher_btn"):
-            st.session_state = "teacher_auth"
+            st.session_state["page_status"] = "teacher_auth"
             st.rerun()
             
     active_dbs = get_active_databases()
@@ -391,23 +388,23 @@ if st.session_state == "student_main":
             st.warning("현재 등록된 성적 데이터가 없습니다.")
         else:
             st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🎯 대상 과목 및 학기 선택</div>", unsafe_allow_html=True)
-            opts_s = +} ({d} - {d})" for d in active_dbs]
+            opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
             st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
             
             if sel_s != "과목 및 학기를 선택하세요.":
-                db = active_dbs
-                cf, sf = get_file_names(db, db.replace("학년",""), db)
-                config = load_config(cite: cf)
+                db = active_dbs[opts_s.index(sel_s)-1]
+                cf, sf = get_file_names(db['subject'], db['grade'].replace("학년",""), db['semester'])
+                config = load_config(cf)
                 
                 if config:
-                    st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config}</b> ({config})</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
                     with st.form("login_form"):
                         st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🔐 본인 인증 정보 입력</div>", unsafe_allow_html=True)
-                        classes =).split(",")] if '선택된반 목록' in config else ["1반"]
+                        classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
                         
-                        c1, c2, c3, c4 = st.columns()
+                        c1, c2, c3, c4 = st.columns([1, 1, 1.5, 1.5])
                         with c1: b_in = st.selectbox("반", classes)
                         with c2: n_in = st.number_input("번호", 1, 50, 1)
                         with c3: name_in = st.text_input("이름", placeholder="홍길동")
@@ -416,38 +413,38 @@ if st.session_state == "student_main":
                         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                         
                         if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
-                            df_st = load_students(cite: sf)
+                            df_st = load_students(sf)
                             if df_st.empty: 
                                 st.error("성적 데이터가 아직 연동되지 않은 교과입니다.")
                             else:
-                                res = df_st==int(b_in.replace("반",""))) & (df_st==n_in) & (df_st==name_in) & (df_st.astype(str)==str(pw_in))]
+                                res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
                                 if not res.empty:
-                                    idx = res.index
+                                    idx = res.index[0]
                                     
                                     scores = {}
                                     total_sum = 0
                                     
-                                    for i in range(int(config)):
-                                        h_name = config.get(cite: f'항목{i+1}_이름', f'항목{i+1}')
+                                    for i in range(int(config['항목개수'])):
+                                        h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
                                         if h_name in df_st.columns:
-                                            val = df_st.loc
-                                            scores =
+                                            val = df_st.loc[idx, h_name]
+                                            scores[h_name] = [val]
                                             try:
-                                                if pd.notna(cite: val): total_sum += float(cite: val)
+                                                if pd.notna(val): total_sum += float(val)
                                             except: pass
                                     
-                                    if float(cite: total_sum).is_integer(): scores =
-                                    else: scores =
+                                    if float(total_sum).is_integer(): scores['합계'] = [int(total_sum)]
+                                    else: scores['합계'] = [round(total_sum, 2)]
                                     
-                                    if df_st.loc != "확인 완료":
-                                        df_st.loc, df_st.loc = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                    if df_st.loc[idx, '확인여부'] != "확인 완료":
+                                        df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                         df_st.to_csv(sf, index=False)
                                         
-                                    show_result_dialog(cite: name_in, scores)
+                                    show_result_dialog(name_in, scores)
                                 else: 
                                     st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
 
-elif st.session_state == "teacher_auth":
+elif st.session_state["page_status"] == "teacher_auth":
     st.markdown("""
         <style>
         div[data-testid="stForm"] {
@@ -470,66 +467,66 @@ elif st.session_state == "teacher_auth":
         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
         if st.form_submit_button("로그인", use_container_width=True, type="primary"):
             if admin_pw == CURRENT_ADMIN_PW:
-                st.session_state = True
-                st.session_state = "teacher_main"
+                st.session_state["admin_logged_in"] = True
+                st.session_state["page_status"] = "teacher_main"
                 st.rerun()
             else: st.error("❌ 비밀번호가 틀렸습니다.")
-    col1, col2, col3 = st.columns()
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("🎒 학생 화면으로 돌아가기", key="outer_student_btn", use_container_width=True):
-            st.session_state = "student_main"
+            st.session_state["page_status"] = "student_main"
             st.rerun()
 
 # ------------------------------------------
 # ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후)
 # ------------------------------------------
-elif st.session_state == "teacher_main":
-    if not st.session_state:
-        st.session_state = "teacher_auth"
+elif st.session_state["page_status"] == "teacher_main":
+    if not st.session_state["admin_logged_in"]:
+        st.session_state["page_status"] = "teacher_auth"
         st.rerun()
 
-    col_empty, col_pw, col_logout = st.columns()
+    col_empty, col_pw, col_logout = st.columns([5, 1.4, 1.4])
     with col_pw:
         st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         if st.button("🔐 암호 변경", key="outer_pw_btn", use_container_width=True): password_update_dialog()
     with col_logout:
         st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         if st.button("🎒 학생 화면", key="outer_logout_btn", use_container_width=True):
-            st.session_state = "student_main"
-            st.session_state = False
-            st.session_state = False
-            st.session_state = False
+            st.session_state["page_status"] = "student_main"
+            st.session_state["admin_logged_in"] = False
+            st.session_state["show_monitor_view"] = False
+            st.session_state["show_delete_panel"] = False
             st.rerun()
 
     with st.container(border=True):
         st.markdown("<h2>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
         # 좌우 분할 비율 1.4 : 4.2 매칭
-        frame_left, frame_right = st.columns()
+        frame_left, frame_right = st.columns([1.4, 4.2])
         
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
         
         # ==========================================
-        # 👈
+        # 👈 [1구역 - 왼쪽 제어 메뉴]
         # ==========================================
         with frame_left:
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
             
-            g_opts =
+            g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
             sel_g = st.selectbox("1단계: 교과군 분류", options=g_opts, index=st.session_state.sel_group_idx, label_visibility="collapsed")
             
             final_sub = ""
             t_g = ""
             if sel_g == "➕ 신규 과목 개설":
-                t_g = st.selectbox("추가 위치 지정",)
+                t_g = st.selectbox("추가 위치 지정", ["인문·사회군", "수리·과학군", "예체능군"])
                 final_sub = st.text_input("✏️ 새 과목명 입력", placeholder="과목명 입력").strip()
             elif sel_g != "교과군 선택":
-                s_opts = + SUBJECT_MAP
-                idx_s = st.session_state.sel_sub_idx if st.session_state.sel_sub_idx < len(cite: s_opts) else 0
+                s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
+                idx_s = st.session_state.sel_sub_idx if st.session_state.sel_sub_idx < len(s_opts) else 0
                 sel_s = st.selectbox("2단계: 세부 과목 선택", options=s_opts, index=idx_s, label_visibility="collapsed")
                 if sel_s != "과목 선택": final_sub = sel_s
             else: 
-                st.selectbox("2단계: 세부 과목 선택",, disabled=True, label_visibility="collapsed")
+                st.selectbox("2단계: 세부 과목 선택", ["과목 선택 대기"], disabled=True, label_visibility="collapsed")
                 
             sel_gr = st.selectbox("3단계: 관리 학년 지정", options=GRADE_OPTIONS, index=st.session_state.sel_grade_idx, label_visibility="collapsed")
             final_gr = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
@@ -537,42 +534,39 @@ elif st.session_state == "teacher_main":
             sel_se = st.selectbox("4단계: 대상 학기 선택", options=SEMESTER_OPTIONS, index=st.session_state.sel_semester_idx, label_visibility="collapsed")
             final_se = sel_se if sel_se != "학기 선택" else ""
             
-            # 💡: 과목 활성화 블루 버튼 색상 완전 박음질
+            # 과목 활성화 버튼
             if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn"):
                 if final_sub and final_gr and final_se:
-                    if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(cite: t_g, final_sub)
+                    if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
                     st.session_state.active_subject = final_sub
                     st.session_state.active_grade = final_gr
                     st.session_state.active_semester = final_se
                     
-                    st.session_state.sel_group_idx = g_opts.index(cite: sel_g)
-                    if sel_g != "➕ 신규 과목 개설": st.session_state.sel_sub_idx = s_opts.index(cite: final_sub)
-                    st.session_state.sel_grade_idx = GRADE_OPTIONS.index(cite: sel_gr)
-                    st.session_state.sel_semester_idx = SEMESTER_OPTIONS.index(cite: sel_se)
-                    st.session_state = False
+                    st.session_state.sel_group_idx = g_opts.index(sel_g)
+                    if sel_g != "➕ 신규 과목 개설": st.session_state.sel_sub_idx = s_opts.index(final_sub)
+                    st.session_state.sel_grade_idx = GRADE_OPTIONS.index(sel_gr)
+                    st.session_state.sel_semester_idx = SEMESTER_OPTIONS.index(sel_se)
+                    st.session_state["show_delete_panel"] = False
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 💡: 시스템 테마 간섭을 무조건 무력화하고 강제로 새빨간 색상을 때려 넣는 절대 고유 규칙
-            del_panel_label = "🛠️ 데이터 삭제 센터 닫기" if st.session_state else "🛠️ 데이터 삭제 센터"
-            if st.button(cite: del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
-                st.session_state = not st.session_state
-                if st.session_state:
-                    st.session_state = False
+            # 데이터 삭제 센터 단추
+            del_panel_label = "🛠️ 데이터 삭제 센터 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제 센터"
+            if st.button(del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
+                st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
+                if st.session_state["show_delete_panel"]:
+                    st.session_state["show_monitor_view"] = False
                 st.rerun()
-                
-            # 데이터 삭제 센터 밑의 회색 가로 구분선(hr) 유격 최소화 및 마진 절반 압축
-            st.markdown("<hr style='margin: 2px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
             # 설정 저장 버튼
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
-            if st.button(cite: save_btn_label, key="side_save_btn", disabled=not has_active):
-                st.session_state = True
+            if st.button(save_btn_label, key="side_save_btn", disabled=not has_active):
+                st.session_state["trigger_save_action"] = True
             
             # 학생 입력 확인 버튼
-            monitor_label = "👀 학생 입력 확인 닫기" if st.session_state else "👥 학생 입력 확인"
-            if st.button(cite: monitor_label, key="side_monitor_btn", disabled=not has_active):
-                st.session_state = not st.session_state
+            monitor_label = "👀 학생 입력 확인 닫기" if st.session_state["show_monitor_view"] else "👥 학생 입력 확인"
+            if st.button(monitor_label, key="side_monitor_btn", disabled=not has_active):
+                st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]
                 st.rerun()
                 
             # 과목 추가 버튼
@@ -584,8 +578,8 @@ elif st.session_state == "teacher_main":
                 st.session_state.sel_sub_idx = 0
                 st.session_state.sel_grade_idx = 0
                 st.session_state.sel_semester_idx = 0
-                st.session_state = False
-                st.session_state = False
+                st.session_state["show_monitor_view"] = False
+                st.session_state["show_delete_panel"] = False
                 st.rerun()
 
             # 성적 CSV 관리 및 업로드 구역
@@ -593,16 +587,16 @@ elif st.session_state == "teacher_main":
                 sub = st.session_state.active_subject
                 grd = st.session_state.active_grade
                 sem = st.session_state.active_semester
-                cf, sf = get_file_names(cite: sub, grd, sem)
-                conf = load_config(cite: cf)
-                item_names = if conf else ["수행1", "수행2"]
+                cf, sf = get_file_names(sub, grd, sem)
+                conf = load_config(cf)
+                item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else ["수행1", "수행2"]
 
                 with st.container(border=True):
                     st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드</div>", unsafe_allow_html=True)
                     
-                    sample_columns = + item_names
-                    sample_df = pd.DataFrame( + [0]*len(cite: item_names)], columns=sample_columns)
+                    sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + item_names
+                    sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names)], columns=sample_columns)
                     csv_buffer = io.StringIO()
                     sample_df.to_csv(csv_buffer, index=False, encoding='cp949')
                     csv_bytes = csv_buffer.getvalue().encode('cp949')
@@ -632,14 +626,14 @@ elif st.session_state == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
-        # 👉
+        # 👉 [2구역 - 오른쪽 메인 기능 판넬 및 모니터 창]
         # ==========================================
         with frame_right:
-            if st.session_state:
+            if st.session_state["show_delete_panel"]:
                 st.markdown("<h4 style='color: #ef4444; margin-top: 0px;'>⚙️ 데이터 삭제 및 청소 관리 센터</h4>", unsafe_allow_html=True)
                 st.markdown("<p style='font-size:13px; color:#64748b;'>선택 과목의 CSV 데이터 파괴 및 마스터 연동 삭제를 선별 관리합니다.</p>", unsafe_allow_html=True)
                 
-                tab_del_sem, tab_del_sub = st.tabs()
+                tab_del_sem, tab_del_sub = st.tabs(["학기 및 학년별 삭제", "과목 일괄 삭제"])
                 
                 # 1) 학기 및 학년별 삭제 모드
                 with tab_del_sem:
@@ -648,16 +642,16 @@ elif st.session_state == "teacher_main":
                         st.info("현재 디스크에 누적 보관 중인 학기별 데이터베이스가 없습니다.")
                     else:
                         st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;'>1. 폐기 타격할 분기 학기 데이터베이스 지정</div>", unsafe_allow_html=True)
-                        sem_opts =} | {d} | {d}" for d in existing_dbs]
+                        sem_opts = [f"📚 {d['subject']} | {d['grade']} | {d['semester']}" for d in existing_dbs]
                         selected_sem_str = st.selectbox("삭제 대상 선택", options=sem_opts, label_visibility="collapsed", key="sb_delete_target_sem")
                         
-                        target_idx = sem_opts.index(cite: selected_sem_str)
-                        t_db = existing_dbs
+                        target_idx = sem_opts.index(selected_sem_str)
+                        t_db = existing_dbs[target_idx]
                         
-                        verify_code_sem = f"{t_db}_{t_db.replace('학년','')}_{t_db.replace('학년도','').replace(' ', '')}"
+                        verify_code_sem = f"{t_db['subject']}_{t_db['grade'].replace('학년','')}_{t_db['semester'].replace('학년도','').replace(' ', '')}"
                         
                         st.markdown(f"""<div style="background-color:#fff3cd; padding:10px; border-radius:6px; font-size:12px; color:#664d03; margin-bottom:10px;">
-                        ⚠️ <b>경고:</b> 과목의 대분류 틀은 안전히 보존하되, <b>[{cite: t_db} - {t_db} {t_db}]</b>에 구성된 데이터 원본을 완전 파괴합니다.
+                        ⚠️ <b>경고:</b> 과목의 대분류 틀은 안전히 보존하되, <b>[{t_db['subject']} - {t_db['grade']} {t_db['semester']}]</b>에 구성된 데이터 원본을 완전 파괴합니다.
                         </div>""", unsafe_allow_html=True)
                         
                         st.markdown(f"<div style='font-size:12px; margin-bottom:4px;'>데이터 오작동 전면 방지를 위해 아래 코드를 똑같이 입력해 주세요.<br>👉 인증코드: <code style='background:#f1f5f9; padding:2px 4px; border-radius:4px; font-weight:bold; color:#ef4444;'>{verify_code_sem}</code></div>", unsafe_allow_html=True)
@@ -665,16 +659,16 @@ elif st.session_state == "teacher_main":
                         
                         btn_disabled_sem = (user_confirm_sem != verify_code_sem)
                         if st.button("🔒 선택 학기 데이터 영구 폐기 실행", disabled=btn_disabled_sem, type="primary", use_container_width=True, key="btn_execute_delete_sem"):
-                            cf, sf = get_file_names(cite: t_db, t_db.replace("학년",""), t_db)
-                            if os.path.exists(cite: cf): os.remove(cite: cf)
-                            if os.path.exists(cite: sf): os.remove(cite: sf)
+                            cf, sf = get_file_names(t_db['subject'], t_db['grade'].replace("학년",""), t_db['semester'])
+                            if os.path.exists(cf): os.remove(cf)
+                            if os.path.exists(sf): os.remove(sf)
                             st.toast("🎉 선택하신 분기 학기 데이터 클렌징 완료!")
                             st.rerun()
 
                 # 2) 과목 일괄 삭제 모드
                 with tab_del_sub:
                     raw_subjects = load_master_subjects()
-                    flat_subs = sorted(cite: list(cite: set()))
+                    flat_subs = sorted(list(set([sub for list_sub in raw_subjects.values() for sub in list_sub])))
                     
                     if not flat_subs:
                         st.info("등록 개설된 교과목 마스터 목록이 비어 있습니다.")
@@ -691,7 +685,7 @@ elif st.session_state == "teacher_main":
                         
                         btn_disabled_sub = (user_confirm_sub != selected_sub_to_del)
                         if st.button("🚨 마스터 교과 및 하위 데이터 연쇄 일괄 파괴 실행", disabled=btn_disabled_sub, type="primary", use_container_width=True, key="btn_execute_delete_sub"):
-                            remove_subject_completely_from_disk(cite: selected_sub_to_del)
+                            remove_subject_completely_from_disk(selected_sub_to_del)
                             st.session_state.active_subject = None
                             st.toast(f"🎉 [{selected_sub_to_del}] 교과 및 하위 종속 파일 일괄 영구 소멸 완료!")
                             st.rerun()
@@ -701,42 +695,42 @@ elif st.session_state == "teacher_main":
                 grd = st.session_state.active_grade
                 sem = st.session_state.active_semester
                 
-                cf, sf = get_file_names(cite: sub, grd, sem)
-                conf = load_config(cite: cf)
+                cf, sf = get_file_names(sub, grd, sem)
+                conf = load_config(cf)
                 
-                st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{cite: sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 st.markdown("<h4 style='color: #1e293b; margin-top: 0px;'>📌 학기 및 평가 세팅</h4>", unsafe_allow_html=True)
                 
                 with st.container(border=True):
                     if conf:
-                        st.markdown(f"<div style='font-size:13px; font-weight:600; color:#16a34a; margin-bottom:8px;'>✅ 기존 설정 불러오기 완료 ({cite: sem})</div>", unsafe_allow_html=True)
-                        saved_cl =
-                        default_items_count = int(cite: conf.get(cite: '항목개수', 0))
+                        st.markdown(f"<div style='font-size:13px; font-weight:600; color:#16a34a; margin-bottom:8px;'>✅ 기존 설정 불러오기 완료 ({sem})</div>", unsafe_allow_html=True)
+                        saved_cl = [int(x) for x in str(conf.get('선택된반 목록', '')).split(",") if x.strip()]
+                        default_items_count = int(conf.get('항목개수', 0))
                     else:
-                        st.markdown(f"<div style='font-size:13px; font-weight:600; color:#3b82f6; margin-bottom:8px;'>🎯 지정 학기 연동 완료: {cite: sem}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size:13px; font-weight:600; color:#3b82f6; margin-bottom:8px;'>🎯 지정 학기 연동 완료: {sem}</div>", unsafe_allow_html=True)
                         saved_cl = []
                         default_items_count = 0
 
                     st.markdown("<div style='margin-top:8px; margin-bottom:2px; font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
                     sel_cl = []
-                    cols_cl = st.columns()
+                    cols_cl = st.columns(6)
                     for i in range(1, 13):
                         with cols_cl[(i-1)%6]:
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): 
-                                sel_cl.append(cite: i)
+                                sel_cl.append(i)
 
                     st.markdown("<div style='margin-top:8px; margin-bottom:2px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
                     n_item = st.number_input("평가 항목 개수", 0, 10, default_items_count, key="num_items_input")
                     item_names = []
                     
-                    placeholders =
+                    placeholders = ["지필평가", "포트폴리오", "실기평가", "보고서", "발표평가", "실험실습", "형성평가", "논술형평가", "독서기록", "과제물"]
                     
                     if n_item > 0:
                         cols_i = st.columns(2)
                         for i in range(1, n_item + 1):
                             with cols_i[(i-1)%2]:
-                                default_val = conf.get(cite: f'항목{i}_이름', "") if conf else ""
-                                ex_name = placeholders[(i-1) % len(cite: placeholders)]
+                                default_val = conf.get(f'항목{i}_이름', "") if conf else ""
+                                ex_name = placeholders[(i-1) % len(placeholders)]
                                 item_names.append(st.text_input(
                                     f"{i}번 항목명", 
                                     value=default_val, 
@@ -746,19 +740,19 @@ elif st.session_state == "teacher_main":
                                 ))
 
                 # 저장 동작 프로세스
-                ready = sel_cl and n_item > 0 and all(cite: item_names)
-                if st.session_state.get(cite: "trigger_save_action", False):
-                    st.session_state = False
+                ready = sel_cl and n_item > 0 and all(item_names)
+                if st.session_state.get("trigger_save_action", False):
+                    st.session_state["trigger_save_action"] = False
                     if ready:
-                        d = {"교과명":sub, "학년":grd, "학기통합명":sem, "선택된반 목록":",".join(cite: map(cite: str, sorted(cite: sel_cl))), "항목개수":n_item}
-                        for i, name in enumerate(cite: item_names): d = name
-                        pd.DataFrame().to_csv(cf, index=False)
+                        d = {"교과명":sub, "학년":grd, "학기통합명":sem, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
+                        for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
+                        pd.DataFrame([d]).to_csv(cf, index=False)
                         st.success("🎉 학기별 설정 저장 완료!")
                         st.rerun()
                     else: st.error("❌ 학급(반) 선택 및 평가 항목 명칭을 채운 후 저장을 눌러주세요.")
 
                 # 📊 실시간 데이터 연동 모니터 구역
-                if st.session_state:
+                if st.session_state["show_monitor_view"]:
                     st.markdown("<hr style='margin: 15px 0 10px 0; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
                     st.markdown("<h4 style='color: #0f172a; margin-top: 0px;'>📊 실시간 데이터 연동 모니터</h4>", unsafe_allow_html=True)
                     
@@ -770,15 +764,15 @@ elif st.session_state == "teacher_main":
                             </div>
                             """, unsafe_allow_html=True)
                         
-                        df_monitor = load_students(cite: sf)
+                        df_monitor = load_students(sf)
                         if not df_monitor.empty:
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
-                            st.dataframe(cite: df_monitor, use_container_width=True, hide_index=True)
+                            st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
                         else: st.warning("⚠️ 해당 학기의 성적 CSV 파일이 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
-                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 또는를 클릭해 주세요.")
+                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 [🛠️ 데이터 삭제 센터]를 클릭해 주세요.")
 
         # 최하단 가이드 바
-        st.markdown("<div class='custom-guide-bar'>💡 <b></b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'></b>가 됩니다.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
