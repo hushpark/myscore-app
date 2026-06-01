@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 다운로드 버튼 내부 글자 파격 축소 및 업로더 초밀착 봉인
+# 🎯 [CSS 최종 완결판] 왼쪽 제어판 컴팩트 밀착 정렬 레이아웃
 # =========================================================================
 st.markdown("""
     <style>
@@ -72,9 +72,14 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 💡 [초강력 교정 1]: stDownloadButton과 관련된 하위 모든 태그의 폰트 크기를 11px 미니형으로 강제 일괄 축소 */
+        /* 💡 [정밀 교정]: 각 버튼들의 기본 하단 마진을 줄여 틈새 방지 */
+        div.stButton {
+            margin-bottom: 4px !important;
+        }
+        
+        /* 다운로드 버튼 폰트 및 스타일 미니멀화 */
         div.stDownloadButton, div.stDownloadButton button, div.stDownloadButton button * {
-            font-size: 11px !important; /* 👈 글자 크기를 확 줄여서 뚫고 나오지 못하게 함 */
+            font-size: 11px !important; 
             white-space: nowrap !important;
             word-break: keep-all !important;
         }
@@ -82,12 +87,19 @@ st.markdown("""
             padding: 4px 6px !important;
         }
         
-        /* 💡 [초강력 교정 2]: 다운로드 버튼 밑바닥 마진을 대폭 위로 밀어올려 업로더 박스와 밀착 */
+        /* 다운로드 버튼 밑바닥 마진을 대폭 위로 밀어올려 업로더 박스와 밀착 */
         div.stDownloadButton {
             margin-bottom: -15px !important; 
         }
         
-        /* 💡 [초강력 교정 3]: 파일 업로드 영역의 내부 상단 여백을 극단적으로 줄여 딱 붙임 */
+        /* 💡 [정밀 교정]: 성적 일괄 업로드 테두리 박스 내부 공백을 콤팩트하게 다듬기 */
+        div.compact-upload-box {
+            padding: 8px 10px !important;
+            margin-top: 4px !important;
+            margin-bottom: 4px !important;
+        }
+        
+        /* 파일 업로드 영역의 내부 상단 여백을 극단적으로 줄여 딱 붙임 */
         div[data-testid="stFileUploader"] {
             padding-top: 0px !important;
             margin-top: -10px !important; 
@@ -527,7 +539,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state["show_monitor_view"] = False
                 st.rerun()
 
-            # 성적 CSV 관리 및 업로드 구역
+            # 💡 성적 CSV 관리 및 업로드 구역 (전용 컴팩트 스타일 클래스 부여)
             if has_active:
                 sub = st.session_state.active_subject
                 grd = st.session_state.active_grade
@@ -536,8 +548,9 @@ elif st.session_state["page_status"] == "teacher_main":
                 conf = load_config(cf)
                 item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else ["수행1", "수행2"]
 
-                st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                 with st.container(border=True):
+                    # HTML 내부 래퍼를 씌워 여백 강제 축소
+                    st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드</div>", unsafe_allow_html=True)
                     
                     sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + item_names
@@ -565,10 +578,9 @@ elif st.session_state["page_status"] == "teacher_main":
                             st.rerun()
                         except: 
                             st.error("❌ 파일 형식을 확인하세요 (CP949/UTF-8)")
+                    st.markdown('</div>', unsafe_allow_html=True)
                         
-            st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
-            
-            # 4. 시스템 초기화 버튼
+            # 4. 시스템 초기화 버튼 (중간 공백 없이 바로 밀착 연동)
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
