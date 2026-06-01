@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최적화] 1구역(270px) 복원 및 2구역 확장을 위한 전체 가로폭 1350px 세팅
+# 🎯 [CSS 최적화] 1구역 내부 한 줄 정렬 보장 및 전체 가로폭 1350px 최종 세팅
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,10 +30,10 @@ st.markdown("""
             padding-bottom: 0.5rem !important; 
         }
         
-        /* 💡 [교정 핵심]: 1구역 크기를 유지하면서 전체 가로폭 카드 크기를 1350px로 확대! */
+        /* 💡 [교정 핵심]: 전체 가로폭 카드 크기를 1350px로 유지하여 넓은 공간 확보 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
-            padding: 15px 25px !important;
+            padding: 15px 20px !important; /* 👈 좌우 여백을 소폭 줄여 내부 가로공간 확보 */
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
@@ -64,7 +64,7 @@ st.markdown("""
             white-space: nowrap !important;
         }
         
-        /* 좌측 세로형 버튼 일괄 제어 구역 */
+        /* 좌측 세로형 버튼 일괄 제어 구역 - 절대 줄바꿈 금지 */
         div.stButton > button[key^="side_"] {
             width: 100% !important;
             padding: 6px 10px !important;
@@ -76,6 +76,7 @@ st.markdown("""
             text-align: center !important;
             margin-bottom: 2px !important;
             font-weight: 500 !important;
+            white-space: nowrap !important; /* 👈 버튼 글자 한 줄 유지 */
         }
         
         /* 개별 제어: 예시 파일 다운로드 버튼만 단독으로 초슬림하게 세팅 */
@@ -89,6 +90,7 @@ st.markdown("""
             border: 1px solid #cbd5e1 !important;
             border-radius: 4px !important;
             line-height: 1.2 !important;
+            white-space: nowrap !important;
         }
         
         div.stButton:has(button[key="outer_teacher_btn"]),
@@ -107,8 +109,9 @@ st.markdown("""
             border-radius: 6px !important;
         }
         
-        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 10px 0 10px 0 !important; }
-        h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin-bottom: 6px !important; }
+        /* 제목 및 헤더 폰트 줄바꿈 차단 */
+        h2 { font-size: 22px !important; color: #0f172a !important; font-weight: 800 !important; margin: 10px 0 10px 0 !important; white-space: nowrap !important; }
+        h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin-bottom: 6px !important; white-space: nowrap !important; }
         
         /* 테이블 내부 중앙 정렬 */
         div.monitor-table table th, div.monitor-table table td {
@@ -429,13 +432,13 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 💡 [황금 비율 재교정 완료]: 왼쪽 1구역을 270px로 온전히 복원하고, 오른쪽 2구역은 1080px로 쾌적하게 뿌려줍니다.
-        frame_left, frame_right = st.columns([1.0, 4.0])
+        # 💡 [정밀 배율 재교정]: 왼쪽 메뉴판의 가로 비율을 [1.1, 4.0]으로 조정하여 글자 잘림이나 줄바꿈을 완벽 차단합니다!
+        frame_left, frame_right = st.columns([1.1, 4.0])
         
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
         
         # ==========================================
-        # 👈 [1구역 - 왼쪽]: 원래 크기(270px) 완벽 복원 구역
+        # 👈 [1구역 - 왼쪽]: 모든 요소 완벽 한 줄 정렬 구역
         # ==========================================
         with frame_left:
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
