@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 데이터 삭제 단독 레드 지정 및 컴팩트 마진 튜닝
+# 🎯 [CSS 최종 완결판] 대시보드 탭(Tab) 메뉴 스타일 입히기 및 간격 초밀착 튜닝
 # =========================================================================
 st.markdown("""
     <style>
@@ -76,7 +76,7 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 모든 버튼과 컴포넌트 간의 세로 유격을 최소화 */
+        /* 모든 버튼과 컴포넌트 간의 세로 유격을 최소화하여 촘촘하게 배치 */
         div[data-testid="stVerticalBlock"] > div:has(div.stButton),
         div[data-testid="stVerticalBlock"] > div:has(div.stSelectbox) {
             padding-bottom: 0px !important;
@@ -84,30 +84,9 @@ st.markdown("""
         }
         div.stButton button {
             margin: 0px auto !important;
-            padding-top: 4px !important;
-            padding-bottom: 4px !important;
-        }
-        
-        /* 데이터 삭제 버튼과 설정 저장 버튼 사이 세로 유격 초밀착 고정 */
-        div[data-testid="stVerticalBlock"] > div:has(button[key="side_toggle_delete_btn"]) {
-            margin-bottom: -15px !important;
-        }
-        
-        /* 💡 [교정 핵심]: 고유 키값을 정밀 타격하여 '데이터 삭제' 버튼에 세련된 빨간색(#ef4444) 염색 및 중앙 고정 */
-        div.stButton > button[key="side_toggle_delete_btn"],
-        div.stButton > button[key="side_toggle_delete_btn"]:hover,
-        div.stButton > button[key="side_toggle_delete_btn"]:focus,
-        div.stButton > button[key="side_toggle_delete_btn"]:active {
-            background-color: #ef4444 !important;
-            color: white !important;
-            border: 1px solid #dc2626 !important;
-            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2) !important;
-            font-weight: 700 !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-            width: 100% !important;
+            padding-top: 5px !important;
+            padding-bottom: 5px !important;
+            transition: all 0.15s ease-in-out !important;
         }
         
         /* 다운로드 버튼 폰트 및 스타일 미니멀화 */
@@ -533,7 +512,7 @@ elif st.session_state["page_status"] == "teacher_main":
             sel_se = st.selectbox("4단계: 대상 학기 선택", options=SEMESTER_OPTIONS, index=st.session_state.sel_semester_idx, label_visibility="collapsed")
             final_se = sel_se if sel_se != "학기 선택" else ""
             
-            # 과목 활성화 버튼 (파란색 고정)
+            # 💡 [디자인 보정]: 과목 활성화 버튼 (기본 탭)
             if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn"):
                 if final_sub and final_gr and final_se:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
@@ -549,21 +528,84 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 💡 [문구 변경]: 센터를 제거하고 "🛠️ 데이터 삭제" 및 "🛠️ 데이터 삭제 닫기"로 아담하게 수정
-            del_panel_label = "🛠️ 데이터 삭제 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제"
+            # 💡 [1단계 핵심]: 데이터 삭제 탭 (선택 상태에 따라 배경색 토글 및 빨간색 밑줄 강제 연동)
+            if st.session_state["show_delete_panel"]:
+                # 탭 활성화 상태: 세련된 경고용 배경 연빨강 + 글자 진빨강 + 밑줄 진빨강
+                st.markdown("""<style>
+                    div:has(> button[key='side_toggle_delete_btn']) button {
+                        background-color: #fef2f2 !important;
+                        border: 1px solid #fca5a5 !important;
+                        box-shadow: inset 0 2px 4px rgba(239, 68, 68, 0.05) !important;
+                    }
+                    div:has(> button[key='side_toggle_delete_btn']) p, 
+                    div:has(> button[key='side_toggle_delete_btn']) span {
+                        color: #ef4444 !important;
+                        text-decoration: underline !important;
+                        text-decoration-color: #ef4444 !important;
+                        text-underline-offset: 4px !important;
+                        font-weight: 800 !important;
+                    }
+                </style>""", unsafe_allow_html=True)
+                del_panel_label = "🚨 데이터 삭제 닫기"
+            else:
+                # 탭 비활성화 기본 상태: 글자 빨간색 + 밑줄 빨간색 고정으로 시각적 주의 집중
+                st.markdown("""<style>
+                    div:has(> button[key='side_toggle_delete_btn']) p, 
+                    div:has(> button[key='side_toggle_delete_btn']) span {
+                        color: #ef4444 !important;
+                        text-decoration: underline !important;
+                        text-decoration-color: #ef4444 !important;
+                        text-underline-offset: 4px !important;
+                        font-weight: 700 !important;
+                    }
+                </style>""", unsafe_allow_html=True)
+                del_panel_label = "🚨 데이터 삭제"
+
             if st.button(del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
                 st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
                 if st.session_state["show_delete_panel"]:
                     st.session_state["show_monitor_view"] = False
                 st.rerun()
             
-            # 설정 저장 버튼
+            # 💡 [2구역 긴밀 정렬] 데이터 삭제 버튼 바로 하단 여백 공간 압축
+            st.markdown("<div style='margin-bottom: -15px;'></div>", unsafe_allow_html=True)
+            
+            # 💡 [2단계 핵심]: 설정 저장 탭 (활성화 되었을 때 세련된 블루 테마 탭으로 유도)
+            if has_active:
+                st.markdown("""<style>
+                    div:has(> button[key='side_save_btn']) button {
+                        border: 1px solid #93c5fd !important;
+                        background-color: #eff6ff !important;
+                    }
+                    div:has(> button[key='side_save_btn']) p,
+                    div:has(> button[key='side_save_btn']) span {
+                        color: #1d4ed8 !important;
+                        font-weight: 700 !important;
+                    }
+                </style>""", unsafe_allow_html=True)
+            
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
             if st.button(save_btn_label, key="side_save_btn", disabled=not has_active):
                 st.session_state["trigger_save_action"] = True
             
-            # 학생 입력 확인 버튼
-            monitor_label = "👀 학생 입력 확인 닫기" if st.session_state["show_monitor_view"] else "👥 학생 입력 확인"
+            # 💡 [3단계 핵심]: 학생 입력 확인 탭 (활성화 시 상큼한 그린 테마 탭으로 스위칭)
+            if st.session_state["show_monitor_view"]:
+                st.markdown("""<style>
+                    div:has(> button[key='side_monitor_btn']) button {
+                        background-color: #f0fdf4 !important;
+                        border: 1px solid #86efac !important;
+                        box-shadow: inset 0 2px 4px rgba(34, 197, 94, 0.05) !important;
+                    }
+                    div:has(> button[key='side_monitor_btn']) p,
+                    div:has(> button[key='side_monitor_btn']) span {
+                        color: #16a34a !important;
+                        font-weight: 700 !important;
+                    }
+                </style>""", unsafe_allow_html=True)
+                monitor_label = "👀 학생 입력 확인 닫기"
+            else:
+                monitor_label = "👥 학생 입력 확인"
+
             if st.button(monitor_label, key="side_monitor_btn", disabled=not has_active):
                 st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]
                 st.rerun()
