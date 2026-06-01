@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 교정판] 다운로드 버튼 글자 크기 축소 및 업로더 간격 밀착 세팅
+# 🎯 [CSS 최종 교정판] 자동 버튼 스타일 복원 + 다운로드-업로더 초밀착 세팅
 # =========================================================================
 st.markdown("""
     <style>
@@ -72,7 +72,7 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 💡 [교정 핵심 1]: 다운로드 버튼 글씨 크기를 콤팩트하게 줄여 테두리 안으로 강제 안착 */
+        /* 💡 다운로드 버튼 글씨 크기를 콤팩트하게 줄여 테두리 안으로 강제 안착 */
         div.stDownloadButton button,
         div.stDownloadButton button:disabled,
         div.stDownloadButton button div,
@@ -80,23 +80,23 @@ st.markdown("""
         div.stDownloadButton button span,
         div.stDownloadButton button[data-testid="stMarkdownContainer"] p {
             padding: 4px 8px !important;         
-            font-size: 11.5px !important; /* 👈 글씨 크기를 보기 좋게 줄임 */
+            font-size: 11.5px !important; 
             white-space: nowrap !important;
             word-break: keep-all !important;
         }
         
-        /* 💡 [교정 핵심 2]: 예시 파일 다운로드 버튼 하단의 여백을 제거하여 업로더와 딱 붙임 */
+        /* 💡 예시 파일 다운로드 버튼 하단의 여백을 제거하여 업로더와 딱 붙임 */
         div.stDownloadButton {
-            margin-bottom: -8px !important; /* 👈 하단 여백을 위로 바짝 당김 */
+            margin-bottom: -8px !important; 
         }
         
-        /* 💡 [교정 핵심 3]: 파일 업로드 컴포넌트 상단의 과도한 공백 제거 */
+        /* 💡 파일 업로드 컴포넌트 상단의 과도한 공백 제거 */
         div[data-testid="stFileUploader"] {
             padding-top: 0px !important;
-            margin-top: -5px !important; /* 👈 위로 바짝 당겨서 딱 붙게 만듦 */
+            margin-top: -5px !important; 
         }
         
-        /* Upload 밑의 200MB 안내 문구 가독성 튜닝 */
+        /* Upload 밑의 200MB 안내 문구 가독성 및 2줄 처리 튜닝 */
         div[data-testid="stFileUploader"] section small {
             white-space: normal !important;
             word-break: break-all !important;
@@ -105,7 +105,7 @@ st.markdown("""
             color: #64748b !important;
         }
         
-        /* 오직 [🚀 과목 활성화] 버튼만 독점적으로 강렬한 빨간색 강조 효과 부여 */
+        /* 💡 오직 [🚀 과목 활성화] 버튼만 독점적으로 강렬한 빨간색 강조 효과 부여 */
         div.stButton > button[kind="primary"] {
             background-color: #ef4444 !important;
             color: white !important;
@@ -476,8 +476,9 @@ elif st.session_state["page_status"] == "teacher_main":
             
             st.markdown("<div style='height: 3px;'></div>", unsafe_allow_html=True)
             
+            # 💡 [문법 버그 완벽 수정]: 자바스크립트 기호(&&)를 파이썬 표준 기호(and)로 교정 완료!
             if st.button("🚀 과목 활성화", use_container_width=True, type="primary"):
-                if final_sub && final_gr && final_se:
+                if final_sub and final_gr and final_se:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
                     st.session_state.active_subject = final_sub
                     st.session_state.active_grade = final_gr
@@ -515,7 +516,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state["show_monitor_view"] = False
                 st.rerun()
 
-            # 성적 CSV 관리 구역
+            # 성적 CSV 관리 및 업로드 구역
             if has_active:
                 sub = st.session_state.active_subject
                 grd = st.session_state.active_grade
@@ -618,7 +619,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.session_state["trigger_save_action"] = False
                     if ready:
                         d = {"교과명":sub, "학년":grd, "학기통합명":sem, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
-                        for i, name in enumerate(item_names): d[f"학기통합명"] = name # 수정 필요 유추 부분 보존
+                        for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
                         pd.DataFrame([d]).to_csv(cf, index=False)
                         st.success("🎉 학기별 설정 저장 완료!")
                         st.rerun()
