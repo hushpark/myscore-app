@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최적화] 1450px 전체폭 + 1구역 1.4 확장 + 좌측 핵심 버튼 길이 완전 일치
+# 🎯 [CSS 최종 교정판] 1450px 전체폭 + 1구역 1.4 확장 + 비활성 버튼까지 가로 폭 100% 완전 일치
 # =========================================================================
 st.markdown("""
     <style>
@@ -24,16 +24,16 @@ st.markdown("""
         /* 하단 잉여 공간(푸터) 완전 제거 및 전체 화면 위로 끌어올리기 */
         footer { display: none !important; }
         
-        /* 위아래 높이와 스크롤바 방지 여백 유지 */
+        /* 💡 상단 잘림 느낌을 지우기 위해 위쪽 패딩과 여백을 스탠다드하게 리튜닝 */
         .block-container {
-            padding-top: 1.5rem !important; 
-            padding-bottom: 0.5rem !important; 
+            padding-top: 2.0rem !important; 
+            padding-bottom: 1.0rem !important; 
         }
         
         /* max-width를 1450px로 넉넉하게 확장 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
-            padding: 15px 20px !important; 
+            padding: 20px 25px !important; 
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
             background-color: #ffffff !important;
@@ -64,9 +64,14 @@ st.markdown("""
             white-space: nowrap !important;
         }
         
-        /* 💡 [교정 핵심]: 좌측 세로형 제어판 버튼들 가로 길이를 100% 똑같이 통일 */
-        div.stButton > button[key^="side_"] {
+        /* 💡 [교정 핵심]: 활성 상태든, 비활성(disabled) 상태든 예외 없이 가로 길이를 100% 똑같이 맞춤 */
+        div.stButton > button[key^="side_"],
+        div.stButton > button[key^="side_"]:disabled,
+        div.stButton > button[key^="side_"]:hover,
+        div.stButton > button[key^="side_"]:active {
             width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
             display: block !important;
             box-sizing: border-box !important;
             padding: 8px 12px !important;
@@ -81,7 +86,7 @@ st.markdown("""
             white-space: nowrap !important; 
         }
         
-        /* 예시 파일 다운로드 미니 미니 스타일 */
+        /* 예시 파일 다운로드 미니 스타일 */
         div.stButton > button[key="btn_download_sample"] {
             width: auto !important;             
             min-width: auto !important;
@@ -411,7 +416,7 @@ elif st.session_state["page_status"] == "teacher_auth":
             st.rerun()
 
 # ------------------------------------------
-# ⚙️ 3. 진짜 교사용 제어 센터 센터 화면 (로그인 후)
+# ⚙️ 3. 진짜 교사용 제어 센터 화면 (로그인 후)
 # ------------------------------------------
 elif st.session_state["page_status"] == "teacher_main":
     if not st.session_state["admin_logged_in"]:
@@ -433,7 +438,7 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 💡 [요청 반영]: 1구역 메뉴판의 가로 비율을 1.4로 확장 및 2구역은 4.2 매칭
+        # 💡 좌우 분할 비율 1.4 : 4.2 매칭
         frame_left, frame_right = st.columns([1.4, 4.2])
         
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
@@ -481,7 +486,6 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 💡 [버튼 정렬 구역]: CSS 규칙에 의해 모두 동일한 100% 가로폭으로 가득 차게 렌더링됩니다.
             st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
             # 1. 설정 저장 버튼
@@ -616,9 +620,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.rerun()
                     else: st.error("❌ 학급(반) 선택 및 평가 항목 명칭을 채운 후 저장을 눌러주세요.")
 
-                # ==========================================
                 # 📊 실시간 데이터 연동 모니터 구역
-                # ==========================================
                 if st.session_state["show_monitor_view"]:
                     st.markdown("<hr style='margin: 15px 0 10px 0; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
                     st.markdown("<h4 style='color: #0f172a; margin-top: 0px;'>📊 실시간 데이터 연동 모니터</h4>", unsafe_allow_html=True)
