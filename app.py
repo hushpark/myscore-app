@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 스트림릿 엔진의 스타일 강제 오버라이딩을 완벽 차단하는 규칙
+# 🎯 [CSS 최종 완결판] 과목 활성화 블루 복원 + 데이터 삭제 센터 레드 마우스 오버 탑재
 # =========================================================================
 st.markdown("""
     <style>
@@ -87,7 +87,7 @@ st.markdown("""
             padding-bottom: 4px !important;
         }
         
-        /* 💡 [교정 고정 1]: 과목 활성화 버튼 (Primary 테마 기반 블루 완벽 고정) */
+        /* 💡 [교정 고정 1]: 과목 활성화 버튼을 세련된 파란색(Primary-Soft)으로 완벽 격리 고정 */
         div.stButton > button[key="side_activate_btn"] {
             background-color: #2563eb !important;
             color: white !important;
@@ -98,20 +98,23 @@ st.markdown("""
         div.stButton > button[key="side_activate_btn"]:hover {
             background-color: #1d4ed8 !important;
             color: white !important;
+            border: 1px solid #1e40af !important;
         }
         
-        /* 💡 [교정 고정 2]: 스트림릿의 복사 태그 버그를 우회하여 데이터 삭제 센터 버튼을 무조건 빨간색으로 고정 */
-        div.stButton > button[key="side_toggle_delete_btn"],
-        div.stButton > button[key="side_toggle_delete_btn"]:hover,
-        div.stButton > button[key="side_toggle_delete_btn"]:focus,
-        div.stButton > button[key="side_toggle_delete_btn"]:active,
-        .st-key-side_toggle_delete_btn button,
-        .st-key-side_toggle_delete_btn p {
+        /* 💡 [교정 고정 2]: 데이터 삭제 센터 고유 키에 빨간색 주입 및 마우스 오버(Hover) 모션 전격 탑재 */
+        div.stButton > button[key="side_toggle_delete_btn"] {
             background-color: #ef4444 !important;
             color: white !important;
             border: 1px solid #dc2626 !important;
             box-shadow: 0 2px 4px rgba(239, 68, 68, 0.25) !important;
             font-weight: 700 !important;
+            transition: all 0.2s ease !important;
+        }
+        div.stButton > button[key="side_toggle_delete_btn"]:hover {
+            background-color: #dc2626 !important; /* 👈 마우스 올렸을 때 더 짙은 진한 빨간색으로 변경 */
+            color: white !important;
+            border: 1px solid #b91c1c !important;
+            cursor: pointer !important;
         }
         
         /* 데이터 삭제 센터 밑의 회색 가로 구분선(hr) 유격 최소화 및 마진 절반 압축 */
@@ -543,8 +546,8 @@ elif st.session_state["page_status"] == "teacher_main":
             sel_se = st.selectbox("4단계: 대상 학기 선택", options=SEMESTER_OPTIONS, index=st.session_state.sel_semester_idx, label_visibility="collapsed")
             final_se = sel_se if sel_se != "학기 선택" else ""
             
-            # 파란색 과목 활성화 버튼 (Primary 테마 기반 블루 고정)
-            if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn", type="primary"):
+            # 파란색 과목 활성화 버튼
+            if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn"):
                 if final_sub and final_gr and final_se:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
                     st.session_state.active_subject = final_sub
@@ -559,7 +562,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 데이터 삭제 센터 단추
+            # 빨간색 데이터 삭제 센터 단추
             del_panel_label = "🛠️ 데이터 삭제 센터 닫기" if st.session_state["show_delete_panel"] else "🛠️ 데이터 삭제 센터"
             if st.button(del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
                 st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
@@ -784,7 +787,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         else: st.warning("⚠️ 해당 학기의 성적 CSV 파일이 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
-                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 [🛠️ 데이터 삭제 센터]를 클릭해 주세요.")
+                st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 파란색 [🛠️ 데이터 삭제 센터]를 클릭해 주세요.")
 
         # 최하단 가이드 바
         st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
