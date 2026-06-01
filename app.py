@@ -14,23 +14,23 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 교정판] 1450px 전체폭 + 1구역 1.4 확장 + 비활성 버튼 강제 100% 일치
+# 🎯 [CSS 최종 해결판] 다운로드 버튼 텍스트까지 완벽하게 강제 한 줄 고정 세팅
 # =========================================================================
 st.markdown("""
     <style>
         .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
         div[data-testid="stHeader"] { display: none !important; background: transparent !important; }
         
-        /* 하단 잉여 공간(푸터) 완전 제거 및 전체 화면 위로 끌어올리기 */
+        /* 하단 잉여 공간(푸터) 완전 제거 */
         footer { display: none !important; }
         
-        /* 상단 잘림 느낌을 지우기 위해 위쪽 패딩과 여백을 스탠다드하게 리튜닝 */
+        /* 상단 여백 리튜닝 */
         .block-container {
             padding-top: 2.0rem !important; 
             padding-bottom: 1.0rem !important; 
         }
         
-        /* max-width를 1450px로 넉넉하게 확장 */
+        /* max-width를 1450px로 확장 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
             padding: 20px 25px !important; 
@@ -64,7 +64,7 @@ st.markdown("""
             white-space: nowrap !important;
         }
         
-        /* 💡 [교정 핵심]: 좌측 블록 내부에 있는 모든 버튼(비활성 포함)의 가로 길이를 강제로 100% 일치시킴 */
+        /* 💡 좌측 세로형 제어판 버튼들 가로 길이 100% 통일 */
         div[data-testid="stHorizontalBlock"] div.stButton button,
         div[data-testid="stHorizontalBlock"] div.stButton button:disabled,
         div[data-testid="stHorizontalBlock"] div.stButton button[disabled] {
@@ -85,18 +85,25 @@ st.markdown("""
             white-space: nowrap !important; 
         }
         
-        /* 예시 파일 다운로드 미니 스타일 */
-        div.stButton > button[key="btn_download_sample"] {
-            width: auto !important;             
-            min-width: auto !important;
-            padding: 2px 8px !important;         
-            font-size: 12px !important;          
+        /* 💡 [교정 핵심]: 예시 파일 다운로드 버튼과 내부 글자까지 예외 없이 통째로 한 줄 강제 고정 */
+        div.stDownloadButton button,
+        div.stDownloadButton button:disabled,
+        div.stDownloadButton button div,
+        div.stDownloadButton button p,
+        div.stDownloadButton button span,
+        div.stDownloadButton button[data-testid="stMarkdownContainer"] p {
+            width: 100% !important;             
+            min-width: 100% !important;
+            max-width: 100% !important;
+            display: block !important;
+            padding: 6px 5px !important;         
+            font-size: 13px !important;          
             color: #475569 !important;
             background-color: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            border-radius: 4px !important;
-            line-height: 1.2 !important;
-            white-space: nowrap !important;
+            border-radius: 5px !important;
+            line-height: 1.3 !important;
+            white-space: nowrap !important; /* 👈 절대 줄바꿈 타파 */
+            word-break: keep-all !important;
         }
         
         div.stButton:has(button[key="outer_teacher_btn"]),
@@ -487,7 +494,7 @@ elif st.session_state["page_status"] == "teacher_main":
             
             st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
-            # 1. 설정 저장 버튼 (식별을 위한 키 수치 연동 적용)
+            # 1. 설정 저장 버튼
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
             if st.button(save_btn_label, key="side_save_btn", disabled=not has_active):
                 st.session_state["trigger_save_action"] = True
@@ -521,7 +528,8 @@ elif st.session_state["page_status"] == "teacher_main":
 
                 st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 CSV 관리 및 업로드</div>", unsafe_allow_html=True)
+                    # 💡 [피드백 적용 1]: 문구를 "성적 일괄 업로드"로 최종 교정
+                    st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드</div>", unsafe_allow_html=True)
                     
                     sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + item_names
                     sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names)], columns=sample_columns)
@@ -529,6 +537,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     sample_df.to_csv(csv_buffer, index=False, encoding='cp949')
                     csv_bytes = csv_buffer.getvalue().encode('cp949')
                     
+                    # 💡 [피드백 적용 2]: 예시 파일 다운로드 컴포넌트가 한 줄로 깨끗하게 표현됨
                     st.download_button(
                         label="📥 예시 파일 다운로드",
                         data=csv_bytes,
