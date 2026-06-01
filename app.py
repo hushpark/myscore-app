@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 결과 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최적화] 전체폭 1450px 대폭 확장 및 1구역 메뉴판 시각적 안정성 확보
+# 🎯 [CSS 최적화] 1450px 전체폭 + 1구역 1.4 확장 + 좌측 핵심 버튼 길이 완전 일치
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,7 +30,7 @@ st.markdown("""
             padding-bottom: 0.5rem !important; 
         }
         
-        /* 💡 [교정 핵심]: 요청사항을 반영하여 max-width를 1450px로 시원하게 확장 */
+        /* max-width를 1450px로 넉넉하게 확장 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
             padding: 15px 20px !important; 
@@ -48,7 +48,7 @@ st.markdown("""
             background-color: transparent !important;
         }
         
-        /* 상단 우측 버튼 스타일 */
+        /* 상단 우측 학생인증 관련 버튼 스타일 */
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
         div.stButton > button[key="outer_logout_btn"],
@@ -64,17 +64,19 @@ st.markdown("""
             white-space: nowrap !important;
         }
         
-        /* 좌측 세로형 버튼 일괄 제어 구역 - 무조건 한 줄 유지 */
+        /* 💡 [교정 핵심]: 좌측 세로형 제어판 버튼들 가로 길이를 100% 똑같이 통일 */
         div.stButton > button[key^="side_"] {
             width: 100% !important;
-            padding: 6px 10px !important;
+            display: block !important;
+            box-sizing: border-box !important;
+            padding: 8px 12px !important;
             font-size: 13px !important;
             border-radius: 6px !important;
             border: 1px solid #cbd5e1 !important;
             color: #334155 !important;
             background-color: #ffffff !important;
             text-align: center !important;
-            margin-bottom: 2px !important;
+            margin-bottom: 6px !important;
             font-weight: 500 !important;
             white-space: nowrap !important; 
         }
@@ -431,8 +433,8 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 10px 0px;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 💡 [황금 분할 배율 적용]: 1구역 메뉴판을 1.3으로 듬직하게 넓히고, 2구역 표를 4.3으로 세팅
-        frame_left, frame_right = st.columns([1.3, 4.3])
+        # 💡 [요청 반영]: 1구역 메뉴판의 가로 비율을 1.4로 확장 및 2구역은 4.2 매칭
+        frame_left, frame_right = st.columns([1.4, 4.2])
         
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
         
@@ -479,19 +481,21 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
-            # 데이터 제어판 버튼 메뉴판
+            # 💡 [버튼 정렬 구역]: CSS 규칙에 의해 모두 동일한 100% 가로폭으로 가득 차게 렌더링됩니다.
             st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
+            # 1. 설정 저장 버튼
             save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
             if st.button(save_btn_label, key="side_save_btn", disabled=not has_active):
                 st.session_state["trigger_save_action"] = True
             
+            # 2. 학생 입력 확인 버튼
             monitor_label = "👀 학생 입력 확인 닫기" if st.session_state["show_monitor_view"] else "👥 학생 입력 확인"
             if st.button(monitor_label, key="side_monitor_btn", disabled=not has_active):
                 st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]
                 st.rerun()
                 
-            # "과목 추가" 컴팩트 메뉴 명칭 적용
+            # 3. 과목 추가 버튼
             if st.button("➕ 과목 추가", key="side_add_btn"):
                 st.session_state.active_subject = None
                 st.session_state.active_grade = None
@@ -543,6 +547,8 @@ elif st.session_state["page_status"] == "teacher_main":
                             st.error("❌ 파일 형식을 확인하세요 (CP949/UTF-8)")
                         
             st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+            
+            # 4. 시스템 초기화 버튼
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         # ==========================================
@@ -627,7 +633,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         
                         df_monitor = load_students(sf)
                         if not df_monitor.empty:
-                            # 💡 hide_index=True 및 여유 가로폭 매칭으로 가로 스크롤바 없는 쾌적한 테이블 구현
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
@@ -636,5 +641,5 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
 
-        # 최하단 가이드 바 (강제 한 줄 정렬 속성 완벽 보존)
+        # 최하단 가이드 바
         st.markdown("<div style='background-color:#eff6ff; border: 2px dashed #93c5fd; padding:10px; border-radius:8px; margin-top:15px; color:#1e3a8a; font-size:14px; text-align: center; font-weight: 500; white-space: nowrap !important;'><span style='display: inline-block !important; white-space: nowrap !important; word-break: keep-all !important;'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</span></div>", unsafe_allow_html=True)
