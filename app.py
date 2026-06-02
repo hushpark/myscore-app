@@ -5,10 +5,63 @@ from datetime import datetime
 import io
 import glob
 import re
+import gspread
+from google.oauth2.service_account import Credentials
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
+
+# =========================================================================
+# 🔐 [구글 시트 API 연동 설정] secrets.toml 기반 안전 접속 엔진
+# =========================================================================
+@st.cache_resource
+def init_google_sheet_client():
+    try:
+        credentials_info = st.secrets["gcp_service_account"]
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        creds = Credentials.from_service_account_info(credentials_info, scopes=scopes)
+        return gspread.authorize(creds)
+    except Exception as e:
+        return None
+
+gc = init_google_sheet_client()
+SPREADSHEET_NAME = "수행평가_데이터베이스"  # 👈 구글 드라이브 파일명
+
+def get_google_sheet(sheet_name):
+    if gc is None: return None
+    try:
+        sh = gc.open(SPREADSHEET_NAME)
+        try:
+            return sh.worksheet(sheet_name)
+        except gspread.exceptions.WorksheetNotFound:
+            return sh.add_worksheet(title=sheet_name, rows="1000", cols="30")
+    except:
+        return None
+
+def load_sheet_to_df(sheet_name, default_cols=None):
+    wks = get_google_sheet(sheet_name)
+    if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
+    try:
+        records = wks.get_all_records()
+        if not records: return pd.DataFrame(columns=default_cols if default_cols else [])
+        return pd.DataFrame(records)
+    except:
+        return pd.DataFrame(columns=default_cols if default_cols else [])
+
+def save_df_to_sheet(sheet_name, df):
+    wks = get_google_sheet(sheet_name)
+    if wks is None: return False
+    try:
+        wks.clear()
+        df_filled = df.fillna("")
+        wks.update([df_filled.columns.values.tolist()] + df_filled.values.tolist())
+        return True
+    except:
+        return False
 
 # --- 🎯 layout 설정을 centered로 고정하여 기본 프레임 최적화 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
@@ -78,88 +131,77 @@ def load_master_subjects():
         "수리·과학군": ["수학", "과학", "기술·가정", "정보"],
         "예체능군": ["음악", "미술", "체육"]
     }
-    if os.path.exists(CONFIG_FILE_MAIN):
-        try:
-            df = pd.read_csv(CONFIG_FILE_MAIN)
-            for _, row in df.iterrows():
-                group = row['교과군']
-                sub = row['과목명']
-                if group in default_structure and sub not in default_structure[group]:
-                    default_structure[group].append(sub)
-        except: pass
+    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
+    if not df.empty:
+        for _, row in df.iterrows():
+            group = str(row['교과군']).strip()
+            sub = str(row['과목명']).strip()
+            if group in default_structure and sub not in default_structure[group]:
+                default_structure[group].append(sub)
     return default_structure
 
 def save_new_subject_to_master(group, subject):
-    new_data = pd.DataFrame([{"교과군": group, "과목명": subject}])
-    if os.path.exists(CONFIG_FILE_MAIN):
-        try:
-            df = pd.read_csv(CONFIG_FILE_MAIN)
-            if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
-                pd.concat([df, new_data], ignore_index=True).to_csv(CONFIG_FILE_MAIN, index=False)
-        except: new_data.to_csv(CONFIG_FILE_MAIN, index=False)
-    else: new_data.to_csv(CONFIG_FILE_MAIN, index=False)
+    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
+    if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
+        new_row = pd.DataFrame([{"교과군": group, "과목명": subject}])
+        df = pd.concat([df, new_row], ignore_index=True)
+        save_df_to_sheet("master_subjects", df)
 
 def load_admin_password():
-    if os.path.exists(META_FILE):
-        try:
-            df = pd.read_csv(META_FILE)
-            return str(df.iloc[0]['password']).strip()
-        except: pass
+    df = load_sheet_to_df("admin_meta", ["password"])
+    if not df.empty:
+        return str(df.iloc[0]['password']).strip()
     return "1234"
 
 def save_admin_password(new_pw):
-    pd.DataFrame([{"password": str(new_pw).strip()}]).to_csv(META_FILE, index=False)
+    df = pd.DataFrame([{"password": str(new_pw).strip()}])
+    save_df_to_sheet("admin_meta", df)
 
-def get_file_names(subject, grade, semester_str):
+def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
-    return f"config_{safe_subject}_{grade}grade_{safe_semester}.csv", f"students_{safe_subject}_{grade}grade_{safe_semester}.csv"
-
-def load_config(file):
-    if os.path.exists(file):
-        try: return pd.read_csv(file).iloc[0].to_dict()
-        except: return None
-    return None
-
-def load_students(file):
-    return pd.read_csv(file) if os.path.exists(file) else pd.DataFrame()
+    return f"cfg_{safe_subject}_{grade}_{safe_semester}", f"st_{safe_subject}_{grade}_{safe_semester}"
 
 def get_active_databases():
     active_list = []
-    for f in glob.glob("config_*.csv"):
-        try:
-            filename = os.path.basename(f)
-            if filename == CONFIG_FILE_MAIN: continue
-            core_name = filename.replace("config_", "").replace(".csv", "")
-            match = re.search(r"(.+?)_(1|2|3)grade_(.+)", core_name)
-            if match:
-                sub_name = match.group(1).replace("_", " ")
-                grd_name = f"{match.group(2)}학년"
-                sem_name = match.group(3).replace("_", " ")
-                active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
-        except: pass
+    if gc is None: return active_list
+    try:
+        sh = gc.open(SPREADSHEET_NAME)
+        for wks in sh.worksheets():
+            name = wks.title
+            if name.startswith("cfg_"):
+                core_name = name.replace("cfg_", "")
+                match = re.search(r"(.+?)_(1|2|3)_(.+)", core_name)
+                if match:
+                    sub_name = match.group(1).replace("_", " ")
+                    grd_name = f"{match.group(2)}학년"
+                    sem_name = match.group(3).replace("_", " ")
+                    active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
+    except: pass
     return active_list
 
 def remove_subject_completely_from_disk(sub_name):
-    if os.path.exists(CONFIG_FILE_MAIN):
-        try:
-            df = pd.read_csv(CONFIG_FILE_MAIN)
-            df = df[df["과목명"] != sub_name]
-            df.to_csv(CONFIG_FILE_MAIN, index=False)
-        except: pass
-    safe_sub = sub_name.replace(" ", "_")
-    all_targets = glob.glob(f"config_{safe_sub}_*.csv") + glob.glob(f"students_{safe_sub}_*.csv")
-    for f in all_targets:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except: pass
+    df_m = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
+    if not df_m.empty:
+        df_m = df_m[df_m["과목명"] != sub_name]
+        save_df_to_sheet("master_subjects", df_m)
+    if gc is None: return
+    try:
+        sh = gc.open(SPREADSHEET_NAME)
+        safe_sub = sub_name.replace(" ", "_")
+        for wks in sh.worksheets():
+            if safe_sub in wks.title and (wks.title.startswith("cfg_") or wks.title.startswith("st_")):
+                sh.del_worksheet(wks)
+    except: pass
 
 def reset_all_data():
-    targets = glob.glob("config_*.csv") + glob.glob("students_*.csv") + [CONFIG_FILE_MAIN, META_FILE]
-    for f in targets:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except: pass
+    if gc is None: return
+    try:
+        sh = gc.open(SPREADSHEET_NAME)
+        for wks in sh.worksheets():
+            try: sh.del_worksheet(wks)
+            except: wks.clear()
+    except: pass
     st.session_state.clear()
     st.rerun()
 
@@ -211,7 +253,7 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_PW = load_admin_password()
 
 # ==========================================
-# 🔄 화면 분기 구동 영역
+# 🔄 화면 분기 구동 영역 (대문자 버그 완치)
 # ==========================================
 if st.session_state["page_status"] == "student_main":
     st.markdown("<style>div[data-testid='stVerticalBlockBorderWrapper'] { border: 1px solid #e2e8f0 !important; padding: 35px 40px !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; background-color: #ffffff !important; max-width: 500px !important; margin: 0px auto 20px auto !important; }</style>", unsafe_allow_html=True)
@@ -237,12 +279,14 @@ if st.session_state["page_status"] == "student_main":
             
             if sel_s != "과목 및 학기를 선택하세요.":
                 db = active_dbs[opts_s.index(sel_s)-1]
-                cf, sf = get_file_names(db['subject'], db['grade'].replace("학년",""), db['semester'])
-                config = load_config(cf)
+                cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
+                config = load_config(cf_id) if os.path.exists(cf_id) else load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
                 
                 if config:
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
-                    with St.form("login_form"):
+                    
+                    # 💡 [버그 완치 구역]: 대문자 St.form을 소문자 st.form으로 원상복구 완료!
+                    with st.form("login_form"):
                         st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🔐 본인 인증 정보 입력</div>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
                         c1, c2, c3, c4 = st.columns([1, 1, 1.5, 1.5])
@@ -253,12 +297,12 @@ if st.session_state["page_status"] == "student_main":
                         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                         
                         if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
-                            df_st = load_students(sf)
+                            df_st = load_sheet_to_df(sf_id)
                             if df_st.empty: st.error("성적 데이터가 아직 연동되지 않은 교과입니다.")
                             else:
                                 if '확인여부' in df_st.columns: df_st['확인여부'] = df_st['확인여부'].astype(str).replace(['nan', 'None', ''], '미확인')
                                 if '확인시간' in df_st.columns: df_st['확인시간'] = df_st['확인시간'].astype(str).replace(['nan', 'None', ''], '')
-                                res = df_st[(df_st['반']==int(b_in.replace("반",""))) & (df_st['번호']==n_in) & (df_st['이름']==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
+                                res = df_st[(df_st['반'].astype(int)==int(b_in.replace("반",""))) & (df_st['번호'].astype(int)==n_in) & (df_st['이름'].astype(str)==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
                                 if not res.empty:
                                     idx = res.index[0]
                                     scores, total_sum = {}, 0
@@ -273,7 +317,7 @@ if st.session_state["page_status"] == "student_main":
                                     else: scores['합계'] = [round(total_sum, 2)]
                                     
                                     df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                    df_st.to_csv(sf, index=False)
+                                    save_df_to_sheet(sf_id, df_st)
                                     show_result_dialog(name_in, scores)
                                 else: st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
 
@@ -360,13 +404,13 @@ elif st.session_state["page_status"] == "teacher_main":
 
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
-                cf, sf = get_file_names(sub, grd, sem)
-                conf = load_config(cf)
+                cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
+                conf = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else {}
                 item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else ["수행1", "수행2"]
 
                 with st.container(border=True):
                     st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
-                    st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드</div>", unsafe_allow_html=True)
+                    st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드 (클라우드 직송)</div>", unsafe_allow_html=True)
                     sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + item_names
                     sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names)], columns=sample_columns)
                     csv_buffer = io.StringIO()
@@ -379,9 +423,13 @@ elif st.session_state["page_status"] == "teacher_main":
                     if up_f:
                         try:
                             df_up = pd.read_csv(up_f, encoding='cp949')
-                            df_up.to_csv(sf, index=False)
-                            st.success("🎉 성적 연동 완료!")
-                            st.rerun()
+                            # 💡 가짜 에러 원천 차단: 로컬 디스크가 아닌 오직 구글 시트에만 즉시 세이브를 시도합니다.
+                            success = save_df_to_sheet(sf_id, df_up)
+                            if success:
+                                st.success("🎉 구글 시트로 성적 동기화 완벽 완료!")
+                                st.rerun()
+                            else:
+                                st.error("❌ 구글 시트 업로드 실패. 권한 및 파일명을 점검하세요.")
                         except:
                             st.error("❌ 인코딩 포맷을 확인해 주세요. (EUC-KR 또는 CP949)")
                     st.markdown('</div>', unsafe_allow_html=True)
@@ -395,7 +443,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 with tab_del_sem:
                     existing_dbs = get_active_databases()
-                    if not existing_dbs: st.info("현재 디스크에 누적 보관 중인 학기별 데이터베이스가 없습니다.")
+                    if not existing_dbs: st.info("현재 구글 시트에 보관 중인 분기 데이터가 없습니다.")
                     else:
                         sem_opts = [f"📚 {d['subject']} | {d['grade']} | {d['semester']}" for d in existing_dbs]
                         selected_sem_str = st.selectbox("삭제 대상 선택", options=sem_opts, label_visibility="collapsed", key="sb_delete_target_sem")
@@ -405,10 +453,13 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.markdown(f"<div style='font-size:12px; margin-bottom:4px;'>인증코드 입력: <code style='color:#ef4444;'>{verify_code_sem}</code></div>", unsafe_allow_html=True)
                         user_confirm_sem = st.text_input("인증코드 입력창", label_visibility="collapsed", key="ti_verify_sem_code")
                         if st.button("🔒 선택 학기 데이터 영구 폐기 실행", disabled=(user_confirm_sem != verify_code_sem), type="primary", use_container_width=True):
-                            cf, sf = get_file_names(t_db['subject'], t_db['grade'].replace("학년",""), t_db['semester'])
-                            if os.path.exists(cf): os.remove(cf)
-                            if os.path.exists(sf): os.remove(sf)
-                            st.toast("🎉 선택하신 분기 학기 데이터 클렌징 완료!"); st.rerun()
+                            cf_id, sf_id = get_sheet_names_id(t_db['subject'], t_db['grade'].replace("학년",""), t_db['semester'])
+                            if gc:
+                                try:
+                                    sh = gc.open(SPREADSHEET_NAME)
+                                    for n in [cf_id, sf_id]: sh.del_worksheet(sh.worksheet(n))
+                                except: pass
+                            st.toast("🎉 선택하신 분기 데이터 클렌징 완료!"); st.rerun()
 
                 with tab_del_sub:
                     raw_subjects = load_master_subjects()
@@ -422,8 +473,8 @@ elif st.session_state["page_status"] == "teacher_main":
 
             elif has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
-                cf, sf = get_file_names(sub, grd, sem)
-                conf = load_config(cf)
+                cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
+                conf = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else {}
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 with st.container(border=True):
@@ -451,18 +502,19 @@ elif st.session_state["page_status"] == "teacher_main":
                     if sel_cl and n_item > 0 and all(item_names):
                         d = {"교과명":sub, "학년":grd, "학기통합명":sem, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
                         for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
-                        pd.DataFrame([d]).to_csv(cf, index=False); st.success("🎉 설정 저장 완료!"); st.rerun()
+                        save_df_to_sheet(cf_id, pd.DataFrame([d]))
+                        st.success("🎉 구글 시트에 설정 저장 완료!"); st.rerun()
                     else: st.error("❌ 반 선택 및 항목명을 모두 채워주세요.")
 
                 if st.session_state["show_monitor_view"]:
-                    st.markdown("<h4 style='color: #0f172a;'>📊 실시간 데이터 연동 모니터</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color: #0f172a;'>📊 실시간 데이터 연동 모니터 (구글 시트)</h4>", unsafe_allow_html=True)
                     with st.container(border=True):
-                        df_monitor = load_students(sf)
+                        df_monitor = load_sheet_to_df(sf_id)
                         if not df_monitor.empty:
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
-                        else: st.warning("⚠️ 해당 학기의 성적 CSV 파일이 아직 업로드되지 않았습니다.")
+                        else: st.warning("⚠️ 해당 학기의 성적 데이터가 구글 시트에 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
