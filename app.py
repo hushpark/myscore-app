@@ -14,7 +14,7 @@ META_FILE = "admin_meta.csv"
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 데이터 삭제 단독 레드 강조 및 버튼 유격 초밀착 압축 정렬
+# 🎯 [CSS 최종 완결판] 데이터 삭제 버튼 단독 레드 조준 및 내부 탭 스타일링
 # =========================================================================
 st.markdown("""
     <style>
@@ -76,11 +76,11 @@ st.markdown("""
             word-break: keep-all !important;
         }
         
-        /* 💡 [교정 1]: 과목 활성화와 데이터 삭제 버튼 간격을 자석처럼 다시 초밀착 정렬 */
+        /* 모든 버튼과 컴포넌트 간의 세로 유격을 최소화하여 촘촘하게 배치 */
         div[data-testid="stVerticalBlock"] > div:has(div.stButton),
         div[data-testid="stVerticalBlock"] > div:has(div.stSelectbox) {
             padding-bottom: 0px !important;
-            margin-bottom: -11px !important; /* 👈 투명 간격을 극단적으로 삭제하여 복원 */
+            margin-bottom: -4px !important;
         }
         div.stButton button {
             margin: 0px auto !important;
@@ -89,9 +89,9 @@ st.markdown("""
             transition: all 0.15s ease-in-out !important;
         }
         
-        /* 💡 [교정 2]: 데이터 삭제 메인 버튼만 정밀 조준하여 빨간색 글자 + 빨간색 밑줄 스타일 완벽 주입 */
-        div:has(> button[key='side_toggle_delete_btn']) p, 
-        div:has(> button[key='side_toggle_delete_btn']) span {
+        /* 💡 [교정 핵심 1]: 위쪽 과목 활성화 버튼 침범을 막기 위해 고유 key 속성을 직접 타격하여 '데이터 삭제'만 빨간 글씨+밑줄 적용 */
+        div.stButton > button[key='side_toggle_delete_btn'] p, 
+        div.stButton > button[key='side_toggle_delete_btn'] span {
             color: #ef4444 !important;
             text-decoration: underline !important;
             text-decoration-color: #ef4444 !important;
@@ -99,7 +99,7 @@ st.markdown("""
             font-weight: 700 !important;
         }
         
-        /* 데이터 삭제 내부의 탭(Tab) 스타일링 보정 */
+        /* 💡 [교정 핵심 2]: 첫 번째 이미지처럼 삭제 센터 내부의 라디오 구역을 세련된 표준 브라우저 탭(Tab) 테마로 빌드 */
         div[data-testid="stTabs"] button[aria-selected="true"] p {
             color: #ef4444 !important;
             font-weight: bold !important;
@@ -631,7 +631,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<h4 style='color: #ef4444; margin-top: 0px;'>⚙️ 데이터 삭제 및 청소 관리 센터</h4>", unsafe_allow_html=True)
                 st.markdown("<p style='font-size:13px; color:#64748b;'>선택 과목의 CSV 데이터 파괴 및 마스터 연동 삭제를 선별 관리합니다.</p>", unsafe_allow_html=True)
                 
-                # 💡 [교정 반영]: 두 번째 그림처럼 깔끔하게 클릭해서 노출되는 표준 웹 브라우저 탭(Tab) 구현
+                # 💡 첫 번째 이미지 형태를 완벽 반영한 가로형 '탭(Tabs)' 메뉴 구조 탑재 완료
                 tab_del_sem, tab_del_sub = st.tabs(["학기 및 학년별 삭제", "과목 일괄 삭제"])
                 
                 # 1) 학기 및 학년별 삭제 모드
@@ -770,8 +770,9 @@ elif st.session_state["page_status"] == "teacher_main":
                             st.markdown('</div>', unsafe_allow_html=True)
                         else: st.warning("⚠️ 해당 학기의 성적 CSV 파일이 아직 업로드되지 않았습니다.")
             else:
-                st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
+                # 💡 두 번째 이미지의 명령어 합선 구역 완벽 분리로 버그 완치 공표
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화] 또는 [🛠️ 데이터 삭제]를 클릭해 주세요.")
+                st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
 
         # 최하단 가이드 바
         st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 <b style='color:#ef4444; font-size:15px; background-color:#ffe4e6; padding:3px 6px; border-radius:4px;'>[만들기 및 불러오기]</b>가 됩니다.</div>", unsafe_allow_html=True)
