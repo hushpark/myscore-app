@@ -253,7 +253,7 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_PW = load_admin_password()
 
 # ==========================================
-# 🔄 화면 분기 구동 영역 (대문자 버그 완치)
+# 🔄 화면 분기 구동 영역 
 # ==========================================
 if st.session_state["page_status"] == "student_main":
     st.markdown("<style>div[data-testid='stVerticalBlockBorderWrapper'] { border: 1px solid #e2e8f0 !important; padding: 35px 40px !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; background-color: #ffffff !important; max-width: 500px !important; margin: 0px auto 20px auto !important; }</style>", unsafe_allow_html=True)
@@ -285,7 +285,6 @@ if st.session_state["page_status"] == "student_main":
                 if config:
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
-                    # 💡 [버그 완치 구역]: 대문자 St.form을 소문자 st.form으로 원상복구 완료!
                     with st.form("login_form"):
                         st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🔐 본인 인증 정보 입력</div>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
@@ -423,7 +422,6 @@ elif st.session_state["page_status"] == "teacher_main":
                     if up_f:
                         try:
                             df_up = pd.read_csv(up_f, encoding='cp949')
-                            # 💡 가짜 에러 원천 차단: 로컬 디스크가 아닌 오직 구글 시트에만 즉시 세이브를 시도합니다.
                             success = save_df_to_sheet(sf_id, df_up)
                             if success:
                                 st.success("🎉 구글 시트로 성적 동기화 완벽 완료!")
@@ -488,14 +486,23 @@ elif st.session_state["page_status"] == "teacher_main":
                         with cols_cl[(i-1)%6]:
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
 
+                    # =========================================================================
+                    # 🛠️ [레이아웃 및 탭 이동 순서 완치 구역] 1번 ➡️ 2번 ➡️ 3번 순서 매칭
+                    # =========================================================================
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
-                    n_item = st.number_input("평가 항목 개수", 0, 10, default_items_count, key="num_items_input")
+                    n_item = st.number_input("평가 항목 개수", min_value=1, max_value=10, value=default_items_count if default_items_count > 0 else 3, key="num_items_input")
+                    
                     item_names = []
-                    if n_item > 0:
-                        cols_i = st.columns(2)
-                        for i in range(1, n_item + 1):
-                            with cols_i[(i-1)%2]:
-                                item_names.append(st.text_input(f"{i}번 항목명", value=conf.get(f'항목{i}_이름', "") if conf else "", key=f"item_name_input_{i}"))
+                    # 가로 2열 배치 루프 (탭 입력 방향 순차 정렬 보장 구조)
+                    for i in range(n_item):
+                        if i % 2 == 0:
+                            cols_i = st.columns(2)
+                            with cols_i[0]:
+                                name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', f"수행{i+1}"), key=f"item_name_input_{i+1}")
+                        else:
+                            with cols_i[1]:
+                                name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', f"수행{i+1}"), key=f"item_name_input_{i+1}")
+                        item_names.append(name.strip())
 
                 if st.session_state.get("trigger_save_action", False):
                     st.session_state["trigger_save_action"] = False
