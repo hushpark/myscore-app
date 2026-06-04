@@ -39,7 +39,6 @@ def get_google_sheet(sheet_name):
         try:
             return sh.worksheet(sheet_name)
         except gspread.exceptions.WorksheetNotFound:
-            # 💡 [구글 시트 강제 생성 락 해제]: 방이 없으면 1000행 30열짜리 서랍을 즉시 자동 개설합니다.
             return sh.add_worksheet(title=sheet_name, rows="1000", cols="30")
     except:
         return None
@@ -426,29 +425,25 @@ elif st.session_state["page_status"] == "teacher_main":
             monitor_label = "👀 학생 입력 확인 닫기" if st.session_state["show_monitor_view"] else "👥 학생 입력 확인"
             if st.button(monitor_label, key="side_monitor_btn", disabled=not has_active): st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]; st.rerun()
                 
-            if st.button("➕ 과목 추가", key="side_add_btn"):
-                st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester = None, None, None
-                st.session_state.sel_group_idx, st.session_state.sel_sub_idx, st.session_state.sel_grade_idx, st.session_state.sel_semester_idx = 0, 0, 0, 0
-                st.session_state["saved_classes_list"] = ''
-                st.session_state["saved_items_count"] = 0
-                st.session_state["just_saved_success"] = False
-                st.session_state["show_monitor_view"], st.session_state["show_delete_panel"] = False, False; st.rerun()
-
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
                 
-                df_load_right = load_sheet_to_df(cf_id)
-                conf = df_load_right.iloc[0].to_dict() if not df_load_right.empty else {}
-                item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else []
+                # 💡 [버그 완치 핵심 1]: 예시 파일 다운로드 서랍이 구글 시트가 아닌 "현재 화면 세션"의 항목명을 실시간 즉각 추출하도록 통로 전면 교체!
+                n_current = st.session_state.get("num_items_input", 0)
+                live_item_names = []
+                for idx in range(n_current):
+                    val_live = st.session_state.get(f"item_name_input_{sub}_{idx+1}", f"수행{idx+1}").strip()
+                    if not val_live: val_live = f"수행{idx+1}"
+                    live_item_names.append(val_live)
 
                 with st.container(border=True):
                     st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드 (클라우드 직송)</div>", unsafe_allow_html=True)
                     
                     base_headers = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"]
-                    final_headers = base_headers + item_names
-                    sample_row = ["1", "1", "홍길동", "1234", "미확인", ""] + ["0"] * len(item_names)
+                    final_headers = base_headers + live_item_names # 화면 입력값이 실시간 강제 반영됨!
+                    sample_row = ["1", "1", "홍길동", "1234", "미확인", ""] + ["0"] * len(live_item_names)
                     
                     output = io.StringIO()
                     writer = csv.writer(output)
@@ -528,7 +523,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         if '항목' in k: conf[k] = v
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
-                
+
                 with st.container(border=True):
                     saved_cl_str = st.session_state.get("saved_classes_list", str(conf.get('선택된반 목록', '')))
                     saved_cl = []
@@ -569,11 +564,9 @@ elif st.session_state["page_status"] == "teacher_main":
                                 }
                                 for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
                                 
-                                # 💡 [버그 완치 핵심]: 데이터프레임을 생성하기 전, 구글 시트에 강제로 물리적 시트방(cf_id)을 선제 가동하여 생성해버립니다!
+                                # 💡 [강제 동기화 락 해제]: 저장 누르는 즉시 시트 탭 개설
                                 get_google_sheet(cf_id)
                                 save_df_to_sheet(cf_id, pd.DataFrame([d]))
-                                
-                                # 💡 [버그 완치 핵심]: 성적 전송용 빈 시트(sf_id)도 양식이 깨지지 않도록 이때 미리 빈 방으로 뚝딱 함께 만들어 둡니다.
                                 get_google_sheet(sf_id)
                                 
                                 st.session_state["saved_classes_list"] = classes_string
@@ -585,7 +578,6 @@ elif st.session_state["page_status"] == "teacher_main":
                             else:
                                 st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성해 주셔야 저장이 가능합니다.")
 
-                # 💡 [대수술 2]: 선생님의 요청대로 녹색 가이드박스 안내판을 저장 버튼의 바로 아랫줄 영역으로 재배치 완료!
                 if st.session_state.get("just_saved_success", False):
                     st.markdown(f"""
                         <div class="next-step-box">
