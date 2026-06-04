@@ -64,7 +64,7 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# ⚡ [회색 화면 해결의 핵심]: 글자 타이핑할 때마다 구글 서버를 무한 조회하여 렉 유발하던 원인을 원천 차단!
+# ⚡ [초고속 렉 완치 1]: 활성화 분기 목록을 30초간 메모리에 가두어 무한 로딩(그림1)을 원천 차단합니다.
 @st.cache_data(ttl=30)
 def get_active_databases():
     active_list = []
@@ -83,6 +83,45 @@ def get_active_databases():
                     active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
     except: pass
     return active_list
+
+# ⚡ [초고속 렉 완치 2]: 글자 타이핑 시 교과목 불러오기 트래픽 병목 현상을 완벽 방어합니다.
+@st.cache_data(ttl=60)
+def load_master_subjects():
+    default_structure = {
+        "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
+        "수리·과학군": ["수학", "과학", "기술·가정", "정보"],
+        "예체능군": ["음악", "미술", "체육"]
+    }
+    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
+    if not df.empty:
+        for _, row in df.iterrows():
+            group = str(row['교과군']).strip()
+            sub = str(row['과목명']).strip()
+            if group in default_structure and sub not in default_structure[group]:
+                default_structure[group].append(sub)
+    return default_structure
+
+def save_new_subject_to_master(group, subject):
+    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
+    if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
+        new_row = pd.DataFrame([{"교과군": group, "과목명": subject}])
+        df = pd.concat([df, new_row], ignore_index=True)
+        save_df_to_sheet("master_subjects", df)
+
+def load_admin_password():
+    df = load_sheet_to_df("admin_meta", ["password"])
+    if not df.empty:
+        return str(df.iloc[0]['password']).strip()
+    return "1234"
+
+def save_admin_password(new_pw):
+    df = pd.DataFrame([{"password": str(new_pw).strip()}])
+    save_df_to_sheet("admin_meta", df)
+
+def get_sheet_names_id(subject, grade, semester_str):
+    safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
+    safe_semester = semester_str.replace(" ", "_").replace("/", "_")
+    return f"cfg_{safe_subject}_{grade}_{safe_semester}", f"st_{safe_subject}_{grade}_{safe_semester}"
 
 def remove_subject_completely_from_disk(sub_name):
     df_m = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
@@ -153,39 +192,6 @@ def reset_all_data():
     st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
 
-def load_master_subjects():
-    default_structure = {
-        "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
-        "수리·과학군": ["수학", "과학", "기술·가정", "정보"],
-        "예체능군": ["음악", "미술", "체육"]
-    }
-    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not df.empty:
-        for _, row in df.iterrows():
-            group = str(row['교과군']).strip()
-            sub = str(row['과목명']).strip()
-            if group in default_structure and sub not in default_structure[group]:
-                default_structure[group].append(sub)
-    return default_structure
-
-def save_new_subject_to_master(group, subject):
-    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
-        new_row = pd.DataFrame([{"교과군": group, "과목명": subject}])
-        df = pd.concat([df, new_row], ignore_index=True)
-        save_df_to_sheet("master_subjects", df)
-
-def load_admin_password():
-    df = load_sheet_to_df("admin_meta", ["password"])
-    if not df.empty:
-        return str(df.iloc[0]['password']).strip()
-    return "1234"
-
-def save_admin_password(new_pw):
-    df = pd.DataFrame([{"password": str(new_pw).strip()}])
-    save_df_to_sheet("admin_meta", df)
-
-# --- 🎯 세션 상태(임시 메모리방) 초기 가동용 안전 락(Lock) 배치 ---
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "show_monitor_view" not in st.session_state: st.session_state["show_monitor_view"] = False
@@ -253,7 +259,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🌟 [버그 연쇄 봉쇄 구역]: 구글 연동 클라이언트(gc) 가동이 끝난 완벽하게 안전한 하단 베이스에 매핑 배치!
+# 🌟 [순서 연쇄 안착 구역]: 안전 장치 가동 후 연동 정보 로드 단 1회 수행
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
@@ -420,6 +426,8 @@ elif st.session_state["page_status"] == "teacher_main":
                 
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
+                
+                # 🌟 [그림2 버그 완치]: 유령 변수명을 sub, grd, sem 명칭으로 완벽 교정 매핑했습니다!
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
                 
                 n_current = st.session_state.get("num_items_input", 0)
@@ -519,6 +527,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 # ⚡ [회색 화면 완치 격리 폼]: 상자 안에 가두어 입력할 때 트래픽 폭발을 원천 봉쇄합니다.
                 with st.form(key=f"right_config_form_secure_{sub}"):
                     
+                    # 🌟 [반 복원 코드 핵심]: 구글 시트의 "1,2,3" 문자열을 가져와 순수 정수형 리스트로 정밀 분해
                     saved_cl_str = st.session_state.get("saved_classes_list", conf.get('선택된반 목록', ''))
                     saved_cl = []
                     if saved_cl_str:
@@ -549,6 +558,7 @@ elif st.session_state["page_status"] == "teacher_main":
                                     name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
+                        # 🌟 [선생님 황금 동선 고정]: 항목 상자 바로 밑줄에 저장 버튼 연동
                         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                         submit_btn = st.form_submit_button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True)
                         
@@ -556,7 +566,7 @@ elif st.session_state["page_status"] == "teacher_main":
                             if sel_cl and all(item_names):
                                 classes_string = ",".join(map(str, sorted(sel_cl)))
                                 d = {
-                                    "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
+                                    "過목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
                                     "선택된반 목록": classes_string, "항목개수": n_item
                                 }
                                 for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
