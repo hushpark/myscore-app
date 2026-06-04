@@ -43,8 +43,6 @@ def get_google_sheet(sheet_name):
     except:
         return None
 
-# ⚡ [초고속 렉 방지 1]: 구글 시트 데이터를 읽어올 때 5초간 메모리에 가두어 깜빡임을 전면 차단
-@st.cache_data(ttl=5)
 def load_sheet_to_df(sheet_name, default_cols=None):
     wks = get_google_sheet(sheet_name)
     if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
@@ -66,8 +64,8 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# ⚡ [초고속 렉 방지 2]: 메뉴 스위칭 시 구글 서버 과부하를 막는 15초 캐시 장착
-@st.cache_data(ttl=15)
+# ⚡ [초고속 렉 방지 핵심]: 글자 타이핑할 때마다 구글 서버를 무한 조회하여 렉 유발하던 원인을 원천 차단!
+@st.cache_data(ttl=30)
 def get_active_databases():
     active_list = []
     if gc is None: return active_list
@@ -85,45 +83,6 @@ def get_active_databases():
                     active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
     except: pass
     return active_list
-
-# ⚡ [초고속 렉 방지 3]: 타이핑할 때 마스터 과목 호출 트래픽이 꼬이는 병목 전면 방어
-@st.cache_data(ttl=60)
-def load_master_subjects():
-    default_structure = {
-        "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
-        "수리·과학군": ["수학", "과학", "기술·가정", "정보"],
-        "예체능군": ["음악", "미술", "체육"]
-    }
-    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not df.empty:
-        for _, row in df.iterrows():
-            group = str(row['교과군']).strip()
-            sub = str(row['과목명']).strip()
-            if group in default_structure and sub not in default_structure[group]:
-                default_structure[group].append(sub)
-    return default_structure
-
-def save_new_subject_to_master(group, subject):
-    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
-        new_row = pd.DataFrame([{"교과군": group, "과목명": subject}])
-        df = pd.concat([df, new_row], ignore_index=True)
-        save_df_to_sheet("master_subjects", df)
-
-def load_admin_password():
-    df = load_sheet_to_df("admin_meta", ["password"])
-    if not df.empty:
-        return str(df.iloc[0]['password']).strip()
-    return "1234"
-
-def save_admin_password(new_pw):
-    df = pd.DataFrame([{"password": str(new_pw).strip()}])
-    save_df_to_sheet("admin_meta", df)
-
-def get_sheet_names_id(subject, grade, semester_str):
-    safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
-    safe_semester = semester_str.replace(" ", "_").replace("/", "_")
-    return f"cfg_{safe_subject}_{grade}_{safe_semester}", f"st_{safe_subject}_{grade}_{safe_semester}"
 
 def remove_subject_completely_from_disk(sub_name):
     df_m = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
@@ -194,6 +153,7 @@ def reset_all_data():
     st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
 
+# --- 🎯 세션 상태(임시 메모리방) 초기 가동용 안전 락(Lock) 배치 ---
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "show_monitor_view" not in st.session_state: st.session_state["show_monitor_view"] = False
@@ -262,6 +222,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 SUBJECT_MAP = load_master_subjects()
+GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
+SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 CURRENT_ADMIN_PW = load_admin_password()
 
 # ==========================================
@@ -277,6 +239,7 @@ if st.session_state["page_status"] == "student_main":
     active_dbs = get_active_databases()
     with st.container(border=True):
         st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>🎒 수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; margin: 0px 0px 10px 0px; color: #475569;'>📝 개인별 성적 조회</h4>", unsafe_allow_html=True)
         st.markdown("<h4 style='text-align: center; margin: 0px 0px 10px 0px; color: #475569;'>📝 개인별 성적 조회</h4>", unsafe_allow_html=True)
         st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:20px;'>과목과 해당 학기를 선택하고 정보를 입력해 주세요.</p>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 10px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
@@ -387,20 +350,20 @@ elif st.session_state["page_status"] == "teacher_main":
             else: st.selectbox("2단계: 세부 과목 선택", ["과목 선택 대기"], disabled=True, label_visibility="collapsed")
                 
             sel_gr = st.selectbox("3단계: 관리 학년 지정", options=GRADE_OPTIONS, index=st.session_state.sel_grade_idx, label_visibility="collapsed")
-            final_gr = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
+            grd = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
             sel_se = st.selectbox("4단계: 대상 학기 선택", options=SEMESTER_OPTIONS, index=st.session_state.sel_semester_idx, label_visibility="collapsed")
-            final_se = sel_se if sel_se != "학기 선택" else ""
+            sem = sel_se if sel_se != "학기 선택" else ""
             
             if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn"):
-                if final_sub and final_gr and final_se:
+                if final_sub and grd and sem:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
-                    st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester = final_sub, final_gr, final_se
+                    st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester = final_sub, grd, sem
                     st.session_state.sel_group_idx = g_opts.index(sel_g)
                     if sel_g != "➕ 신규 과목 개설": st.session_state.sel_sub_idx = s_opts.index(final_sub)
                     st.session_state.sel_grade_idx = GRADE_OPTIONS.index(sel_gr)
                     st.session_state.sel_semester_idx = SEMESTER_OPTIONS.index(sel_se)
                     
-                    cf_id, sf_id = get_sheet_names_id(final_sub, final_gr, final_se)
+                    cf_id, sf_id = get_sheet_names_id(final_sub, grd, sem)
                     df_init = load_sheet_to_df(cf_id)
                     if not df_init.empty:
                         r_dict = df_init.iloc[0].to_dict()
@@ -439,7 +402,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드 (클라우드 직송)</div>", unsafe_allow_html=True)
                     
                     base_headers = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"]
-                    final_headers = base_headers + live_item_names 
+                    final_headers = base_headers + live_item_names
                     sample_row = ["1", "1", "홍길동", "1234", "미확인", ""] + ["0"] * len(live_item_names)
                     
                     output = io.StringIO()
@@ -521,10 +484,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
 
-                # ⚡ [회색 화면 완치 격리 폼]: 상자 안에 가두어 입력할 때 트래픽 폭발을 원천 봉쇄합니다.
-                with st.form(key=f"right_config_form_secure_{sub}"):
-                    
-                    # 🌟 [반 복원 코드 핵심]: 구글 시트의 "1,2,3" 문자열을 가져와 순수 정수형 리스트로 정밀 분해
+                with st.container(border=True):
                     saved_cl_str = st.session_state.get("saved_classes_list", conf.get('선택된반 목록', ''))
                     saved_cl = []
                     if saved_cl_str:
@@ -537,7 +497,6 @@ elif st.session_state["page_status"] == "teacher_main":
                     cols_cl = st.columns(6)
                     for i in range(1, 13):
                         with cols_cl[(i-1)%6]:
-                            # 🌟 정수형 데이터로 대조하여 구글 시트의 값에 맞게 체크박스에 자동으로 파란 불(V)을 켭니다!
                             if st.checkbox(f"{i}반", value=(i in saved_cl), key=f"chk_class_{i}"): 
                                 sel_cl.append(i)
 
@@ -556,11 +515,8 @@ elif st.session_state["page_status"] == "teacher_main":
                                     name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
-                        # 🌟 [선생님 황금 동선 고정]: 항목 상자 바로 밑줄에 저장 버튼 연동
                         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-                        submit_btn = st.form_submit_button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True)
-                        
-                        if submit_btn:
+                        if st.button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True, key="embedded_save_btn"):
                             if sel_cl and all(item_names):
                                 classes_string = ",".join(map(str, sorted(sel_cl)))
                                 d = {
@@ -582,7 +538,6 @@ elif st.session_state["page_status"] == "teacher_main":
                             else:
                                 st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성해 주셔야 저장이 가능합니다.")
 
-                # 🌟 [선생님 황금 동선 고정]: 성공 안내 가이드 박스 표출
                 if st.session_state.get("just_saved_success", False):
                     st.markdown(f"""
                         <div class="next-step-box">
