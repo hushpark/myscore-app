@@ -195,8 +195,6 @@ def remove_subject_completely_from_disk(sub_name):
                 sh.del_worksheet(wks)
     except: pass
 
-* **🔧 수정할 코드 (이걸로 덮어쓰기 하세요):**
-  ```python
   def reset_all_data():
       # 💡 인터넷이 완전히 꼬였을 때 화면을 강제로 태초의 상태로 되돌리는 비상 탈출 장치
       st.session_state.clear()
