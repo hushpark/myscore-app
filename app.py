@@ -8,29 +8,38 @@ import re
 import gspread
 from google.oauth2.service_account import Credentials
 import csv
-import json # 💡 실시간 강제 파싱용 도구 탑재
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
 # =========================================================================
-# 🔐 [구글 시트 API 연동 설정] 서버 찌꺼기 기억을 우회하여 무조건 강제 돌파하는 엔진
+# 🔐 [구글 시트 API 연동 설정] 비밀키 내부 찌꺼기를 원천 청소하는 무적 엔진
 # =========================================================================
 @st.cache_resource
 def init_google_sheet_client():
     try:
-        # 🌟 [버그 완치 핵심]: 서버가 굳어있어도 텍스트 상자 원본을 실시간으로 직접 파싱하여 락을 풉니다.
         raw_secrets = st.secrets.get("gcp_service_account", None)
         if raw_secrets is None:
             return None
             
-        # 딕셔너리 형태로 완벽 정렬 매핑
         credentials_info = dict(raw_secrets)
         
-        # private_key 내부의 줄바꿈 특수기호 복원 안전화 조치
+        # 🌟 [긴급 특수 처방]: 스트림릿 secrets 입력창에서 오염된 private_key 문자열을 원본으로 완전 강제 복원
         if "private_key" in credentials_info:
-            credentials_info["private_key"] = credentials_info["private_key"].replace("\\n", "\n")
+            pk = str(credentials_info["private_key"]).strip()
+            # 따옴표 찌꺼기나 양끝 공백 전면 제거
+            pk = pk.strip('"').strip("'").strip()
+            # 역슬래시 n 문자로 깨진 줄바꿈 강제 교정
+            pk = pk.replace("\\n", "\n")
+            # 여러 줄로 쪼개지면서 유실된 헤더/푸터 양식 강제 복원 및 단일화
+            if "-----BEGIN PRIVATE KEY-----" not in pk:
+                pk = "-----BEGIN PRIVATE KEY-----\n" + pk
+            if "-----END PRIVATE KEY-----" not in pk:
+                pk = pk + "\n-----END PRIVATE KEY-----"
+            # 내부 연속 줄바꿈 기호 깔끔하게 단일 정렬
+            pk = re.sub(r'\n+', '\n', pk)
+            credentials_info["private_key"] = pk
             
         scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
@@ -299,8 +308,11 @@ elif st.session_state["page_status"] == "teacher_main":
         if st.button("🎒 학생 화면"): st.session_state["page_status"] = "student_main"; st.session_state["admin_logged_in"] = False; st.rerun()
 
     with st.container(border=True):
-        st.markdown("<h2>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align:center;'>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
+        # =========================================================================
+        # 🟢 실시간 연결 진단 보정 알림 신호등
+        # =========================================================================
         if gc is None:
             st.markdown("<div style='background-color:#FDE8E8; border:1px solid #F8B4B4; padding:10px; border-radius:6px; color:#9B1C1C; font-weight:bold; font-size:13px; text-align:center;'>❌ [연결 실패] 스트림릿 secrets 설정에 구글 비밀 열쇠(gcp_service_account)가 완전히 누락되었거나 형식이 깨졌습니다!</div>", unsafe_allow_html=True)
         else:
