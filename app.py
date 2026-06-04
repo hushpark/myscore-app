@@ -80,7 +80,6 @@ def reset_all_data():
     st.session_state.clear()
     for k, v in keep_keys.items():
         st.session_state[k] = v
-    # 💡 강제 리셋 시 항목 개수도 0으로 밀어버림
     st.session_state["saved_items_count"] = 0
     st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
@@ -135,6 +134,9 @@ st.markdown("""
         
         div.custom-guide-bar {
             background-color: #eff6ff !important; border: 2px dashed #93c5fd !important; padding: 10px !important; border-radius: 8px !important; margin-top: 15px !important; margin-bottom: 10px !important; color: #1e3a8a !important; font-size: 14px !important; text-align: center !important; font-weight: 500 !important; white-space: nowrap !important;
+        }
+        div.next-step-box {
+            background-color: #f0fdf4 !important; border: 2px solid #bbf7d0 !important; padding: 15px !important; border-radius: 10px !important; margin-top: 15px !important; margin-bottom: 15px !important; color: #166534 !important; font-size: 14px !important; line-height: 1.6 !important;
         }
         div.monitor-table table th, div.monitor-table table td { text-align: center !important; }
     </style>
@@ -404,11 +406,13 @@ elif st.session_state["page_status"] == "teacher_main":
                     if not df_init.empty:
                         r_dict = df_init.iloc[0].to_dict()
                         st.session_state["saved_classes_list"] = r_dict.get('선택된반 목록', '')
-                        st.session_state["saved_items_count"] = int(r_dict.get('항목개수', 0)) # 👈 핵심 교정: 기존 값이 있을 때만 불러옴
+                        st.session_state["saved_items_count"] = int(r_dict.get('항목개수', 0))
                     else:
                         st.session_state["saved_classes_list"] = ''
-                        st.session_state["saved_items_count"] = 0 # 👈 핵심 교정: 신규 개설 시 화면 무조건 0으로 비움
+                        st.session_state["saved_items_count"] = 0
                         
+                    # 💡 과목 바뀔 때 새 안내를 위해 성공 흔적 토글 초기화
+                    st.session_state["just_saved_success"] = False
                     st.session_state["show_delete_panel"] = False; st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
@@ -418,8 +422,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 if st.session_state["show_delete_panel"]: st.session_state["show_monitor_view"] = False
                 st.rerun()
             
-            save_btn_label = f"💾 [{st.session_state.get('active_subject', '미정')}] 설정 저장" if has_active else "💾 설정 저장"
-            if st.button(save_btn_label, key="side_save_btn", disabled=not has_active): st.session_state["trigger_save_action"] = True
+            # ❌ [대수술 1]: 왼쪽의 구형 `💾 설정 저장` 버튼 완전 제거 (선생님 동선 방해 금지)
             
             monitor_label = "👀 학생 입력 확인 닫기" if st.session_state["show_monitor_view"] else "👥 학생 입력 확인"
             if st.button(monitor_label, key="side_monitor_btn", disabled=not has_active): st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]; st.rerun()
@@ -429,6 +432,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state.sel_group_idx, st.session_state.sel_sub_idx, st.session_state.sel_grade_idx, st.session_state.sel_semester_idx = 0, 0, 0, 0
                 st.session_state["saved_classes_list"] = ''
                 st.session_state["saved_items_count"] = 0
+                st.session_state["just_saved_success"] = False
                 st.session_state["show_monitor_view"], st.session_state["show_delete_panel"] = False, False; st.rerun()
 
             if has_active:
@@ -520,18 +524,31 @@ elif st.session_state["page_status"] == "teacher_main":
                     conf['학년'] = raw_dict.get('학년', grd)
                     conf['학기통합명'] = raw_dict.get('학기통합명', sem)
                     conf['선택된반 목록'] = raw_dict.get('선택된반 목록', '')
-                    conf['항목개수'] = raw_dict.get('항목개수', 0) # 👈 기본값을 0으로 꽉 쥐어둠
+                    conf['항목개수'] = raw_dict.get('항목개수', 0)
                     for k, v in raw_dict.items():
                         if '항목' in k: conf[k] = v
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
+                
+                # 💡 만약 바로 직전에 저장이 완벽히 끝났다면 명확한 녹색 대형 가이드라인 송출
+                if st.session_state.get("just_saved_success", False):
+                    st.markdown(f"""
+                        <div class="next-step-box">
+                            <b>✅ [{sub}] 과목 사양 설정 완료!</b><br>
+                            구글 클라우드에 테이블이 무결하게 정착되었습니다. 이제 다음 작업을 이어가세요:<br>
+                            <hr style='margin:8px 0; border:none; border-top:1px solid #bbf7d0;'>
+                            1️⃣ 왼쪽 아래의 <b>📥 예시 파일 다운로드</b> 버튼을 누릅니다.<br>
+                            2️⃣ 다운로드된 맞춤형 CSV 파일 양식에 학생 인적 사항과 성적을 기입합니다.<br>
+                            3️⃣ 파일 선택 창에 성적 파일을 업로드하시면 실시간 성적 공시가 즉시 시작됩니다!
+                        </div>
+                    """, unsafe_allow_html=True)
+
                 with st.container(border=True):
                     saved_cl_str = st.session_state.get("saved_classes_list", str(conf.get('선택된반 목록', '')))
                     saved_cl = []
                     if saved_cl_str:
                         saved_cl = [int(x) for x in str(saved_cl_str).replace("[","").replace("]","").split(",") if str(x).strip()]
                     
-                    # 💡 [버그 완치 핵심 1]: 저장된 데이터가 없으면 무조건 0으로 깨끗하게 띄움!
                     default_items_count = st.session_state.get("saved_items_count", int(conf.get('항목개수', 0)))
 
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
@@ -542,39 +559,44 @@ elif st.session_state["page_status"] == "teacher_main":
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
 
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
-                    # 💡 [버그 완치 핵심 2]: 최하점 하한선을 0으로 지정하여 새 과목 가동 시 무조건 깔끔하게 비워지게 조율함
                     n_item = st.number_input("평가 항목 개수", min_value=0, max_value=10, value=default_items_count, key="num_items_input")
                     
                     item_names = []
-                    # 💡 [버그 완치 핵심 3]: 선생님이 숫자를 올릴 때만 아래 항목 상자가 태어나도록 가드를 칩니다.
                     if n_item > 0:
                         for i in range(n_item):
                             if i % 2 == 0:
                                 cols_i = st.columns(2)
                                 with cols_i[0]:
-                                    name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder="예: 수행평가A", key=f"item_name_input_{sub}_{i+1}")
+                                    name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             else:
                                 with cols_i[1]:
-                                    name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder="예: 수행평가B", key=f"item_name_input_{sub}_{i+1}")
+                                    name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
-                if st.session_state.get("trigger_save_action", False):
-                    st.session_state["trigger_save_action"] = False
-                    if sel_cl and n_item > 0 and all(item_names):
-                        classes_string = ",".join(map(str, sorted(sel_cl)))
-                        d = {
-                            "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
-                            "선택된반 목록": classes_string, "항목개수": n_item
-                        }
-                        for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
-                        
-                        save_df_to_sheet(cf_id, pd.DataFrame([d]))
-                        
-                        st.session_state["saved_classes_list"] = classes_string
-                        st.session_state["saved_items_count"] = n_item
-                        
-                        st.success("🎉 구글 시트에 설정 저장 완료!"); st.rerun()
-                    else: st.error("❌ 반 선택 및 항목명을 모두 채워주세요.")
+                        # =========================================================================
+                        # ✨ [선생님의 황금 피드백 적용]: 항목명 입력창이 끝나는 바로 아랫줄에 자연스럽게 동선 일치 버튼 배치
+                        # =========================================================================
+                        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+                        if st.button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True, key="embedded_save_btn"):
+                            if sel_cl and all(item_names):
+                                classes_string = ",".join(map(str, sorted(sel_cl)))
+                                d = {
+                                    "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
+                                    "선택된반 목록": classes_string, "항목개수": n_item
+                                }
+                                for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
+                                
+                                save_df_to_sheet(cf_id, pd.DataFrame([d]))
+                                
+                                # 세션 갱신 및 내비게이션 힌트 플래그 작동
+                                st.session_state["saved_classes_list"] = classes_string
+                                st.session_state["saved_items_count"] = n_item
+                                st.session_state["just_saved_success"] = True
+                                
+                                st.toast("💾 설정이 정상 수립되었습니다!")
+                                st.rerun()
+                            else:
+                                st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성성해 주셔야 저장이 가능합니다.")
 
                 show_mon = st.session_state.get("show_monitor_view", False)
                 if show_mon:
