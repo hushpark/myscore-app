@@ -195,16 +195,13 @@ def remove_subject_completely_from_disk(sub_name):
                 sh.del_worksheet(wks)
     except: pass
 
-def reset_all_data():
-    if gc is None: return
-    try:
-        sh = gc.open(SPREADSHEET_NAME)
-        for wks in sh.worksheets():
-            try: sh.del_worksheet(wks)
-            except: wks.clear()
-    except: pass
-    st.session_state.clear()
-    st.rerun()
+* **🔧 수정할 코드 (이걸로 덮어쓰기 하세요):**
+  ```python
+  def reset_all_data():
+      # 💡 인터넷이 완전히 꼬였을 때 화면을 강제로 태초의 상태로 되돌리는 비상 탈출 장치
+      st.session_state.clear()
+      st.cache_resource.clear() # 👈 구글 시트 연결 통로까지 완벽하게 새로고침
+      st.success("🔄 시스템 내부 찌꺼기가 청소되었습니다! 새로고침(F5)을 해주세요.")
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict):
