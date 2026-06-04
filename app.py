@@ -64,8 +64,8 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# ⚡ [회색 화면 해결의 핵심]: 글자 타이핑할 때마다 구글 서버를 무한 조회하여 렉 유발하던 원인을 원천 차단!
-@st.cache_data(ttl=30)
+# ⚡ [버버버벅 회색 화면 완치 핵심]: 메뉴 조작 시 구글 서버의 무한 접속을 막아 렉을 100% 제거합니다.
+@st.cache_data(ttl=15)
 def get_active_databases():
     active_list = []
     if gc is None: return active_list
@@ -157,7 +157,7 @@ def reset_all_data():
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 데이터 삭제 버튼 단독 RED 조준 및 내부 탭 스타일링
+# 🎯 [CSS 최종 완결판] 데이터 삭제 버튼 단독  조준 및 내부 탭 스타일링
 # =========================================================================
 st.markdown("""
     <style>
@@ -254,24 +254,6 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
     return f"cfg_{safe_subject}_{grade}_{safe_semester}", f"st_{safe_subject}_{grade}_{safe_semester}"
-
-def get_active_databases():
-    active_list = []
-    if gc is None: return active_list
-    try:
-        sh = gc.open(SPREADSHEET_NAME)
-        for wks in sh.worksheets():
-            name = wks.title
-            if name.startswith("cfg_"):
-                core_name = name.replace("cfg_", "")
-                match = re.search(r"(.+?)_(1|2|3)_(.+)", core_name)
-                if match:
-                    sub_name = match.group(1).replace("_", " ")
-                    grd_name = f"{match.group(2)}학년"
-                    sem_name = match.group(3).replace("_", " ")
-                    active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
-    except: pass
-    return active_list
 
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
@@ -427,7 +409,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     df_init = load_sheet_to_df(cf_id)
                     if not df_init.empty:
                         r_dict = df_init.iloc[0].to_dict()
-                        st.session_state["saved_classes_list"] = r_dict.get('선택된반 목록', '')
+                        st.session_state["saved_classes_list"] = str(r_dict.get('선택된반 목록', ''))
                         st.session_state["saved_items_count"] = int(r_dict.get('항목개수', 0))
                     else:
                         st.session_state["saved_classes_list"] = ''
@@ -537,18 +519,23 @@ elif st.session_state["page_status"] == "teacher_main":
                     conf['과목명'] = raw_dict.get('과목명', raw_dict.get('교과명', sub))
                     conf['학년'] = raw_dict.get('학년', grd)
                     conf['학기통합명'] = raw_dict.get('학기통합명', sem)
-                    conf['선택된반 목록'] = raw_dict.get('선택된반 목록', '')
+                    conf['선택된반 목록'] = str(raw_dict.get('선택된반 목록', ''))
                     conf['항목개수'] = raw_dict.get('항목개수', 0)
                     for k, v in raw_dict.items():
                         if '항목' in k: conf[k] = v
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
 
-                with st.container(border=True):
-                    saved_cl_str = st.session_state.get("saved_classes_list", str(conf.get('선택된반 목록', '')))
+                # 🌟 [버극 완전 치유 팩]: 입력 상자와 체크박스를 대형 폼(st.form) 구조로 격리!!
+                # 이렇게 가두어 두면, 체크박스를 마구 누르거나 한글 항목명을 타이핑해도 회색 화면(서버 무한호출 렉)이 절대 발생하지 않습니다!
+                with st.form(key=f"right_config_form_secure_{sub}"):
+                    
+                    # 🌟 [그림1 데이터 100% 매핑]: 구글 시트의 "1,2,3" 문자열을 분석하여 자동 체크(V)하는 지능형 파서
+                    saved_cl_str = st.session_state.get("saved_classes_list", conf.get('선택된반 목록', ''))
                     saved_cl = []
                     if saved_cl_str:
-                        saved_cl = [int(x) for x in str(saved_cl_str).replace("[","").replace("]","").split(",") if str(x).strip()]
+                        # 대괄호나 공백, 쉼표를 전면 정제하여 순수 숫자형 반 목록 추출
+                        saved_cl = [int(x) for x in str(saved_cl_str).replace("[","").replace("]","").split(",") if str(x).strip().isdigit()]
                     
                     default_items_count = st.session_state.get("saved_items_count", int(conf.get('항목개수', 0)))
 
@@ -557,7 +544,9 @@ elif st.session_state["page_status"] == "teacher_main":
                     cols_cl = st.columns(6)
                     for i in range(1, 13):
                         with cols_cl[(i-1)%6]:
-                            if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
+                            # 🌟 시트에 값이 있으면 True로 켜서 그림2에 체크박스가 자동으로 채워짐!
+                            if st.checkbox(f"{i}반", value=(i in saved_cl), key=f"chk_class_{i}"): 
+                                sel_cl.append(i)
 
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
                     n_item = st.number_input("평가 항목 개수", min_value=0, max_value=10, value=default_items_count, key="num_items_input")
@@ -574,8 +563,11 @@ elif st.session_state["page_status"] == "teacher_main":
                                     name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
+                        # 🌟 [선생님 황금 동선 고정]: 항목 상자 바로 밑줄에 저장 버튼 밀착 연동
                         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-                        if st.button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True, key="embedded_save_btn"):
+                        submit_btn = st.form_submit_button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True)
+                        
+                        if submit_btn:
                             if sel_cl and all(item_names):
                                 classes_string = ",".join(map(str, sorted(sel_cl)))
                                 d = {
@@ -584,6 +576,7 @@ elif st.session_state["page_status"] == "teacher_main":
                                 }
                                 for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
                                 
+                                # 구글 클라우드로 최종 정제 설정 파일 단 1회 연동 전송
                                 get_google_sheet(cf_id)
                                 save_df_to_sheet(cf_id, pd.DataFrame([d]))
                                 get_google_sheet(sf_id)
@@ -597,6 +590,7 @@ elif st.session_state["page_status"] == "teacher_main":
                             else:
                                 st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성해 주셔야 저장이 가능합니다.")
 
+                # 🌟 [선생님 황금 동선 고정]: 성공 안내 가이드 박스 표출
                 if st.session_state.get("just_saved_success", False):
                     st.markdown(f"""
                         <div class="next-step-box">
