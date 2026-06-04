@@ -175,6 +175,16 @@ def save_new_subject_to_master(group, subject):
         df = pd.concat([df, new_row], ignore_index=True)
         save_df_to_sheet("master_subjects", df)
 
+def load_admin_password():
+    df = load_sheet_to_df("admin_meta", ["password"])
+    if not df.empty:
+        return str(df.iloc[0]['password']).strip()
+    return "1234"
+
+def save_admin_password(new_pw):
+    df = pd.DataFrame([{"password": str(new_pw).strip()}])
+    save_df_to_sheet("admin_meta", df)
+
 # --- 🎯 세션 상태(임시 메모리방) 초기 가동용 안전 락(Lock) 배치 ---
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
@@ -243,7 +253,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🌟 [버그 원천 소멸]: 구글 연동 마스터 열쇠(gc) 생성 프로토콜 완료 후 안전하게 변수 수립 연동!
+# 🌟 [버그 연쇄 봉쇄 구역]: 구글 연동 클라이언트(gc) 가동이 끝난 완벽하게 안전한 하단 베이스에 매핑 배치!
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
@@ -506,10 +516,9 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
 
-                # ⚡ [회색 화면 완치 폼 격리]: 글자를 타이핑할 때 원격 조회를 끊어내어 초고속 메모장 스피드 구현 완료
+                # ⚡ [회색 화면 완치 격리 폼]: 상자 안에 가두어 입력할 때 트래픽 폭발을 원천 봉쇄합니다.
                 with st.form(key=f"right_config_form_secure_{sub}"):
                     
-                    # 🌟 [반 복원 코드 핵심]: 구글 시트의 "1,2,3" 문자열을 가져와 순수 정수형 리스트로 정밀 분해
                     saved_cl_str = st.session_state.get("saved_classes_list", conf.get('선택된반 목록', ''))
                     saved_cl = []
                     if saved_cl_str:
