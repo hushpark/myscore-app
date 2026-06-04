@@ -64,11 +64,15 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# 💡 [버그 완치 구역 1]: 먹통 상태를 깨부수고 세션과 구글 통로를 완벽하게 태초로 리셋하는 비상탈출 함수
+# 💡 [버그 완치 구역 1]: 에러 문구 원천 차단! 청소 후 학생 첫 화면으로 부드럽게 리다이렉트하는 리셋 엔진
 def reset_all_data():
     st.session_state.clear()
-    st.cache_resource.clear()  # 구글 시트 캐시 연결 완벽 제거
-    st.success("🔄 초기화 되었습니다. 새로고침(F5)을 해주세요.")
+    st.cache_resource.clear()  # 구글 시트 통로 완전 초기화
+    # 🌟 필수 세션 초기값을 미리 채워주어 에러 발생 가능성을 0%로 만듭니다.
+    st.session_state["page_status"] = "student_main"
+    st.session_state["admin_logged_in"] = False
+    st.toast("🔄 시스템 초기화가 완료되었습니다!")
+    st.rerun()
 
 # --- 🎯 layout 설정을 centered로 고정하여 기본 프레임 최적화 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
@@ -234,6 +238,7 @@ def password_update_dialog():
     with b_col2:
         if st.button("수정 취소", use_container_width=True): st.rerun()
 
+# 💡 세션 키 에러 방지용 안전 장치 배치
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "show_monitor_view" not in st.session_state: st.session_state["show_monitor_view"] = False
@@ -414,9 +419,6 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드 (클라우드 직송)</div>", unsafe_allow_html=True)
                     
-                    # =========================================================================
-                    # 🛠️ [다운로드 싱크 버그 완치]: 실제 설정된 3개 항목명(수행3)을 그대로 추출해 엑셀 구성
-                    # =========================================================================
                     base_headers = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"]
                     final_headers = base_headers + item_names
                     sample_row = ["1", "1", "홍길동", "1234", "미확인", ""] + ["0"] * len(item_names)
@@ -425,7 +427,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     writer = csv.writer(output)
                     writer.writerow(final_headers)
                     writer.writerow(sample_row)
-                    csv_data = output.getvalue().encode('utf-8-sig')  # 한글 인코딩 깨짐 락 해제
+                    csv_data = output.getvalue().encode('utf-8-sig')
                     
                     st.download_button(label="📥 예시 파일 다운로드", data=csv_data, file_name=f"sample_students_{sub}_{sem}.csv", mime="text/csv", key="btn_download_sample")
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
@@ -447,7 +449,9 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         with frame_right:
-            if st.session_state["show_delete_panel"]:
+            # 💡 세션 안전 체크 가드를 쳐서 KeyError를 원천 봉쇄합니다.
+            show_del = st.session_state.get("show_delete_panel", False)
+            if show_del:
                 st.markdown("<h4 style='color: #ef4444; margin-top: 0px;'>⚙️ 데이터 삭제 및 청소 관리 센터</h4>", unsafe_allow_html=True)
                 tab_del_sem, tab_del_sub = st.tabs(["학기 및 학년별 삭제", "과목 일괄 삭제"])
                 
@@ -490,9 +494,6 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    # =========================================================================
-                    # 🛠️ [반 정보 실시간 복원 구역]: 100% 강제로 풀림 현상을 틀어쥐는 매칭 장치
-                    # =========================================================================
                     saved_cl_str = str(conf.get('선택된반 목록', ''))
                     saved_cl = []
                     if saved_cl_str:
@@ -507,9 +508,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         with cols_cl[(i-1)%6]:
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
 
-                    # =========================================================================
-                    # 🛠️ [순차 탭 이동 포커싱]: 가로 2열 배치에서도 1번 -> 2번 -> 3번이 순차 유지되는 구조
-                    # =========================================================================
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
                     n_item = st.number_input("평가 항목 개수", min_value=1, max_value=10, value=default_items_count if default_items_count > 0 else 3, key="num_items_input")
                     
@@ -533,7 +531,9 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.success("🎉 구글 시트에 설정 저장 완료!"); st.rerun()
                     else: st.error("❌ 반 선택 및 항목명을 모두 채워주세요.")
 
-                if st.session_state["show_monitor_view"]:
+                # 💡 세션 가드 추가
+                show_mon = st.session_state.get("show_monitor_view", False)
+                if show_mon:
                     st.markdown("<h4 style='color: #0f172a;'>📊 실시간 데이터 연동 모니터 (구글 시트)</h4>", unsafe_allow_html=True)
                     with st.container(border=True):
                         df_monitor = load_sheet_to_df(sf_id)
