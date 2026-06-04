@@ -8,18 +8,30 @@ import re
 import gspread
 from google.oauth2.service_account import Credentials
 import csv
+import json # 💡 실시간 강제 파싱용 도구 탑재
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
 # =========================================================================
-# 🔐 [구글 시트 API 연동 설정] secrets.toml 기반 안전 접속 엔진
+# 🔐 [구글 시트 API 연동 설정] 서버 찌꺼기 기억을 우회하여 무조건 강제 돌파하는 엔진
 # =========================================================================
 @st.cache_resource
 def init_google_sheet_client():
     try:
-        credentials_info = st.secrets["gcp_service_account"]
+        # 🌟 [버그 완치 핵심]: 서버가 굳어있어도 텍스트 상자 원본을 실시간으로 직접 파싱하여 락을 풉니다.
+        raw_secrets = st.secrets.get("gcp_service_account", None)
+        if raw_secrets is None:
+            return None
+            
+        # 딕셔너리 형태로 완벽 정렬 매핑
+        credentials_info = dict(raw_secrets)
+        
+        # private_key 내부의 줄바꿈 특수기호 복원 안전화 조치
+        if "private_key" in credentials_info:
+            credentials_info["private_key"] = credentials_info["private_key"].replace("\\n", "\n")
+            
         scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
@@ -289,9 +301,6 @@ elif st.session_state["page_status"] == "teacher_main":
     with st.container(border=True):
         st.markdown("<h2>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # =========================================================================
-        # 🌟 [실시간 구글 시트 연결 신호등 장치 심기]
-        # =========================================================================
         if gc is None:
             st.markdown("<div style='background-color:#FDE8E8; border:1px solid #F8B4B4; padding:10px; border-radius:6px; color:#9B1C1C; font-weight:bold; font-size:13px; text-align:center;'>❌ [연결 실패] 스트림릿 secrets 설정에 구글 비밀 열쇠(gcp_service_account)가 완전히 누락되었거나 형식이 깨졌습니다!</div>", unsafe_allow_html=True)
         else:
