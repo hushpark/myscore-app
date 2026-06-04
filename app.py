@@ -39,6 +39,7 @@ def get_google_sheet(sheet_name):
         try:
             return sh.worksheet(sheet_name)
         except gspread.exceptions.WorksheetNotFound:
+            # 💡 [구글 시트 강제 생성 락 해제]: 방이 없으면 1000행 30열짜리 서랍을 즉시 자동 개설합니다.
             return sh.add_worksheet(title=sheet_name, rows="1000", cols="30")
     except:
         return None
@@ -81,6 +82,7 @@ def reset_all_data():
     for k, v in keep_keys.items():
         st.session_state[k] = v
     st.session_state["saved_items_count"] = 0
+    st.session_state["just_saved_success"] = False
     st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
 
@@ -411,7 +413,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.session_state["saved_classes_list"] = ''
                         st.session_state["saved_items_count"] = 0
                         
-                    # 💡 과목 바뀔 때 새 안내를 위해 성공 흔적 토글 초기화
                     st.session_state["just_saved_success"] = False
                     st.session_state["show_delete_panel"] = False; st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
@@ -421,8 +422,6 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
                 if st.session_state["show_delete_panel"]: st.session_state["show_monitor_view"] = False
                 st.rerun()
-            
-            # ❌ [대수술 1]: 왼쪽의 구형 `💾 설정 저장` 버튼 완전 제거 (선생님 동선 방해 금지)
             
             monitor_label = "👀 학생 입력 확인 닫기" if st.session_state["show_monitor_view"] else "👥 학생 입력 확인"
             if st.button(monitor_label, key="side_monitor_btn", disabled=not has_active): st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]; st.rerun()
@@ -530,19 +529,6 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 
-                # 💡 만약 바로 직전에 저장이 완벽히 끝났다면 명확한 녹색 대형 가이드라인 송출
-                if st.session_state.get("just_saved_success", False):
-                    st.markdown(f"""
-                        <div class="next-step-box">
-                            <b>✅ [{sub}] 과목 사양 설정 완료!</b><br>
-                            구글 클라우드에 테이블이 무결하게 정착되었습니다. 이제 다음 작업을 이어가세요:<br>
-                            <hr style='margin:8px 0; border:none; border-top:1px solid #bbf7d0;'>
-                            1️⃣ 왼쪽 아래의 <b>📥 예시 파일 다운로드</b> 버튼을 누릅니다.<br>
-                            2️⃣ 다운로드된 맞춤형 CSV 파일 양식에 학생 인적 사항과 성적을 기입합니다.<br>
-                            3️⃣ 파일 선택 창에 성적 파일을 업로드하시면 실시간 성적 공시가 즉시 시작됩니다!
-                        </div>
-                    """, unsafe_allow_html=True)
-
                 with st.container(border=True):
                     saved_cl_str = st.session_state.get("saved_classes_list", str(conf.get('선택된반 목록', '')))
                     saved_cl = []
@@ -573,9 +559,6 @@ elif st.session_state["page_status"] == "teacher_main":
                                     name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
-                        # =========================================================================
-                        # ✨ [선생님의 황금 피드백 적용]: 항목명 입력창이 끝나는 바로 아랫줄에 자연스럽게 동선 일치 버튼 배치
-                        # =========================================================================
                         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                         if st.button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True, key="embedded_save_btn"):
                             if sel_cl and all(item_names):
@@ -586,17 +569,34 @@ elif st.session_state["page_status"] == "teacher_main":
                                 }
                                 for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
                                 
+                                # 💡 [버그 완치 핵심]: 데이터프레임을 생성하기 전, 구글 시트에 강제로 물리적 시트방(cf_id)을 선제 가동하여 생성해버립니다!
+                                get_google_sheet(cf_id)
                                 save_df_to_sheet(cf_id, pd.DataFrame([d]))
                                 
-                                # 세션 갱신 및 내비게이션 힌트 플래그 작동
+                                # 💡 [버그 완치 핵심]: 성적 전송용 빈 시트(sf_id)도 양식이 깨지지 않도록 이때 미리 빈 방으로 뚝딱 함께 만들어 둡니다.
+                                get_google_sheet(sf_id)
+                                
                                 st.session_state["saved_classes_list"] = classes_string
                                 st.session_state["saved_items_count"] = n_item
                                 st.session_state["just_saved_success"] = True
                                 
-                                st.toast("💾 설정이 정상 수립되었습니다!")
+                                st.toast("💾 설정이 구글 클라우드에 연동되었습니다!")
                                 st.rerun()
                             else:
-                                st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성성해 주셔야 저장이 가능합니다.")
+                                st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성해 주셔야 저장이 가능합니다.")
+
+                # 💡 [대수술 2]: 선생님의 요청대로 녹색 가이드박스 안내판을 저장 버튼의 바로 아랫줄 영역으로 재배치 완료!
+                if st.session_state.get("just_saved_success", False):
+                    st.markdown(f"""
+                        <div class="next-step-box">
+                            <b>✅ [{sub}] 과목 사양 설정 완료!</b><br>
+                            구글 클라우드에 테이블 방(cfg_...)이 완벽하게 개설되었습니다. 이제 다음 작업을 순서대로 이어가세요:<br>
+                            <hr style='margin:8px 0; border:none; border-top:1px solid #bbf7d0;'>
+                            1️⃣ 왼쪽 하단 서랍에 있는 <b>📥 예시 파일 다운로드</b> 버튼을 누릅니다.<br>
+                            2️⃣ 방금 다운로드된 따끈따끈한 맞춤형 CSV 양식을 열어 학생 인적 사항과 점수를 기입합니다.<br>
+                            3️⃣ 파일 선택 창에 완성된 성적 파일을 업로드하시면 실시간 성적 공시 엔진이 완벽하게 가동됩니다!
+                        </div>
+                    """, unsafe_allow_html=True)
 
                 show_mon = st.session_state.get("show_monitor_view", False)
                 if show_mon:
@@ -612,4 +612,4 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
 
-        st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 과목의 만들기 및 불러오기가 됩니다.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='custom-guide-bar'>💡 <b>[🚀 과목 활성화]</b>를 누르시면 해당 구글 시트 데이터베이스를 원격 로드합니다.</div>", unsafe_allow_html=True)
