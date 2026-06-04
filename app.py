@@ -294,7 +294,6 @@ if st.session_state["page_status"] == "student_main":
                 config = df_load.iloc[0].to_dict() if not df_load.empty else None
                 
                 if config:
-                    # 💡 [명칭 싱크 해결]: 교과명 매칭
                     sub_title = config.get('교과명', config.get('과목명', '미정'))
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{sub_title}</b> ({config.get('학기통합명','')})</div>", unsafe_allow_html=True)
                     
@@ -397,6 +396,18 @@ elif st.session_state["page_status"] == "teacher_main":
                     if sel_g != "➕ 신규 과목 개설": st.session_state.sel_sub_idx = s_opts.index(final_sub)
                     st.session_state.sel_grade_idx = GRADE_OPTIONS.index(sel_gr)
                     st.session_state.sel_semester_idx = SEMESTER_OPTIONS.index(sel_se)
+                    
+                    # 💡 [버그 완치 핵심 1]: 과목 활성화를 누를 때, 기존 구글 시트의 값을 세션에 강제 동기화 정착시킵니다.
+                    cf_id, sf_id = get_sheet_names_id(final_sub, final_gr, final_se)
+                    df_init = load_sheet_to_df(cf_id)
+                    if not df_init.empty:
+                        r_dict = df_init.iloc[0].to_dict()
+                        st.session_state["saved_classes_list"] = r_dict.get('선택된반 목록', '')
+                        st.session_state["saved_items_count"] = int(r_dict.get('항목개수', 3))
+                    else:
+                        st.session_state["saved_classes_list"] = ''
+                        st.session_state["saved_items_count"] = 3
+                        
                     st.session_state["show_delete_panel"] = False; st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
             
@@ -415,6 +426,8 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("➕ 과목 추가", key="side_add_btn"):
                 st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester = None, None, None
                 st.session_state.sel_group_idx, st.session_state.sel_sub_idx, st.session_state.sel_grade_idx, st.session_state.sel_semester_idx = 0, 0, 0, 0
+                st.session_state["saved_classes_list"] = ''
+                st.session_state["saved_items_count"] = 3
                 st.session_state["show_monitor_view"], st.session_state["show_delete_panel"] = False, False; st.rerun()
 
             if has_active:
@@ -499,29 +512,26 @@ elif st.session_state["page_status"] == "teacher_main":
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
                 
                 df_load_main = load_sheet_to_df(cf_id)
-                # 💡 [명칭 싱크 해결]: 구글 시트에서 불러올 때 칸 이름을 유연하게 매칭하도록 완전 보정
                 conf = {}
                 if not df_load_main.empty:
                     raw_dict = df_load_main.iloc[0].to_dict()
-                    # 영어/한글 혼용 키 완벽 매핑 단일화
                     conf['과목명'] = raw_dict.get('과목명', raw_dict.get('교과명', sub))
                     conf['학년'] = raw_dict.get('학년', grd)
                     conf['학기통합명'] = raw_dict.get('학기통합명', sem)
                     conf['선택된반 목록'] = raw_dict.get('선택된반 목록', '')
-                    conf['항목개수'] = raw_dict.get('항목개수', 0)
+                    conf['항목개수'] = raw_dict.get('항목개수', 3)
                     for k, v in raw_dict.items():
-                        if '항목' in k:
-                            conf[k] = v
+                        if '항목' in k: conf[k] = v
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    # 💡 반 정보 복원 구역
-                    saved_cl_str = str(conf.get('선택된반 목록', ''))
+                    # 💡 [버그 완치 핵심 2]: 구글 시트 저장 데이터와 실시간 체크 작동을 1:1로 결합
+                    saved_cl_str = st.session_state.get("saved_classes_list", str(conf.get('선택된반 목록', '')))
                     saved_cl = []
                     if saved_cl_str:
-                        saved_cl = [int(x) for x in saved_cl_str.replace("[","").replace("]","").split(",") if x.strip()]
+                        saved_cl = [int(x) for x in str(saved_cl_str).replace("[","").replace("]","").split(",") if str(x).strip()]
                     
-                    default_items_count = int(conf.get('항목개수', 0))
+                    default_items_count = st.session_state.get("saved_items_count", int(conf.get('항목개수', 3)))
 
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
                     sel_cl = []
@@ -547,17 +557,20 @@ elif st.session_state["page_status"] == "teacher_main":
                 if st.session_state.get("trigger_save_action", False):
                     st.session_state["trigger_save_action"] = False
                     if sel_cl and n_item > 0 and all(item_names):
-                        # 💡 [버그 완치 구역 2]: 구글 시트 저장 키 명칭을 대소문자/한글 완벽 1:1 결합 매칭함
+                        # 💡 [버그 완치 핵심 3]: 구글 시트 저장과 동시에 내부 메모리 즉시 갱신 강제 주입
+                        classes_string = ",".join(map(str, sorted(sel_cl)))
                         d = {
-                            "과목명": sub, 
-                            "교과명": sub, 
-                            "학년": grd, 
-                            "학기통합명": sem, 
-                            "선택된반 목록": ",".join(map(str, sorted(sel_cl))), 
-                            "항목개수": n_item
+                            "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
+                            "선택된반 목록": classes_string, "항목개수": n_item
                         }
                         for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
+                        
                         save_df_to_sheet(cf_id, pd.DataFrame([d]))
+                        
+                        # 강제 세션 캐시 덮어쓰기 장치 작동
+                        st.session_state["saved_classes_list"] = classes_string
+                        st.session_state["saved_items_count"] = n_item
+                        
                         st.success("🎉 구글 시트에 설정 저장 완료!"); st.rerun()
                     else: st.error("❌ 반 선택 및 항목명을 모두 채워주세요.")
 
