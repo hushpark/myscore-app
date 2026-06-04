@@ -43,6 +43,8 @@ def get_google_sheet(sheet_name):
     except:
         return None
 
+# ⚡ [초고속 렉 완치 1]: 원격 데이터를 긁어올 때 메모리 버퍼를 두어 자잘한 잔렉을 전부 상쇄합니다.
+@st.cache_data(ttl=5)
 def load_sheet_to_df(sheet_name, default_cols=None):
     wks = get_google_sheet(sheet_name)
     if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
@@ -64,8 +66,8 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# ⚡ [초고속 렉 완치 1]: 활성화 분기 목록을 30초간 메모리에 가두어 무한 로딩(그림1)을 원천 차단합니다.
-@st.cache_data(ttl=30)
+# ⚡ [초고속 렉 완치 2]: 메뉴 조작 및 타이핑 시 구글 트래픽 폭발 폭주 현상을 완벽 차단 차단 락(Lock)
+@st.cache_data(ttl=15)
 def get_active_databases():
     active_list = []
     if gc is None: return active_list
@@ -84,7 +86,7 @@ def get_active_databases():
     except: pass
     return active_list
 
-# ⚡ [초고속 렉 완치 2]: 글자 타이핑 시 교과목 불러오기 트래픽 병목 현상을 완벽 방어합니다.
+# ⚡ [초고속 렉 완치 3]: 마스터 데이터 로드 트래픽 최적화 60초 캐시 보증
 @st.cache_data(ttl=60)
 def load_master_subjects():
     default_structure = {
@@ -108,6 +110,7 @@ def save_new_subject_to_master(group, subject):
         df = pd.concat([df, new_row], ignore_index=True)
         save_df_to_sheet("master_subjects", df)
 
+@st.cache_data(ttl=60)
 def load_admin_password():
     df = load_sheet_to_df("admin_meta", ["password"])
     if not df.empty:
@@ -192,6 +195,7 @@ def reset_all_data():
     st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
 
+# --- 🎯 세션 상태(임시 메모리방) 가동 안정 락(Lock) 고정 ---
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "show_monitor_view" not in st.session_state: st.session_state["show_monitor_view"] = False
@@ -259,7 +263,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🌟 [순서 연쇄 안착 구역]: 안전 장치 가동 후 연동 정보 로드 단 1회 수행
+# 🌟 [트래픽 통제 조치 완료]: 메모리 부하 방지용 함수 내부 정렬화 완료
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
@@ -388,23 +392,24 @@ elif st.session_state["page_status"] == "teacher_main":
             else: st.selectbox("2단계: 세부 과목 선택", ["과목 선택 대기"], disabled=True, label_visibility="collapsed")
                 
             sel_gr = st.selectbox("3단계: 관리 학년 지정", options=GRADE_OPTIONS, index=st.session_state.sel_grade_idx, label_visibility="collapsed")
-            final_gr = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
+            grd = sel_gr.replace("학년", "") if sel_gr != "학년 선택" else ""
             sel_se = st.selectbox("4단계: 대상 학기 선택", options=SEMESTER_OPTIONS, index=st.session_state.sel_semester_idx, label_visibility="collapsed")
-            final_se = sel_se if sel_se != "학기 선택" else ""
+            sem = sel_se if sel_se != "학기 선택" else ""
             
             if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn"):
-                if final_sub and final_gr and final_se:
+                if final_sub and grd and sem:
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
-                    st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester = final_sub, final_gr, final_se
+                    st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester = final_sub, grd, sem
                     st.session_state.sel_group_idx = g_opts.index(sel_g)
                     if sel_g != "➕ 신규 과목 개설": st.session_state.sel_sub_idx = s_opts.index(final_sub)
                     st.session_state.sel_grade_idx = GRADE_OPTIONS.index(sel_gr)
                     st.session_state.sel_semester_idx = SEMESTER_OPTIONS.index(sel_se)
                     
-                    cf_id, sf_id = get_sheet_names_id(final_sub, final_gr, final_se)
+                    cf_id, sf_id = get_sheet_names_id(final_sub, grd, sem)
                     df_init = load_sheet_to_df(cf_id)
                     if not df_init.empty:
                         r_dict = df_init.iloc[0].to_dict()
+                        # 🌟 [복원 고도화]: 읽어온 데이터를 세션 상태 방에 확실하게 보관합니다.
                         st.session_state["saved_classes_list"] = str(r_dict.get('선택된반 목록', ''))
                         st.session_state["saved_items_count"] = int(r_dict.get('항목개수', 0))
                     else:
@@ -426,8 +431,6 @@ elif st.session_state["page_status"] == "teacher_main":
                 
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
-                
-                # 🌟 [그림2 버그 완치]: 유령 변수명을 sub, grd, sem 명칭으로 완벽 교정 매핑했습니다!
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
                 
                 n_current = st.session_state.get("num_items_input", 0)
@@ -442,7 +445,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드 (클라우드 직송)</div>", unsafe_allow_html=True)
                     
                     base_headers = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"]
-                    final_headers = base_headers + live_item_names 
+                    final_headers = base_headers + live_item_names
                     sample_row = ["1", "1", "홍길동", "1234", "미확인", ""] + ["0"] * len(live_item_names)
                     
                     output = io.StringIO()
@@ -524,15 +527,16 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
 
-                # ⚡ [회색 화면 완치 격리 폼]: 상자 안에 가두어 입력할 때 트래픽 폭발을 원천 봉쇄합니다.
+                # ⚡ [회색 화면 완치 격리 폼]: 상자 안에 완벽하게 가두어 글자 타이핑 시 실시간 트래픽 폭발을 전면 진압합니다.
                 with st.form(key=f"right_config_form_secure_{sub}"):
                     
-                    # 🌟 [반 복원 코드 핵심]: 구글 시트의 "1,2,3" 문자열을 가져와 순수 정수형 리스트로 정밀 분해
+                    # 🌟 [그림1 ➡️ 그림2 체크박스 완벽 복원]: 구글 시트의 쉼표 문자열을 정수형 숫자로 안전 분해
                     saved_cl_str = st.session_state.get("saved_classes_list", conf.get('선택된반 목록', ''))
                     saved_cl = []
                     if saved_cl_str:
                         saved_cl = [int(x.strip()) for x in str(saved_cl_str).split(",") if x.strip().isdigit()]
                     
+                    # 🌟 [평가 항목 개수 연동 복원]: 구글 시트에 저장된 값 그대로 스핀박스 연동 고정
                     default_items_count = st.session_state.get("saved_items_count", int(conf.get('항목개수', 0)))
 
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
@@ -540,6 +544,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     cols_cl = st.columns(6)
                     for i in range(1, 13):
                         with cols_cl[(i-1)%6]:
+                            # 🌟 시트 데이터 정수형 판별에 성공하여, 활성화 시 해당하는 학급에 파란색 체크(V) 불이 즉시 켜집니다!
                             if st.checkbox(f"{i}반", value=(i in saved_cl), key=f"chk_class_{i}"): 
                                 sel_cl.append(i)
 
@@ -558,7 +563,7 @@ elif st.session_state["page_status"] == "teacher_main":
                                     name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
-                        # 🌟 [선생님 황금 동선 고정]: 항목 상자 바로 밑줄에 저장 버튼 연동
+                        # 🌟 [선생님 황금 동선 고정]: 항목 상자 바로 밑줄에 저장 버튼 밀착 연동
                         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                         submit_btn = st.form_submit_button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True)
                         
@@ -566,7 +571,7 @@ elif st.session_state["page_status"] == "teacher_main":
                             if sel_cl and all(item_names):
                                 classes_string = ",".join(map(str, sorted(sel_cl)))
                                 d = {
-                                    "過목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
+                                    "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
                                     "선택된반 목록": classes_string, "항목개수": n_item
                                 }
                                 for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
