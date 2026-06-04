@@ -64,6 +64,12 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
+# 💡 [버그 완치 구역 1]: 먹통 상태를 깨부수고 세션과 구글 통로를 완벽하게 태초로 리셋하는 비상탈출 함수
+def reset_all_data():
+    st.session_state.clear()
+    st.cache_resource.clear()  # 구글 시트 캐시 연결 완벽 제거
+    st.success("🔄 시스템 내부 찌꺼기가 청소되었습니다! 키보드의 F5를 눌러 새로고침을 해주세요.")
+
 # --- 🎯 layout 설정을 centered로 고정하여 기본 프레임 최적화 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
@@ -194,12 +200,6 @@ def remove_subject_completely_from_disk(sub_name):
             if safe_sub in wks.title and (wks.title.startswith("cfg_") or wks.title.startswith("st_")):
                 sh.del_worksheet(wks)
     except: pass
-
-  def reset_all_data():
-      # 💡 인터넷이 완전히 꼬였을 때 화면을 강제로 태초의 상태로 되돌리는 비상 탈출 장치
-      st.session_state.clear()
-      st.cache_resource.clear() # 👈 구글 시트 연결 통로까지 완벽하게 새로고침
-      st.success("🔄 시스템 내부 찌꺼기가 청소되었습니다! 새로고침(F5)을 해주세요.")
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict):
@@ -415,7 +415,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드 (클라우드 직송)</div>", unsafe_allow_html=True)
                     
                     # =========================================================================
-                    # 🛠️ [버그 완치 구역 1]: 화면의 진짜 항목명(수행3 포함)을 반영한 다운로드 파일 생성
+                    # 🛠️ [다운로드 싱크 버그 완치]: 실제 설정된 3개 항목명(수행3)을 그대로 추출해 엑셀 구성
                     # =========================================================================
                     base_headers = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"]
                     final_headers = base_headers + item_names
@@ -425,7 +425,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     writer = csv.writer(output)
                     writer.writerow(final_headers)
                     writer.writerow(sample_row)
-                    csv_data = output.getvalue().encode('utf-8-sig')  # 한글 깨짐 방지 킷
+                    csv_data = output.getvalue().encode('utf-8-sig')  # 한글 인코딩 깨짐 락 해제
                     
                     st.download_button(label="📥 예시 파일 다운로드", data=csv_data, file_name=f"sample_students_{sub}_{sem}.csv", mime="text/csv", key="btn_download_sample")
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
@@ -491,7 +491,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 with st.container(border=True):
                     # =========================================================================
-                    # 🛠️ [버그 완치 구역 2]: 구글 시트에서 가져온 반 목록을 100% 강제 동기화 복원
+                    # 🛠️ [반 정보 실시간 복원 구역]: 100% 강제로 풀림 현상을 틀어쥐는 매칭 장치
                     # =========================================================================
                     saved_cl_str = str(conf.get('선택된반 목록', ''))
                     saved_cl = []
@@ -508,7 +508,7 @@ elif st.session_state["page_status"] == "teacher_main":
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
 
                     # =========================================================================
-                    # 🛠️ [버그 완치 구역 3]: 가로 2열 탭(Tab) 키 무한 정렬 포커싱 매칭 구조
+                    # 🛠️ [순차 탭 이동 포커싱]: 가로 2열 배치에서도 1번 -> 2번 -> 3번이 순차 유지되는 구조
                     # =========================================================================
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
                     n_item = st.number_input("평가 항목 개수", min_value=1, max_value=10, value=default_items_count if default_items_count > 0 else 3, key="num_items_input")
