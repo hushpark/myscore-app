@@ -43,7 +43,7 @@ def get_google_sheet(sheet_name):
     except:
         return None
 
-# ⚡ [속도 최적화 1]: 데이터 로드 시 매번 구글 서버를 찌르지 않도록 캐싱 처리
+# ⚡ [초고속 렉 방지]: 데이터 로드 시 구글 서버의 과부하를 막는 캐싱 엔진
 @st.cache_data(ttl=10)
 def load_sheet_to_df(sheet_name):
     wks = get_google_sheet(sheet_name)
@@ -66,7 +66,7 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# ⚡ [속도 최적화 2]: 활성화 과목 목록 조회 트래픽 제어 (버벅임 차단 핵심)
+# ⚡ [초고속 렉 방지]: 활성화된 과목 스위칭 목록 조회 딜레이 차단
 @st.cache_data(ttl=30)
 def get_active_databases():
     active_list = []
@@ -87,7 +87,6 @@ def get_active_databases():
     return active_list
 
 def load_master_subjects_local():
-    # 기본 교과 분류 구조 피드백 데이터
     return {
         "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
         "수리·과학군": ["수학", "과학", "기술·가정", "정보"],
@@ -120,7 +119,7 @@ def reset_all_data():
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 가독성 및 세련된 레이아웃 디자인
+# 🎯 [CSS 최종 완결판] 미니 로그인 박스 및 모던 UI 스타일 복원
 # =========================================================================
 st.markdown("""
     <style>
@@ -129,6 +128,7 @@ st.markdown("""
         footer { display: none !important; }
         .block-container { padding-top: 2.5rem !important; padding-bottom: 0.5rem !important; }
         
+        /* 메인 콘텐츠 카드 */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e2e8f0 !important;
             padding: 20px 25px 30px 25px !important; 
@@ -144,19 +144,13 @@ st.markdown("""
         
         div.stButton > button[key="outer_teacher_btn"],
         div.stButton > button[key="outer_student_btn"],
-        div.stButton > button[key="outer_logout_btn"],
-        div.stButton > button[key="outer_pw_btn"] {
+        div.stButton > button[key="outer_logout_btn"] {
             width: fit-content !important; min-width: auto !important; padding: 3px 12px !important; font-size: 12px !important; border-radius: 6px !important; border: 1px solid #cbd5e1 !important; color: #475569 !important; background-color: #ffffff !important; white-space: nowrap !important;
         }
         div[data-testid="stHorizontalBlock"] div.stButton button { white-space: nowrap !important; word-break: keep-all !important; }
         div[data-testid="stVerticalBlock"] > div:has(div.stButton), div[data-testid="stVerticalBlock"] > div:has(div.stSelectbox) { padding-bottom: 0px !important; margin-bottom: -4px !important; }
         div.stButton button { margin: 0px auto !important; padding-top: 5px !important; padding-bottom: 5px !important; transition: all 0.15s ease-in-out !important; }
         
-        div.stButton > button[key='side_toggle_delete_btn'] p, div.stButton > button[key='side_toggle_delete_btn'] span {
-            color: #ef4444 !important; text-decoration: underline !important; font-weight: 700 !important;
-        }
-        div[data-testid="stTabs"] button[aria-selected="true"] p { color: #ef4444 !important; font-weight: bold !important; }
-        div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] { background-color: #ef4444 !important; }
         div.stDownloadButton, div.stDownloadButton button, div.stDownloadButton button * { font-size: 11px !important; white-space: nowrap !important; word-break: keep-all !important; }
         div.stDownloadButton button { padding: 4px 6px !important; }
         div.stDownloadButton { margin-bottom: -15px !important; }
@@ -169,7 +163,6 @@ st.markdown("""
         div.next-step-box {
             background-color: #f0fdf4 !important; border: 2px solid #bbf7d0 !important; padding: 15px !important; border-radius: 10px !important; margin-top: 15px !important; margin-bottom: 15px !important; color: #166534 !important; font-size: 14px !important; line-height: 1.6 !important;
         }
-        div.monitor-table table th, div.monitor-table table td { text-align: center !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -186,10 +179,9 @@ def show_result_dialog(student_name, scores_dict):
         st.session_state.clear()
         st.rerun()
 
+# 세션 초기화 처리 안전장치
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
-if "show_monitor_view" not in st.session_state: st.session_state["show_monitor_view"] = False
-if "show_delete_panel" not in st.session_state: st.session_state["show_delete_panel"] = False
 if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
 if "sel_sub_idx" not in st.session_state: st.session_state.sel_sub_idx = 0
 if "sel_grade_idx" not in st.session_state: st.session_state.sel_grade_idx = 0
@@ -211,7 +203,7 @@ if st.session_state["page_status"] == "student_main":
             
     active_dbs = get_active_databases()
     with st.container(border=True):
-        st.markdown("<h2 style='text-align: center;'>🎒 수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+        st.markdown("<h2>🎒 수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 10px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         if not active_dbs:
@@ -257,10 +249,12 @@ if st.session_state["page_status"] == "student_main":
                                 else: st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
 
 elif st.session_state["page_status"] == "teacher_auth":
-    st.markdown("<style>div[data-testid='stForm'] { border: 1px solid #e2e8f0 !important; padding: 35px 40px !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; background-color: #ffffff !important; max-width: 450px !important; margin: 40px auto 20px auto !important; }</style>", unsafe_allow_html=True)
+    # 🌟 [그림1 복원]: 와이드 화면을 컴팩트한 미니 로그인 폼 상자로 완벽 복원
+    st.markdown("<style>div[data-testid='stVerticalBlockBorderWrapper'] { border: 1px solid #e2e8f0 !important; padding: 35px 40px !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; background-color: #ffffff !important; max-width: 450px !important; margin: 80px auto 20px auto !important; }</style>", unsafe_allow_html=True)
     with st.form("admin_login_form"):
-        st.markdown("<h2 style='text-align: center;'>⚙️ 교과 통합 관리자</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; margin: 0px 0px 15px 0px;'>⚙️ 교과 통합 관리자</h2>", unsafe_allow_html=True)
         admin_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", label_visibility="collapsed")
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         if st.form_submit_button("로그인", use_container_width=True, type="primary"):
             if admin_pw == "1234": st.session_state["admin_logged_in"] = True; st.session_state["page_status"] = "teacher_main"; st.rerun()
             else: st.error("❌ 비밀번호가 틀렸습니다.")
@@ -273,12 +267,14 @@ elif st.session_state["page_status"] == "teacher_main":
     col_empty, col_logout = st.columns([6, 1.4])
     with col_logout:
         if st.button("🎒 학생 화면", key="outer_logout_btn", use_container_width=True):
-            st.session_state["page_status"] = "student_main"; st.session_state["admin_logged_in"] = False; st.session_state["show_monitor_view"] = False; st.session_state["show_delete_panel"] = False; st.rerun()
+            # 🌟 [그림2 스위칭 복원]: 학생 화면에 갔다 와도 활성화 과목 락(Lock)을 유지하기 위해 핵심 값 유지 보존
+            st.session_state["page_status"] = "student_main"
+            st.rerun()
 
     with st.container(border=True):
         st.markdown("<h2>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
         
-        # 🟢 상단 실시간 든든한 신호등 알림판 고정
+        # 원격 안전 신호등 고정
         if gc is None:
             st.markdown("<div style='background-color:#FDE8E8; border:1px solid #F8B4B4; padding:10px; border-radius:6px; color:#9B1C1C; font-weight:bold; font-size:13px; text-align:center; margin-bottom:15px;'>❌ [연결 실패] 스트림릿 secrets 열쇠 양식이 올바르지 않습니다.</div>", unsafe_allow_html=True)
         else:
@@ -323,19 +319,9 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.session_state["saved_classes_list"] = ''
                         st.session_state["saved_items_count"] = 0
                         
-                    st.session_state["just_saved_success"] = False
-                    st.session_state["show_delete_panel"] = False; st.rerun()
+                    st.session_state["just_saved_success"] = False; st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
-            
-            del_panel_label = "🚨 데이터 삭제 닫기" if st.session_state["show_delete_panel"] else "🚨 데이터 삭제"
-            if st.button(del_panel_label, key="side_toggle_delete_btn", use_container_width=True):
-                st.session_state["show_delete_panel"] = not st.session_state["show_delete_panel"]
-                if st.session_state["show_delete_panel"]: st.session_state["show_monitor_view"] = False
-                st.rerun()
-            
-            monitor_label = "👀 학생 입력 확인 닫기" if st.session_state["show_monitor_view"] else "👥 학생 입력 확인"
-            if st.button(monitor_label, key="side_monitor_btn", disabled=not has_active): st.session_state["show_monitor_view"] = not st.session_state["show_monitor_view"]; st.rerun()
-                
+
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
@@ -358,7 +344,6 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.download_button(label="📥 예시 파일 다운로드", data=output.getvalue().encode('utf-8-sig'), file_name=f"sample_students_{sub}_{sem}.csv", mime="text/csv", key="btn_download_sample")
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                     
-                    # ⚡ [버그 완치]: 성적 전송 완료 후 파일 락 제거 및 리셋 구조 가동
                     up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="csv_uploader_reset")
                     if up_f:
                         try:
@@ -392,10 +377,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
 
-                # =========================================================================
-                # ⚡ [회색 화면 해결 핵심]: 입력 상자들을 대형 폼(st.form) 안으로 패키징 격리!!
-                # 이렇게 묶어두면 글자를 치거나 체크박스를 켰을 때 구글 서버를 전혀 호출하지 않습니다!
-                # =========================================================================
+                # ⚡ [회색 화면 완치 폼 격리]: 글자를 타이핑할 때 원격 조회를 끊어내어 초고속 메모장 스피드 구현 완료
                 with st.form(key=f"right_config_form_{sub}"):
                     saved_cl_str = st.session_state.get("saved_classes_list", str(conf.get('선택된반 목록', '')))
                     saved_cl = [int(x) for x in str(saved_cl_str).replace("[","").replace("]","").split(",") if str(x).strip()] if saved_cl_str else []
@@ -409,8 +391,6 @@ elif st.session_state["page_status"] == "teacher_main":
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
 
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
-                    
-                    # 💡 항목 개수 조절용 넘버 박스
                     n_item = st.number_input("평가 항목 개수", min_value=0, max_value=10, value=default_items_count, key="num_items_input")
                     
                     item_names = []
@@ -425,7 +405,7 @@ elif st.session_state["page_status"] == "teacher_main":
                                     name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
-                    # ✨ [선생님의 동선 배치]: 항목 입력 박스가 끝나는 바로 아랫줄에 저장 버튼 연동
+                    # ✨ [선생님의 동선 배치 복원]: 항목창이 끝나는 줄 바로 아랫줄에 자연스럽게 버튼 결합
                     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                     submit_btn = st.form_submit_button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True)
                     
@@ -438,7 +418,6 @@ elif st.session_state["page_status"] == "teacher_main":
                             }
                             for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
                             
-                            # 버튼 클릭 시에만 구글 원격 저장소 최초 1회 호출 구동!
                             get_google_sheet(cf_id)
                             save_df_to_sheet(cf_id, pd.DataFrame([d]))
                             get_google_sheet(sf_id)
@@ -451,7 +430,7 @@ elif st.session_state["page_status"] == "teacher_main":
                         else:
                             st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성해 주셔야 저장이 가능합니다.")
 
-                # ✨ [선생님 전용 알림판]: 저장 버튼의 바로 아랫줄에 정렬 배치된 서랍장
+                # ✨ [선생님 전용 안내판]: 저장 성공 후 버튼 바로 아랫줄에 착 감겨서 송출되는 지침서
                 if st.session_state.get("just_saved_success", False):
                     st.markdown(f"""
                         <div class="next-step-box">
