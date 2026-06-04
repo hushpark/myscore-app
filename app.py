@@ -68,7 +68,7 @@ def save_df_to_sheet(sheet_name, df):
 def reset_all_data():
     st.session_state.clear()
     st.cache_resource.clear()  # 구글 시트 캐시 연결 완벽 제거
-    st.success("🔄 시스템 내부 찌꺼기가 청소되었습니다! 키보드의 F5를 눌러 새로고침을 해주세요.")
+    st.success("🔄 초기화 되었습니다. 새로고침(F5)을 해주세요.")
 
 # --- 🎯 layout 설정을 centered로 고정하여 기본 프레임 최적화 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
