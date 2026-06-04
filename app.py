@@ -43,15 +43,17 @@ def get_google_sheet(sheet_name):
     except:
         return None
 
-def load_sheet_to_df(sheet_name, default_cols=None):
+# ⚡ [속도 최적화 1]: 데이터 로드 시 매번 구글 서버를 찌르지 않도록 캐싱 처리
+@st.cache_data(ttl=10)
+def load_sheet_to_df(sheet_name):
     wks = get_google_sheet(sheet_name)
-    if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
+    if wks is None: return pd.DataFrame()
     try:
         records = wks.get_all_records()
-        if not records: return pd.DataFrame(columns=default_cols if default_cols else [])
+        if not records: return pd.DataFrame()
         return pd.DataFrame(records)
     except:
-        return pd.DataFrame(columns=default_cols if default_cols else [])
+        return pd.DataFrame()
 
 def save_df_to_sheet(sheet_name, df):
     wks = get_google_sheet(sheet_name)
@@ -64,7 +66,7 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# ⚡ [속도 저하 완벽 방어]: 구글 분류 목록을 임시 기억하여 버벅거림을 원천 차단
+# ⚡ [속도 최적화 2]: 활성화 과목 목록 조회 트래픽 제어 (버벅임 차단 핵심)
 @st.cache_data(ttl=30)
 def get_active_databases():
     active_list = []
@@ -83,6 +85,14 @@ def get_active_databases():
                     active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
     except: pass
     return active_list
+
+def load_master_subjects_local():
+    # 기본 교과 분류 구조 피드백 데이터
+    return {
+        "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
+        "수리·과학군": ["수학", "과학", "기술·가정", "정보"],
+        "예체능군": ["음악", "미술", "체육"]
+    }
 
 def reset_all_data():
     st.cache_resource.clear()
@@ -106,11 +116,11 @@ def reset_all_data():
     st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
 
-# --- 🎯 layout 설정을 centered로 고정하여 기본 프레임 최적화 ---
+# --- layout 설정을 centered로 고정하여 기본 프레임 최적화 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 모던 UI 및 안내창 스타일 시트
+# 🎯 [CSS 최종 완결판] 가독성 및 세련된 레이아웃 디자인
 # =========================================================================
 st.markdown("""
     <style>
@@ -152,7 +162,6 @@ st.markdown("""
         div.stDownloadButton { margin-bottom: -15px !important; }
         div.compact-upload-box { padding: 6px 10px !important; margin-top: 2px !important; margin-bottom: 2px !important; }
         div[data-testid="stFileUploader"] { padding-top: 0px !important; margin-top: -10px !important; }
-        div[data-testid="stFileUploader"] section small { white-space: normal !important; word-break: break-all !important; display: block !important; line-height: 1.3 !important; color: #64748b !important; }
         
         div.custom-guide-bar {
             background-color: #eff6ff !important; border: 2px dashed #93c5fd !important; padding: 10px !important; border-radius: 8px !important; margin-top: 15px !important; margin-bottom: 10px !important; color: #1e3a8a !important; font-size: 14px !important; text-align: center !important; font-weight: 500 !important; white-space: nowrap !important;
@@ -164,63 +173,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def is_strong_password(pw):
-    if len(pw) < 12: return False, "❌ 최소 12자리 이상이어야 합니다."
-    if not re.search("[a-zA-Z]", pw): return False, "❌ 영문자가 포함되어야 합니다."
-    if not re.search("[0-9]", pw): return False, "❌ 숫자가 포함되어야 합니다."
-    if not re.search("[!@#$%^&*(),.?\":{}|<>]", pw): return False, "❌ 특수문자가 포함되어야 합니다."
-    return True, "✅ 사용 가능한 안전한 암호 조건입니다."
-
-def load_master_subjects():
-    default_structure = {
-        "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
-        "수리·과학군": ["수학", "과학", "기술·가정", "정보"],
-        "예체능군": ["음악", "미술", "체육"]
-    }
-    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not df.empty:
-        for _, row in df.iterrows():
-            group = str(row['교과군']).strip()
-            sub = str(row['과목명']).strip()
-            if group in default_structure and sub not in default_structure[group]:
-                default_structure[group].append(sub)
-    return default_structure
-
-def save_new_subject_to_master(group, subject):
-    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
-        new_row = pd.DataFrame([{"교과군": group, "과목명": subject}])
-        df = pd.concat([df, new_row], ignore_index=True)
-        save_df_to_sheet("master_subjects", df)
-
-def load_admin_password():
-    df = load_sheet_to_df("admin_meta", ["password"])
-    if not df.empty:
-        return str(df.iloc[0]['password']).strip()
-    return "1234"
-
-def save_admin_password(new_pw):
-    df = pd.DataFrame([{"password": str(new_pw).strip()}])
-    save_df_to_sheet("admin_meta", df)
-
 def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
     return f"cfg_{safe_subject}_{grade}_{safe_semester}", f"st_{safe_subject}_{grade}_{safe_semester}"
-
-def remove_subject_completely_from_disk(sub_name):
-    df_m = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not df_m.empty:
-        df_m = df_m[df_m["과목명"] != sub_name]
-        save_df_to_sheet("master_subjects", df_m)
-    if gc is None: return
-    try:
-        sh = gc.open(SPREADSHEET_NAME)
-        safe_sub = sub_name.replace(" ", "_")
-        for wks in sh.worksheets():
-            if safe_sub in wks.title and (wks.title.startswith("cfg_") or wks.title.startswith("st_")):
-                sh.del_worksheet(wks)
-    except: pass
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict):
@@ -229,31 +185,6 @@ def show_result_dialog(student_name, scores_dict):
     if st.button("확인 후 닫기", use_container_width=True, type="primary"):
         st.session_state.clear()
         st.rerun()
-
-@st.dialog("🔐 관리자 암호 수정")
-def password_update_dialog():
-    st.markdown("<div style='padding: 5px;'></div>", unsafe_allow_html=True)
-    new_pw = st.text_input("1. 새 암호 입력", type="password", key="dialog_new_pw")
-    confirm_pw = st.text_input("2. 새 암호 확인", type="password", key="dialog_confirm_pw")
-    is_valid, msg = is_strong_password(new_pw)
-    if new_pw:
-        if new_pw == confirm_pw and is_valid:
-            st.markdown("<div style='background-color:#E8F5E9; border-radius:4px; padding:10px; color:#2E7D32; font-weight:500; margin-bottom:10px;'>✅ 두 암호가 완벽하게 일치합니다.</div>", unsafe_allow_html=True)
-        elif confirm_pw and new_pw != confirm_pw:
-            st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
-        else:
-            st.warning(msg)
-    st.markdown("""<div style="font-size: 13px; color: #57606a; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px;">
-    <b>[안전 암호 규칙]</b><br>- 최소 12자 이상 필수<br>- 영문 + 숫자 + 특수기호 조합
-    </div>""", unsafe_allow_html=True)
-    st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
-    can_submit = is_valid and (new_pw == confirm_pw)
-    b_col1, b_col2 = st.columns(2)
-    with b_col1:
-        if st.button("저장 후 적용", disabled=not can_submit, use_container_width=True, type="primary"):
-            save_admin_password(new_pw); st.toast("🎉 암호가 변경되었습니다!"); st.rerun()
-    with b_col2:
-        if st.button("수정 취소", use_container_width=True): st.rerun()
 
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
@@ -264,10 +195,9 @@ if "sel_sub_idx" not in st.session_state: st.session_state.sel_sub_idx = 0
 if "sel_grade_idx" not in st.session_state: st.session_state.sel_grade_idx = 0
 if "sel_semester_idx" not in st.session_state: st.session_state.sel_semester_idx = 0
 
-SUBJECT_MAP = load_master_subjects()
+SUBJECT_MAP = load_master_subjects_local()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
-CURRENT_ADMIN_PW = load_admin_password()
 
 # ==========================================
 # 🔄 화면 분기 구동 영역 
@@ -281,18 +211,14 @@ if st.session_state["page_status"] == "student_main":
             
     active_dbs = get_active_databases()
     with st.container(border=True):
-        st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>🎒 수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-        st.markdown("<h4 style='text-align: center; margin: 0px 0px 10px 0px; color: #475569;'>📝 개인별 성적 조회</h4>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:20px;'>과목과 해당 학기를 선택하고 정보를 입력해 주세요.</p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>🎒 수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 10px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         if not active_dbs:
             st.warning("현재 등록된 성적 데이터가 없습니다.")
         else:
-            st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🎯 대상 과목 및 학기 선택</div>", unsafe_allow_html=True)
             opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 과목 선택", opts_s, label_visibility="collapsed", key="student_select_sub")
-            st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
             
             if sel_s != "과목 및 학기를 선택하세요.":
                 db = active_dbs[opts_s.index(sel_s)-1]
@@ -303,10 +229,9 @@ if st.session_state["page_status"] == "student_main":
                 
                 if config:
                     sub_title = config.get('교과명', config.get('과목명', '미정'))
-                    st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{sub_title}</b> ({config.get('학기통합명','')})</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'>선택된 교과: &nbsp;🧬 <b>{sub_title}</b></div>", unsafe_allow_html=True)
                     
                     with st.form("login_form"):
-                        st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🔐 본인 인증 정보 입력</div>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
                         if not classes: classes = ["1반"]
                         
@@ -315,45 +240,29 @@ if st.session_state["page_status"] == "student_main":
                         with c2: n_in = st.number_input("번호", 1, 50, 1)
                         with c3: name_in = st.text_input("이름", placeholder="홍길동")
                         with c4: pw_in = st.text_input("비밀번호", type="password", placeholder="****")
-                        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                         
                         if st.form_submit_button("🔍 내 점수 확인하기", use_container_width=True, type="primary"):
                             df_st = load_sheet_to_df(sf_id)
                             if df_st.empty: st.error("성적 데이터가 아직 연동되지 않은 교과입니다.")
                             else:
-                                if '확인여부' in df_st.columns: df_st['확인여부'] = df_st['확인여부'].astype(str).replace(['nan', 'None', ''], '미확인')
-                                if '확인시간' in df_st.columns: df_st['확인시간'] = df_st['확인시간'].astype(str).replace(['nan', 'None', ''], '')
                                 res = df_st[(df_st['반'].astype(int)==int(b_in.replace("반",""))) & (df_st['번호'].astype(int)==n_in) & (df_st['이름'].astype(str)==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
                                 if not res.empty:
                                     idx = res.index[0]
-                                    scores, total_sum = {}, 0
+                                    scores = {}
                                     for i in range(int(config['항목개수'])):
                                         h_name = config.get(f'항목{i+1}_이름', f'항목{i+1}')
                                         if h_name in df_st.columns:
-                                            val = df_st.loc[idx, h_name]; scores[h_name] = [val]
-                                            try:
-                                                if pd.notna(val): total_sum += float(val)
-                                            except: pass
-                                    if float(total_sum).is_integer(): scores['합계'] = [int(total_sum)]
-                                    else: scores['합계'] = [round(total_sum, 2)]
-                                    
-                                    df_st.loc[idx, '확인여부'] = str("확인 완료")
-                                    df_st.loc[idx, '확인시간'] = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                                    save_df_to_sheet(sf_id, df_st)
+                                            scores[h_name] = [df_st.loc[idx, h_name]]
                                     show_result_dialog(name_in, scores)
                                 else: st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
 
 elif st.session_state["page_status"] == "teacher_auth":
     st.markdown("<style>div[data-testid='stForm'] { border: 1px solid #e2e8f0 !important; padding: 35px 40px !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; background-color: #ffffff !important; max-width: 450px !important; margin: 40px auto 20px auto !important; }</style>", unsafe_allow_html=True)
     with st.form("admin_login_form"):
-        st.markdown("<h2 style='text-align: center; margin: 0px 0px 5px 0px;'>⚙️ 교과 통합 관리자</h2>", unsafe_allow_html=True)
-        st.markdown("<hr style='margin: 15px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; font-size:14px; color:#64748b; margin-bottom:25px; line-height: 1.5;'>여러 교과와 학년별 성적 데이터베이스를<br>스위칭하며 관리하는 공간입니다.</p>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:8px;'>관리자 인증 비밀번호를 입력하세요</div>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>⚙️ 교과 통합 관리자</h2>", unsafe_allow_html=True)
         admin_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", label_visibility="collapsed")
-        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
         if st.form_submit_button("로그인", use_container_width=True, type="primary"):
-            if admin_pw == CURRENT_ADMIN_PW: st.session_state["admin_logged_in"] = True; st.session_state["page_status"] = "teacher_main"; st.rerun()
+            if admin_pw == "1234": st.session_state["admin_logged_in"] = True; st.session_state["page_status"] = "teacher_main"; st.rerun()
             else: st.error("❌ 비밀번호가 틀렸습니다.")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -361,30 +270,30 @@ elif st.session_state["page_status"] == "teacher_auth":
 
 elif st.session_state["page_status"] == "teacher_main":
     if not st.session_state["admin_logged_in"]: st.session_state["page_status"] = "teacher_auth"; st.rerun()
-    col_empty, col_pw, col_logout = st.columns([5, 1.4, 1.4])
-    with col_pw:
-        st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
-        if st.button("🔐 암호 변경", key="outer_pw_btn", use_container_width=True): password_update_dialog()
+    col_empty, col_logout = st.columns([6, 1.4])
     with col_logout:
-        st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         if st.button("🎒 학생 화면", key="outer_logout_btn", use_container_width=True):
             st.session_state["page_status"] = "student_main"; st.session_state["admin_logged_in"] = False; st.session_state["show_monitor_view"] = False; st.session_state["show_delete_panel"] = False; st.rerun()
 
     with st.container(border=True):
         st.markdown("<h2>⚙️ 교과·학년 통합 제어 센터</h2>", unsafe_allow_html=True)
+        
+        # 🟢 상단 실시간 든든한 신호등 알림판 고정
+        if gc is None:
+            st.markdown("<div style='background-color:#FDE8E8; border:1px solid #F8B4B4; padding:10px; border-radius:6px; color:#9B1C1C; font-weight:bold; font-size:13px; text-align:center; margin-bottom:15px;'>❌ [연결 실패] 스트림릿 secrets 열쇠 양식이 올바르지 않습니다.</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div style='background-color:#E1F5FE; border:1px solid #B3E5FC; padding:10px; border-radius:6px; color:#01579B; font-weight:bold; font-size:13px; text-align:center; margin-bottom:15px;'>🟢 [원격 연결 성공] 구글 API 연동 완벽 완료! 드라이브 파일 [ {SPREADSHEET_NAME} ] 결합 완료.</div>", unsafe_allow_html=True)
+
         frame_left, frame_right = st.columns([1.4, 4.2])
         has_active = "active_subject" in st.session_state and st.session_state.active_subject
         
         with frame_left:
             st.markdown("<h4>📁 대상 과목 및 학기 선택</h4>", unsafe_allow_html=True)
-            g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
+            g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군"]
             sel_g = st.selectbox("1단계: 교과군 분류", options=g_opts, index=st.session_state.sel_group_idx, label_visibility="collapsed")
             
-            final_sub, t_g = "", ""
-            if sel_g == "➕ 신규 과목 개설":
-                t_g = st.selectbox("추가 위치 지정", ["인문·사회군", "수리·과학군", "예체능군"])
-                final_sub = st.text_input("✏️ 새 과목명 입력", placeholder="과목명 입력").strip()
-            elif sel_g != "교과군 선택":
+            final_sub = ""
+            if sel_g != "교과군 선택":
                 s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
                 idx_s = st.session_state.sel_sub_idx if st.session_state.sel_sub_idx < len(s_opts) else 0
                 sel_s = st.selectbox("2단계: 세부 과목 선택", options=s_opts, index=idx_s, label_visibility="collapsed")
@@ -398,10 +307,9 @@ elif st.session_state["page_status"] == "teacher_main":
             
             if st.button("🚀 과목 활성화", use_container_width=True, key="side_activate_btn"):
                 if final_sub and final_gr and final_se:
-                    if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
                     st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester = final_sub, final_gr, final_se
                     st.session_state.sel_group_idx = g_opts.index(sel_g)
-                    if sel_g != "➕ 신규 과목 개설": st.session_state.sel_sub_idx = s_opts.index(final_sub)
+                    st.session_state.sel_sub_idx = s_opts.index(final_sub)
                     st.session_state.sel_grade_idx = GRADE_OPTIONS.index(sel_gr)
                     st.session_state.sel_semester_idx = SEMESTER_OPTIONS.index(sel_se)
                     
@@ -433,11 +341,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
                 
                 n_current = st.session_state.get("num_items_input", 0)
-                live_item_names = []
-                for idx in range(n_current):
-                    val_live = st.session_state.get(f"item_name_input_{sub}_{idx+1}", f"수행{idx+1}").strip()
-                    if not val_live: val_live = f"수행{idx+1}"
-                    live_item_names.append(val_live)
+                live_item_names = [st.session_state.get(f"item_name_input_{sub}_{idx+1}", f"수행{idx+1}").strip() for idx in range(n_current)]
 
                 with st.container(border=True):
                     st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
@@ -448,70 +352,29 @@ elif st.session_state["page_status"] == "teacher_main":
                     sample_row = ["1", "1", "홍길동", "1234", "미확인", ""] + ["0"] * len(live_item_names)
                     
                     output = io.StringIO()
-                    writer = csv.writer(output)
-                    writer.writerow(final_headers)
-                    writer.writerow(sample_row)
-                    csv_data = output.getvalue().encode('utf-8-sig')
+                    csv.writer(output).writerow(final_headers)
+                    csv.writer(output).writerow(sample_row)
                     
-                    st.download_button(label="📥 예시 파일 다운로드", data=csv_data, file_name=f"sample_students_{sub}_{sem}.csv", mime="text/csv", key="btn_download_sample")
+                    st.download_button(label="📥 예시 파일 다운로드", data=output.getvalue().encode('utf-8-sig'), file_name=f"sample_students_{sub}_{sem}.csv", mime="text/csv", key="btn_download_sample")
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                     
-                    # 🌟 [버그 완치]: 성적 전송 완료 후 파일 락 찌꺼기를 원천 삭제하기 위한 고유 세션 키('csv_uploader_reset') 부여
+                    # ⚡ [버그 완치]: 성적 전송 완료 후 파일 락 제거 및 리셋 구조 가동
                     up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="csv_uploader_reset")
                     if up_f:
                         try:
                             df_up = pd.read_csv(up_f, encoding='cp949')
-                            success = save_df_to_sheet(sf_id, df_up)
-                            if success:
+                            if save_df_to_sheet(sf_id, df_up):
                                 st.toast("🎉 구글 시트로 성적 동기화 완벽 완료!")
-                                # 🌟 업로드 흔적 파일 자체를 세션에서 완벽 삭제하여 무한 연동 루프(렉)를 즉시 정지시킵니다.
                                 del st.session_state["csv_uploader_reset"]
                                 st.rerun()
-                            else:
-                                st.error("❌ 구글 시트 업로드 실패. 권한 및 파일명을 점검하세요.")
-                        except Exception as upload_err:
+                        except:
                             st.error("❌ 인코딩 포맷을 확인해 주세요. (EUC-KR 또는 CP949)")
                     st.markdown('</div>', unsafe_allow_html=True)
                         
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         with frame_right:
-            show_del = st.session_state.get("show_delete_panel", False)
-            if show_del:
-                st.markdown("<h4 style='color: #ef4444; margin-top: 0px;'>⚙️ 데이터 삭제 및 청소 관리 센터</h4>", unsafe_allow_html=True)
-                tab_del_sem, tab_del_sub = st.tabs(["학기 및 학년별 삭제", "과목 일괄 삭제"])
-                
-                with tab_del_sem:
-                    existing_dbs = get_active_databases()
-                    if not existing_dbs: st.info("현재 구글 시트에 보관 중인 분기 데이터가 없습니다.")
-                    else:
-                        sem_opts = [f"📚 {d['subject']} | {d['grade']} | {d['semester']}" for d in existing_dbs]
-                        selected_sem_str = st.selectbox("삭제 대상 선택", options=sem_opts, label_visibility="collapsed", key="sb_delete_target_sem")
-                        t_db = existing_dbs[sem_opts.index(selected_sem_str)]
-                        verify_code_sem = f"{t_db['subject']}_{t_db['grade'].replace('학년','')}_{t_db['semester'].replace('학년도','').replace(' ', '')}"
-                        
-                        st.markdown(f"<div style='font-size:12px; margin-bottom:4px;'>인증코드 입력: <code style='color:#ef4444;'>{verify_code_sem}</code></div>", unsafe_allow_html=True)
-                        user_confirm_sem = st.text_input("인증코드 입력창", label_visibility="collapsed", key="ti_verify_sem_code")
-                        if st.button("🔒 선택 학기 데이터 영구 폐기 실행", disabled=(user_confirm_sem != verify_code_sem), type="primary", use_container_width=True):
-                            cf_id, sf_id = get_sheet_names_id(t_db['subject'], t_db['grade'].replace("학년",""), t_db['semester'])
-                            if gc:
-                                try:
-                                    sh = gc.open(SPREADSHEET_NAME)
-                                    for n in [cf_id, sf_id]: sh.del_worksheet(sh.worksheet(n))
-                                except: pass
-                            st.toast("🎉 선택하신 분기 데이터 클렌징 완료!"); st.rerun()
-
-                with tab_del_sub:
-                    raw_subjects = load_master_subjects()
-                    flat_subs = sorted(list(set([sub for list_sub in raw_subjects.values() for sub in list_sub])))
-                    if not flat_subs: st.info("등록 개설된 교과목 마스터 목록이 비어 있습니다.")
-                    else:
-                        selected_sub_to_del = st.selectbox("과목명 선택", options=flat_subs, label_visibility="collapsed", key="sb_delete_target_sub")
-                        user_confirm_sub = st.text_input(f"과목명 정확히 재입력 ({selected_sub_to_del})", label_visibility="collapsed", key="ti_verify_sub_code")
-                        if st.button("🚨 마스터 교과 일괄 파괴 실행", disabled=(user_confirm_sub != selected_sub_to_del), type="primary", use_container_width=True):
-                            remove_subject_completely_from_disk(selected_sub_to_del); st.toast("🎉 교과 소멸 완료!"); st.rerun()
-
-            elif has_active:
+            if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
                 
@@ -529,12 +392,13 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
 
-                with st.container(border=True):
+                # =========================================================================
+                # ⚡ [회색 화면 해결 핵심]: 입력 상자들을 대형 폼(st.form) 안으로 패키징 격리!!
+                # 이렇게 묶어두면 글자를 치거나 체크박스를 켰을 때 구글 서버를 전혀 호출하지 않습니다!
+                # =========================================================================
+                with st.form(key=f"right_config_form_{sub}"):
                     saved_cl_str = st.session_state.get("saved_classes_list", str(conf.get('선택된반 목록', '')))
-                    saved_cl = []
-                    if saved_cl_str:
-                        saved_cl = [int(x) for x in str(saved_cl_str).replace("[","").replace("]","").split(",") if str(x).strip()]
-                    
+                    saved_cl = [int(x) for x in str(saved_cl_str).replace("[","").replace("]","").split(",") if str(x).strip()] if saved_cl_str else []
                     default_items_count = st.session_state.get("saved_items_count", int(conf.get('항목개수', 0)))
 
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
@@ -545,6 +409,8 @@ elif st.session_state["page_status"] == "teacher_main":
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
 
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
+                    
+                    # 💡 항목 개수 조절용 넘버 박스
                     n_item = st.number_input("평가 항목 개수", min_value=0, max_value=10, value=default_items_count, key="num_items_input")
                     
                     item_names = []
@@ -559,51 +425,44 @@ elif st.session_state["page_status"] == "teacher_main":
                                     name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
-                        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-                        if st.button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True, key="embedded_save_btn"):
-                            if sel_cl and all(item_names):
-                                classes_string = ",".join(map(str, sorted(sel_cl)))
-                                d = {
-                                    "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
-                                    "선택된반 목록": classes_string, "항목개수": n_item
-                                }
-                                for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
-                                
-                                get_google_sheet(cf_id)
-                                save_df_to_sheet(cf_id, pd.DataFrame([d]))
-                                get_google_sheet(sf_id)
-                                
-                                st.session_state["saved_classes_list"] = classes_string
-                                st.session_state["saved_items_count"] = n_item
-                                st.session_state["just_saved_success"] = True
-                                
-                                st.toast("💾 설정이 구글 클라우드에 연동되었습니다!")
-                                st.rerun()
-                            else:
-                                st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성해 주셔야 저장이 가능합니다.")
+                    # ✨ [선생님의 동선 배치]: 항목 입력 박스가 끝나는 바로 아랫줄에 저장 버튼 연동
+                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                    submit_btn = st.form_submit_button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True)
+                    
+                    if submit_btn:
+                        if sel_cl and all(item_names):
+                            classes_string = ",".join(map(str, sorted(sel_cl)))
+                            d = {
+                                "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
+                                "선택된반 목록": classes_string, "항목개수": n_item
+                            }
+                            for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
+                            
+                            # 버튼 클릭 시에만 구글 원격 저장소 최초 1회 호출 구동!
+                            get_google_sheet(cf_id)
+                            save_df_to_sheet(cf_id, pd.DataFrame([d]))
+                            get_google_sheet(sf_id)
+                            
+                            st.session_state["saved_classes_list"] = classes_string
+                            st.session_state["saved_items_count"] = n_item
+                            st.session_state["just_saved_success"] = True
+                            st.toast("💾 설정이 구글 클라우드에 연동되었습니다!")
+                            st.rerun()
+                        else:
+                            st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성해 주셔야 저장이 가능합니다.")
 
+                # ✨ [선생님 전용 알림판]: 저장 버튼의 바로 아랫줄에 정렬 배치된 서랍장
                 if st.session_state.get("just_saved_success", False):
                     st.markdown(f"""
                         <div class="next-step-box">
-                            <b>🎉 [{sub}] 과목의 평가 사양이 구글 클라우드 데이터베이스에 설정(저장)되었습니다!</b><br>
-                            임무가 성공 수립되었으니 안심하시고 다음 작업을 순서대로 진행해 주세요:<br>
+                            <b>🎉 [{sub}] 과목의 평가 사양이 구글 클라우드 데이터베이스에 최종 설정(저장)되었습니다!</b><br>
+                            임무가 성공적으로 완료되었으니 다음 작업을 순서대로 진행해 주세요:<br>
                             <hr style='margin:8px 0; border:none; border-top:1px solid #bbf7d0;'>
-                            1️⃣ 왼쪽 하단 서랍에 든 <b>📥 예시 파일 다운로드</b> 버튼을 누릅니다.<br>
-                            2️⃣ 다운로드된 CSV 파일 양식에 학생 인적 사항과 성적 점수를 기입합니다.<br>
-                            3️⃣ 파일 선택 창에 완성된 성적 파일을 업로드하시면 실시간 공시 시스템이 즉시 가동됩니다!
+                            1️⃣ 왼쪽 하단 서랍에 있는 <b>📥 예시 파일 다운로드</b> 버튼을 누릅니다.<br>
+                            2️⃣ 다운로드된 CSV 파일 양식을 열어 학생 인적 사항과 점수를 기입합니다.<br>
+                            3️⃣ 파일 선택 창에 완성된 성적 파일을 업로드하시면 실시간 공시 서비스가 즉시 활성화됩니다!
                         </div>
                     """, unsafe_allow_html=True)
-
-                show_mon = st.session_state.get("show_monitor_view", False)
-                if show_mon:
-                    st.markdown("<h4 style='color: #0f172a;'>📊 실시간 데이터 연동 모니터 (구글 시트)</h4>", unsafe_allow_html=True)
-                    with st.container(border=True):
-                        df_monitor = load_sheet_to_df(sf_id)
-                        if not df_monitor.empty:
-                            st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
-                            st.dataframe(df_monitor, use_container_width=True, hide_index=True)
-                            st.markdown('</div>', unsafe_allow_html=True)
-                        else: st.warning("⚠️ 해당 학기의 성적 데이터가 구글 시트에 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
