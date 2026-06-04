@@ -80,6 +80,8 @@ def reset_all_data():
     st.session_state.clear()
     for k, v in keep_keys.items():
         st.session_state[k] = v
+    # 💡 강제 리셋 시 항목 개수도 0으로 밀어버림
+    st.session_state["saved_items_count"] = 0
     st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
 
@@ -402,10 +404,10 @@ elif st.session_state["page_status"] == "teacher_main":
                     if not df_init.empty:
                         r_dict = df_init.iloc[0].to_dict()
                         st.session_state["saved_classes_list"] = r_dict.get('선택된반 목록', '')
-                        st.session_state["saved_items_count"] = int(r_dict.get('항목개수', 3))
+                        st.session_state["saved_items_count"] = int(r_dict.get('항목개수', 0)) # 👈 핵심 교정: 기존 값이 있을 때만 불러옴
                     else:
                         st.session_state["saved_classes_list"] = ''
-                        st.session_state["saved_items_count"] = 3
+                        st.session_state["saved_items_count"] = 0 # 👈 핵심 교정: 신규 개설 시 화면 무조건 0으로 비움
                         
                     st.session_state["show_delete_panel"] = False; st.rerun()
                 else: st.warning("과목, 학년, 학기 데이터를 누락 없이 모두 선택해 주세요.")
@@ -426,7 +428,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester = None, None, None
                 st.session_state.sel_group_idx, st.session_state.sel_sub_idx, st.session_state.sel_grade_idx, st.session_state.sel_semester_idx = 0, 0, 0, 0
                 st.session_state["saved_classes_list"] = ''
-                st.session_state["saved_items_count"] = 3
+                st.session_state["saved_items_count"] = 0
                 st.session_state["show_monitor_view"], st.session_state["show_delete_panel"] = False, False; st.rerun()
 
             if has_active:
@@ -435,7 +437,7 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 df_load_right = load_sheet_to_df(cf_id)
                 conf = df_load_right.iloc[0].to_dict() if not df_load_right.empty else {}
-                item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else ["수행1", "수행2"]
+                item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else []
 
                 with st.container(border=True):
                     st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
@@ -518,7 +520,7 @@ elif st.session_state["page_status"] == "teacher_main":
                     conf['학년'] = raw_dict.get('학년', grd)
                     conf['학기통합명'] = raw_dict.get('학기통합명', sem)
                     conf['선택된반 목록'] = raw_dict.get('선택된반 목록', '')
-                    conf['항목개수'] = raw_dict.get('항목개수', 3)
+                    conf['항목개수'] = raw_dict.get('항목개수', 0) # 👈 기본값을 0으로 꽉 쥐어둠
                     for k, v in raw_dict.items():
                         if '항목' in k: conf[k] = v
                 
@@ -529,7 +531,8 @@ elif st.session_state["page_status"] == "teacher_main":
                     if saved_cl_str:
                         saved_cl = [int(x) for x in str(saved_cl_str).replace("[","").replace("]","").split(",") if str(x).strip()]
                     
-                    default_items_count = st.session_state.get("saved_items_count", int(conf.get('항목개수', 3)))
+                    # 💡 [버그 완치 핵심 1]: 저장된 데이터가 없으면 무조건 0으로 깨끗하게 띄움!
+                    default_items_count = st.session_state.get("saved_items_count", int(conf.get('항목개수', 0)))
 
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
                     sel_cl = []
@@ -539,19 +542,21 @@ elif st.session_state["page_status"] == "teacher_main":
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
 
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
-                    n_item = st.number_input("평가 항목 개수", min_value=1, max_value=10, value=default_items_count if default_items_count > 0 else 3, key="num_items_input")
+                    # 💡 [버그 완치 핵심 2]: 최하점 하한선을 0으로 지정하여 새 과목 가동 시 무조건 깔끔하게 비워지게 조율함
+                    n_item = st.number_input("평가 항목 개수", min_value=0, max_value=10, value=default_items_count, key="num_items_input")
                     
                     item_names = []
-                    for i in range(n_item):
-                        # 💡 [버그 완치 구역]: key 명칭에 과목명(sub)을 강제로 동적 결합하여 다른 과목 클릭 시 상자가 무조건 새로고침 되도록 락을 풉니다.
-                        if i % 2 == 0:
-                            cols_i = st.columns(2)
-                            with cols_i[0]:
-                                name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', f"수행{i+1}"), key=f"item_name_input_{sub}_{i+1}")
-                        else:
-                            with cols_i[1]:
-                                name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', f"수행{i+1}"), key=f"item_name_input_{sub}_{i+1}")
-                        item_names.append(name.strip())
+                    # 💡 [버그 완치 핵심 3]: 선생님이 숫자를 올릴 때만 아래 항목 상자가 태어나도록 가드를 칩니다.
+                    if n_item > 0:
+                        for i in range(n_item):
+                            if i % 2 == 0:
+                                cols_i = st.columns(2)
+                                with cols_i[0]:
+                                    name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder="예: 수행평가A", key=f"item_name_input_{sub}_{i+1}")
+                            else:
+                                with cols_i[1]:
+                                    name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder="예: 수행평가B", key=f"item_name_input_{sub}_{i+1}")
+                            item_names.append(name.strip())
 
                 if st.session_state.get("trigger_save_action", False):
                     st.session_state["trigger_save_action"] = False
@@ -561,7 +566,6 @@ elif st.session_state["page_status"] == "teacher_main":
                             "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
                             "선택된반 목록": classes_string, "항목개수": n_item
                         }
-                        # 💡 [오타 완벽 사살]: '항微'를 '항목'으로 완벽하게 교정하여 구글 클라우드 통로 정상화 완료!
                         for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
                         
                         save_df_to_sheet(cf_id, pd.DataFrame([d]))
