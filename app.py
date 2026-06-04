@@ -64,8 +64,8 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# ⚡ [속도 대수술]: 무한 원격 조회를 막아 속도를 10배 올려주는 60초 캐싱 엔진
-@st.cache_data(ttl=60)
+# ⚡ [속도 저하 완벽 방어]: 구글 분류 목록을 임시 기억하여 버벅거림을 원천 차단
+@st.cache_data(ttl=30)
 def get_active_databases():
     active_list = []
     if gc is None: return active_list
@@ -86,7 +86,7 @@ def get_active_databases():
 
 def reset_all_data():
     st.cache_resource.clear()
-    st.cache_data.clear() # 캐시 메모리까지 초기화
+    st.cache_data.clear()
     keep_keys = {
         "page_status": st.session_state.get("page_status", "teacher_main"),
         "admin_logged_in": st.session_state.get("admin_logged_in", True),
@@ -110,7 +110,7 @@ def reset_all_data():
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # =========================================================================
-# 🎯 [CSS 최종 완결판] 데이터 삭제 버튼 단독 레드 조준 및 내부 탭 스타일링
+# 🎯 [CSS 최종 완결판] 모던 UI 및 안내창 스타일 시트
 # =========================================================================
 st.markdown("""
     <style>
@@ -143,7 +143,7 @@ st.markdown("""
         div.stButton button { margin: 0px auto !important; padding-top: 5px !important; padding-bottom: 5px !important; transition: all 0.15s ease-in-out !important; }
         
         div.stButton > button[key='side_toggle_delete_btn'] p, div.stButton > button[key='side_toggle_delete_btn'] span {
-            color: #ef4444 !important; text-decoration: underline !important; text-decoration-color: #ef4444 !important; text-underline-offset: 5px !important; font-weight: 700 !important;
+            color: #ef4444 !important; text-decoration: underline !important; font-weight: 700 !important;
         }
         div[data-testid="stTabs"] button[aria-selected="true"] p { color: #ef4444 !important; font-weight: bold !important; }
         div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] { background-color: #ef4444 !important; }
@@ -456,17 +456,20 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.download_button(label="📥 예시 파일 다운로드", data=csv_data, file_name=f"sample_students_{sub}_{sem}.csv", mime="text/csv", key="btn_download_sample")
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                     
-                    up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="uploader_csv_file")
+                    # 🌟 [버그 완치]: 성적 전송 완료 후 파일 락 찌꺼기를 원천 삭제하기 위한 고유 세션 키('csv_uploader_reset') 부여
+                    up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="csv_uploader_reset")
                     if up_f:
                         try:
                             df_up = pd.read_csv(up_f, encoding='cp949')
                             success = save_df_to_sheet(sf_id, df_up)
                             if success:
-                                st.success("🎉 구글 시트로 성적 동기화 완벽 완료!")
+                                st.toast("🎉 구글 시트로 성적 동기화 완벽 완료!")
+                                # 🌟 업로드 흔적 파일 자체를 세션에서 완벽 삭제하여 무한 연동 루프(렉)를 즉시 정지시킵니다.
+                                del st.session_state["csv_uploader_reset"]
                                 st.rerun()
                             else:
                                 st.error("❌ 구글 시트 업로드 실패. 권한 및 파일명을 점검하세요.")
-                        except:
+                        except Exception as upload_err:
                             st.error("❌ 인코딩 포맷을 확인해 주세요. (EUC-KR 또는 CP949)")
                     st.markdown('</div>', unsafe_allow_html=True)
                         
@@ -556,9 +559,6 @@ elif st.session_state["page_status"] == "teacher_main":
                                     name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', ""), placeholder=f"예: 수행평가{i+1}", key=f"item_name_input_{sub}_{i+1}")
                             item_names.append(name.strip())
 
-                        # =========================================================================
-                        # ✨ [선생님 전용 UI 배치]: 항목 입력 박스가 끝나는 바로 아랫줄에 저장 버튼 위치 고정
-                        # =========================================================================
                         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                         if st.button(f"💾 [{sub}] 과목 사양 최종 저장하기", type="primary", use_container_width=True, key="embedded_save_btn"):
                             if sel_cl and all(item_names):
@@ -569,7 +569,6 @@ elif st.session_state["page_status"] == "teacher_main":
                                 }
                                 for i, name_val in enumerate(item_names): d[f"항목{i+1}_이름"] = name_val
                                 
-                                # 구글 원격 저장 및 껍데기 방 선제 개설 
                                 get_google_sheet(cf_id)
                                 save_df_to_sheet(cf_id, pd.DataFrame([d]))
                                 get_google_sheet(sf_id)
@@ -578,14 +577,11 @@ elif st.session_state["page_status"] == "teacher_main":
                                 st.session_state["saved_items_count"] = n_item
                                 st.session_state["just_saved_success"] = True
                                 
-                                st.toast(f"💾 [{sub}] 설정 완료 메세지가 아래에 전송되었습니다!")
+                                st.toast("💾 설정이 구글 클라우드에 연동되었습니다!")
                                 st.rerun()
                             else:
                                 st.error("❌ 담당 학급(반)을 한 개 이상 선택하고, 항목명을 전부 완성해 주셔야 저장이 가능합니다.")
 
-                # =========================================================================
-                # ✨ [선생님 전용 알림판]: 저장 버튼의 '바로 밑'에 고정 배치된 명확한 다음 단계 지침 서랍
-                # =========================================================================
                 if st.session_state.get("just_saved_success", False):
                     st.markdown(f"""
                         <div class="next-step-box">
