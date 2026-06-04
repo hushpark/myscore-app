@@ -7,6 +7,7 @@ import glob
 import re
 import gspread
 from google.oauth2.service_account import Credentials
+import csv
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
@@ -57,7 +58,7 @@ def save_df_to_sheet(sheet_name, df):
     if wks is None: return False
     try:
         wks.clear()
-        df_filled = df.fillna("")
+        df_filled = df.fillna("").astype(str)
         wks.update([df_filled.columns.values.tolist()] + df_filled.values.tolist())
         return True
     except:
@@ -280,14 +281,18 @@ if st.session_state["page_status"] == "student_main":
             if sel_s != "과목 및 학기를 선택하세요.":
                 db = active_dbs[opts_s.index(sel_s)-1]
                 cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
-                config = load_config(cf_id) if os.path.exists(cf_id) else load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
+                
+                df_load = load_sheet_to_df(cf_id)
+                config = df_load.iloc[0].to_dict() if not df_load.empty else None
                 
                 if config:
                     st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
                     
                     with st.form("login_form"):
                         st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🔐 본인 인증 정보 입력</div>", unsafe_allow_html=True)
-                        classes = [f"{x.strip()}반" for x in str(config['선택된반 목록']).split(",")] if '선택된반 목록' in config else ["1반"]
+                        classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
+                        if not classes: classes = ["1반"]
+                        
                         c1, c2, c3, c4 = st.columns([1, 1, 1.5, 1.5])
                         with c1: b_in = st.selectbox("반", classes)
                         with c2: n_in = st.number_input("번호", 1, 50, 1)
@@ -315,7 +320,8 @@ if st.session_state["page_status"] == "student_main":
                                     if float(total_sum).is_integer(): scores['합계'] = [int(total_sum)]
                                     else: scores['합계'] = [round(total_sum, 2)]
                                     
-                                    df_st.loc[idx, '확인여부'], df_st.loc[idx, '확인시간'] = "확인 완료", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                    df_st.loc[idx, '확인여부'] = str("확인 완료")
+                                    df_st.loc[idx, '확인시간'] = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                                     save_df_to_sheet(sf_id, df_st)
                                     show_result_dialog(name_in, scores)
                                 else: st.error("입력한 학생 정보 또는 비밀번호가 일치하지 않습니다.")
@@ -404,18 +410,29 @@ elif st.session_state["page_status"] == "teacher_main":
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
-                conf = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else {}
+                
+                df_load_right = load_sheet_to_df(cf_id)
+                conf = df_load_right.iloc[0].to_dict() if not df_load_right.empty else {}
                 item_names = [conf.get(f'항목{i+1}_이름', f'수행{i+1}') for i in range(int(conf.get('항목개수', 0)))] if conf else ["수행1", "수행2"]
 
                 with st.container(border=True):
                     st.markdown('<div class="compact-upload-box">', unsafe_allow_html=True)
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;'>📁 성적 일괄 업로드 (클라우드 직송)</div>", unsafe_allow_html=True)
-                    sample_columns = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"] + item_names
-                    sample_df = pd.DataFrame([[1, 1, "홍길동", "1234", "미확인", ""] + [0]*len(item_names)], columns=sample_columns)
-                    csv_buffer = io.StringIO()
-                    sample_df.to_csv(csv_buffer, index=False, encoding='cp949')
                     
-                    st.download_button(label="📥 예시 파일 다운로드", data=csv_buffer.getvalue().encode('cp949'), file_name=f"sample_students_{sub}_{sem}.csv", mime="text/csv", key="btn_download_sample")
+                    # =========================================================================
+                    # 🛠️ [버그 완치 구역 1]: 화면의 진짜 항목명(수행3 포함)을 반영한 다운로드 파일 생성
+                    # =========================================================================
+                    base_headers = ["반", "번호", "이름", "비밀번호", "확인여부", "확인시간"]
+                    final_headers = base_headers + item_names
+                    sample_row = ["1", "1", "홍길동", "1234", "미확인", ""] + ["0"] * len(item_names)
+                    
+                    output = io.StringIO()
+                    writer = csv.writer(output)
+                    writer.writerow(final_headers)
+                    writer.writerow(sample_row)
+                    csv_data = output.getvalue().encode('utf-8-sig')  # 한글 깨짐 방지 킷
+                    
+                    st.download_button(label="📥 예시 파일 다운로드", data=csv_data, file_name=f"sample_students_{sub}_{sem}.csv", mime="text/csv", key="btn_download_sample")
                     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
                     
                     up_f = st.file_uploader("성적 CSV 업로드", type="csv", label_visibility="collapsed", key="uploader_csv_file")
@@ -472,12 +489,21 @@ elif st.session_state["page_status"] == "teacher_main":
             elif has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
-                conf = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else {}
+                
+                df_load_main = load_sheet_to_df(cf_id)
+                conf = df_load_main.iloc[0].to_dict() if not df_load_main.empty else {}
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    saved_cl = [int(x) for x in str(conf.get('선택된반 목록', '')).split(",") if x.strip()] if conf else []
-                    default_items_count = int(conf.get('항목개수', 0)) if conf else 0
+                    # =========================================================================
+                    # 🛠️ [버그 완치 구역 2]: 구글 시트에서 가져온 반 목록을 100% 강제 동기화 복원
+                    # =========================================================================
+                    saved_cl_str = str(conf.get('선택된반 목록', ''))
+                    saved_cl = []
+                    if saved_cl_str:
+                        saved_cl = [int(x) for x in saved_cl_str.replace("[","").replace("]","").split(",") if x.strip()]
+                    
+                    default_items_count = int(conf.get('항목개수', 0))
 
                     st.markdown("<div style='font-size:12px; font-weight:600; color:#475569;'>🏫 담당 학급(반) 지정</div>", unsafe_allow_html=True)
                     sel_cl = []
@@ -487,13 +513,12 @@ elif st.session_state["page_status"] == "teacher_main":
                             if st.checkbox(f"{i}반", value=i in saved_cl, key=f"chk_class_{i}"): sel_cl.append(i)
 
                     # =========================================================================
-                    # 🛠️ [레이아웃 및 탭 이동 순서 완치 구역] 1번 ➡️ 2번 ➡️ 3번 순서 매칭
+                    # 🛠️ [버그 완치 구역 3]: 가로 2열 탭(Tab) 키 무한 정렬 포커싱 매칭 구조
                     # =========================================================================
                     st.markdown("<div style='margin-top:8px; font-size:12px; font-weight:600; color:#475569;'>✍️ 평가 항목 설정</div>", unsafe_allow_html=True)
                     n_item = st.number_input("평가 항목 개수", min_value=1, max_value=10, value=default_items_count if default_items_count > 0 else 3, key="num_items_input")
                     
                     item_names = []
-                    # 가로 2열 배치 루프 (탭 입력 방향 순차 정렬 보장 구조)
                     for i in range(n_item):
                         if i % 2 == 0:
                             cols_i = st.columns(2)
