@@ -64,14 +64,29 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# 💡 [버그 완치 구역 1]: 에러 문구 원천 차단! 청소 후 학생 첫 화면으로 부드럽게 리다이렉트하는 리셋 엔진
+# 💡 [버그 완치 및 동선 교정 구역]: 로그인과 과목 선택은 유지한 채, 우측 제어판 입력값만 시원하게 포맷하는 엔진
 def reset_all_data():
+    st.cache_resource.clear()  # 구글 시트 캐시 통로 리셋
+    
+    # 🌟 핵심: 로그인 정보(`page_status`, `admin_logged_in`)와 현재 고른 과목 인덱스는 살려둡니다!
+    keep_keys = {
+        "page_status": st.session_state.get("page_status", "teacher_main"),
+        "admin_logged_in": st.session_state.get("admin_logged_in", True),
+        "sel_group_idx": st.session_state.get("sel_group_idx", 0),
+        "sel_sub_idx": st.session_state.get("sel_sub_idx", 0),
+        "sel_grade_idx": st.session_state.get("sel_grade_idx", 0),
+        "sel_semester_idx": st.session_state.get("sel_semester_idx", 0),
+        "active_subject": st.session_state.get("active_subject", None),
+        "active_grade": st.session_state.get("active_grade", None),
+        "active_semester": st.session_state.get("active_semester", None)
+    }
+    
+    # 메모리 전체 청소 후 로그인/과목 상태만 자석처럼 다시 주입
     st.session_state.clear()
-    st.cache_resource.clear()  # 구글 시트 통로 완전 초기화
-    # 🌟 필수 세션 초기값을 미리 채워주어 에러 발생 가능성을 0%로 만듭니다.
-    st.session_state["page_status"] = "student_main"
-    st.session_state["admin_logged_in"] = False
-    st.toast("🔄 시스템 초기화가 완료되었습니다!")
+    for k, v in keep_keys.items():
+        st.session_state[k] = v
+        
+    st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
 
 # --- 🎯 layout 설정을 centered로 고정하여 기본 프레임 최적화 ---
@@ -238,7 +253,6 @@ def password_update_dialog():
     with b_col2:
         if st.button("수정 취소", use_container_width=True): st.rerun()
 
-# 💡 세션 키 에러 방지용 안전 장치 배치
 if "page_status" not in st.session_state: st.session_state["page_status"] = "student_main"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "show_monitor_view" not in st.session_state: st.session_state["show_monitor_view"] = False
@@ -449,7 +463,6 @@ elif st.session_state["page_status"] == "teacher_main":
             if st.button("🗑️ 시스템 초기화", key="side_reset_btn"): reset_all_data()
 
         with frame_right:
-            # 💡 세션 안전 체크 가드를 쳐서 KeyError를 원천 봉쇄합니다.
             show_del = st.session_state.get("show_delete_panel", False)
             if show_del:
                 st.markdown("<h4 style='color: #ef4444; margin-top: 0px;'>⚙️ 데이터 삭제 및 청소 관리 센터</h4>", unsafe_allow_html=True)
@@ -531,7 +544,6 @@ elif st.session_state["page_status"] == "teacher_main":
                         st.success("🎉 구글 시트에 설정 저장 완료!"); st.rerun()
                     else: st.error("❌ 반 선택 및 항목명을 모두 채워주세요.")
 
-                # 💡 세션 가드 추가
                 show_mon = st.session_state.get("show_monitor_view", False)
                 if show_mon:
                     st.markdown("<h4 style='color: #0f172a;'>📊 실시간 데이터 연동 모니터 (구글 시트)</h4>", unsafe_allow_html=True)
@@ -541,7 +553,7 @@ elif st.session_state["page_status"] == "teacher_main":
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
-                        else: st.warning("⚠️ 해당 학기의 성적 데이터가 구글 시트에 아직 업로드되지 않았습니다.")
+                        else: Sandy = st.warning("⚠️ 해당 학기의 성적 데이터가 구글 시트에 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
