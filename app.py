@@ -64,11 +64,8 @@ def save_df_to_sheet(sheet_name, df):
     except:
         return False
 
-# 💡 [버그 완치 및 동선 교정 구역]: 로그인과 과목 선택은 유지한 채, 우측 제어판 입력값만 시원하게 포맷하는 엔진
 def reset_all_data():
-    st.cache_resource.clear()  # 구글 시트 캐시 통로 리셋
-    
-    # 🌟 핵심: 로그인 정보(`page_status`, `admin_logged_in`)와 현재 고른 과목 인덱스는 살려둡니다!
+    st.cache_resource.clear()
     keep_keys = {
         "page_status": st.session_state.get("page_status", "teacher_main"),
         "admin_logged_in": st.session_state.get("admin_logged_in", True),
@@ -80,12 +77,9 @@ def reset_all_data():
         "active_grade": st.session_state.get("active_grade", None),
         "active_semester": st.session_state.get("active_semester", None)
     }
-    
-    # 메모리 전체 청소 후 로그인/과목 상태만 자석처럼 다시 주입
     st.session_state.clear()
     for k, v in keep_keys.items():
         st.session_state[k] = v
-        
     st.success("🎉 현재 구역의 입력 데이터가 깨끗하게 초기화되었습니다!")
     st.rerun()
 
@@ -300,7 +294,9 @@ if st.session_state["page_status"] == "student_main":
                 config = df_load.iloc[0].to_dict() if not df_load.empty else None
                 
                 if config:
-                    st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{config['교과명']}</b> ({config['학기통합명']})</div>", unsafe_allow_html=True)
+                    # 💡 [명칭 싱크 해결]: 교과명 매칭
+                    sub_title = config.get('교과명', config.get('과목명', '미정'))
+                    st.markdown(f"<div style='background:#f1f5f9; padding:12px 15px; border-radius:8px; margin-bottom:20px; font-size:14px;'><span style='font-weight:600; color:#475569;'>선택된 교과:</span> &nbsp;🧬 <b>{sub_title}</b> ({config.get('학기통합명','')})</div>", unsafe_allow_html=True)
                     
                     with st.form("login_form"):
                         st.markdown("<div style='font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;'>🔐 본인 인증 정보 입력</div>", unsafe_allow_html=True)
@@ -503,10 +499,23 @@ elif st.session_state["page_status"] == "teacher_main":
                 cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
                 
                 df_load_main = load_sheet_to_df(cf_id)
-                conf = df_load_main.iloc[0].to_dict() if not df_load_main.empty else {}
+                # 💡 [명칭 싱크 해결]: 구글 시트에서 불러올 때 칸 이름을 유연하게 매칭하도록 완전 보정
+                conf = {}
+                if not df_load_main.empty:
+                    raw_dict = df_load_main.iloc[0].to_dict()
+                    # 영어/한글 혼용 키 완벽 매핑 단일화
+                    conf['과목명'] = raw_dict.get('과목명', raw_dict.get('교과명', sub))
+                    conf['학년'] = raw_dict.get('학년', grd)
+                    conf['학기통합명'] = raw_dict.get('학기통합명', sem)
+                    conf['선택된반 목록'] = raw_dict.get('선택된반 목록', '')
+                    conf['항목개수'] = raw_dict.get('항목개수', 0)
+                    for k, v in raw_dict.items():
+                        if '항목' in k:
+                            conf[k] = v
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 with st.container(border=True):
+                    # 💡 반 정보 복원 구역
                     saved_cl_str = str(conf.get('선택된반 목록', ''))
                     saved_cl = []
                     if saved_cl_str:
@@ -538,7 +547,15 @@ elif st.session_state["page_status"] == "teacher_main":
                 if st.session_state.get("trigger_save_action", False):
                     st.session_state["trigger_save_action"] = False
                     if sel_cl and n_item > 0 and all(item_names):
-                        d = {"교과명":sub, "학년":grd, "학기통합명":sem, "선택된반 목록":",".join(map(str, sorted(sel_cl))), "항목개수":n_item}
+                        # 💡 [버그 완치 구역 2]: 구글 시트 저장 키 명칭을 대소문자/한글 완벽 1:1 결합 매칭함
+                        d = {
+                            "과목명": sub, 
+                            "교과명": sub, 
+                            "학년": grd, 
+                            "학기통합명": sem, 
+                            "선택된반 목록": ",".join(map(str, sorted(sel_cl))), 
+                            "항목개수": n_item
+                        }
                         for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
                         save_df_to_sheet(cf_id, pd.DataFrame([d]))
                         st.success("🎉 구글 시트에 설정 저장 완료!"); st.rerun()
@@ -553,7 +570,7 @@ elif st.session_state["page_status"] == "teacher_main":
                             st.markdown('<div class="monitor-table">', unsafe_allow_html=True)
                             st.dataframe(df_monitor, use_container_width=True, hide_index=True)
                             st.markdown('</div>', unsafe_allow_html=True)
-                        else: Sandy = st.warning("⚠️ 해당 학기의 성적 데이터가 구글 시트에 아직 업로드되지 않았습니다.")
+                        else: st.warning("⚠️ 해당 학기의 성적 데이터가 구글 시트에 아직 업로드되지 않았습니다.")
             else:
                 st.markdown("<div style='height: 80px;'></div>", unsafe_allow_html=True)
                 st.info("👈 왼쪽 제어판에서 과목 사양을 선택한 뒤 [🚀 과목 활성화]를 눌러주세요.")
