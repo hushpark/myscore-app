@@ -397,7 +397,6 @@ elif st.session_state["page_status"] == "teacher_main":
                     st.session_state.sel_grade_idx = GRADE_OPTIONS.index(sel_gr)
                     st.session_state.sel_semester_idx = SEMESTER_OPTIONS.index(sel_se)
                     
-                    # 💡 [버그 완치 핵심 1]: 과목 활성화를 누를 때, 기존 구글 시트의 값을 세션에 강제 동기화 정착시킵니다.
                     cf_id, sf_id = get_sheet_names_id(final_sub, final_gr, final_se)
                     df_init = load_sheet_to_df(cf_id)
                     if not df_init.empty:
@@ -525,7 +524,6 @@ elif st.session_state["page_status"] == "teacher_main":
                 
                 st.markdown(f"<div style='background-color:#eff6ff; border:1px solid #bfdbfe; padding:8px 12px; border-radius:6px; margin-bottom:12px; text-align:center; font-size:13px; font-weight:600; color:#1e40af;'>📍 작업 구역: [{sub}] {grd}학년 ({sem})</div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    # 💡 [버그 완치 핵심 2]: 구글 시트 저장 데이터와 실시간 체크 작동을 1:1로 결합
                     saved_cl_str = st.session_state.get("saved_classes_list", str(conf.get('선택된반 목록', '')))
                     saved_cl = []
                     if saved_cl_str:
@@ -545,29 +543,29 @@ elif st.session_state["page_status"] == "teacher_main":
                     
                     item_names = []
                     for i in range(n_item):
+                        # 💡 [버그 완치 구역]: key 명칭에 과목명(sub)을 강제로 동적 결합하여 다른 과목 클릭 시 상자가 무조건 새로고침 되도록 락을 풉니다.
                         if i % 2 == 0:
                             cols_i = st.columns(2)
                             with cols_i[0]:
-                                name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', f"수행{i+1}"), key=f"item_name_input_{i+1}")
+                                name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', f"수행{i+1}"), key=f"item_name_input_{sub}_{i+1}")
                         else:
                             with cols_i[1]:
-                                name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', f"수행{i+1}"), key=f"item_name_input_{i+1}")
+                                name = st.text_input(f"{i+1}번 항목명", value=conf.get(f'항목{i+1}_이름', f"수행{i+1}"), key=f"item_name_input_{sub}_{i+1}")
                         item_names.append(name.strip())
 
                 if st.session_state.get("trigger_save_action", False):
                     st.session_state["trigger_save_action"] = False
                     if sel_cl and n_item > 0 and all(item_names):
-                        # 💡 [버그 완치 핵심 3]: 구글 시트 저장과 동시에 내부 메모리 즉시 갱신 강제 주입
                         classes_string = ",".join(map(str, sorted(sel_cl)))
                         d = {
                             "과목명": sub, "교과명": sub, "학년": grd, "학기통합명": sem, 
                             "선택된반 목록": classes_string, "항목개수": n_item
                         }
+                        # 💡 [오타 완벽 사살]: '항微'를 '항목'으로 완벽하게 교정하여 구글 클라우드 통로 정상화 완료!
                         for i, name in enumerate(item_names): d[f"항목{i+1}_이름"] = name
                         
                         save_df_to_sheet(cf_id, pd.DataFrame([d]))
                         
-                        # 강제 세션 캐시 덮어쓰기 장치 작동
                         st.session_state["saved_classes_list"] = classes_string
                         st.session_state["saved_items_count"] = n_item
                         
