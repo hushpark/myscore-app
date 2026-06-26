@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from datetime import datetime
 import io
+import glob
 import re
 import gspread
 from google.oauth2.service_account import Credentials
@@ -12,9 +13,10 @@ import csv
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
+# --- 🎯 전체 화면centered 고정 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
-# --- 데이터 로드/저장 시스템 ---
+# --- 데이터 로드/저장 시스템 (기존 구글 시트 엔진 로직 100% 보존) ---
 def load_master_subjects():
     default_structure = {
         "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
@@ -41,9 +43,9 @@ def save_new_subject_to_master(group, subject):
 def load_admin_credentials():
     df = load_sheet_to_df("admin_meta", ["username", "password"])
     if not df.empty:
-        u = str(df.iloc[0].get('username', 'admin')).strip()
-        p = str(df.iloc[0].get('password', '1234')).strip()
-        return u, p
+        username = str(df.iloc[0].get('username', 'admin')).strip()
+        password = str(df.iloc[0].get('password', '1234')).strip()
+        return username, password
     return "admin", "1234"
 
 def save_admin_credentials(new_id, new_pw):
@@ -132,7 +134,6 @@ def get_active_databases():
     return active_list
 
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
-if "activated_confirm" not in st.session_state: st.session_state["activated_confirm"] = False
 
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
@@ -140,83 +141,139 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [디자인 통합] 선생님이 올려주신 아담하고 예쁜 440px 틀 디자인 CSS 고정
+# 🎯 [디자인 대수술] 브라우저 창 크기와 무관하게 하얀 상자 종속형 정중앙 고정 CSS
 # =========================================================================
 st.markdown("""
     <style>
+        /* 배경 고정 */
         .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
         div[data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
         
-        /* 가로 440px 컴팩트 상자 */
-        div[data-testid="stForm"], .custom-dashboard-card {
+        /* 🚨 가로 440px 컴팩트 하얀 상자 정의 */
+        div[data-testid="stForm"] {
             background-color: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 35px 25px 25px 25px !important;
-            border-radius: 20px !important;
+            padding: 40px 30px 30px 30px !important;
+            border-radius: 24px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
             max-width: 440px !important;
             margin: 60px auto 0 auto !important;
+            position: relative !important;
         }
         
+        /* 🚨 [하얀 상자 종속 절대 정중앙 구속] 브라우저 중앙이 아니라 하얀 박스 기준 정중앙 처리 */
         div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] {
-            display: flex !important; flex-direction: column !important; align-items: center !important; width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important; /* 내부의 모든 요소를 가로 정중앙으로 강제 정렬 */
+            width: 100% !important;
         }
-        div[role="radiogroup"] { justify-content: center !important; margin: 0 auto !important; gap: 40px !important; }
+        
+        /* 라디오 버튼 정중앙 배치 정밀화 */
+        div[data-testid="stRadio"] {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+        }
+        div[role="radiogroup"] {
+            justify-content: center !important;
+            margin: 0 auto !important;
+            gap: 40px !important;
+        }
         div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
         div[data-testid="stForm"] { border: none !important; box-shadow: none !important; }
         
-        .stTextInput, .stNumberInput, .stSelectbox { width: 300px !important; margin: 0 auto 5px auto !important; }
-        
-        /* 🚨 버튼 스타일 통합 일치 */
-        button[kind="primaryFormSubmit"], button[kind="primary"], div.stButton button {
-            background-color: #4a69bd !important; border-color: #4a69bd !important; color: white !important; font-weight: bold !important;
-            padding: 9px 0px !important; border-radius: 8px !important; font-size: 15px !important;
-            width: 140px !important; min-width: 140px !important; max-width: 140px !important;
-            box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important; margin: 10px auto 0 auto !important; display: block !important;
+        /* 입력창 너비 슬림하게 맞춤 및 중앙 고정 */
+        .stTextInput, .stNumberInput, .stSelectbox { 
+            width: 300px !important;
+            max-width: 300px !important;
+            margin: 0 auto 5px auto !important;
         }
         
-        h2 { font-size: 22px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 15px 0 !important; width: 100% !important; }
-        h3 { font-size: 18px !important; color: #1e293b !important; font-weight: 700 !important; text-align: center !important; margin: 10px 0 !important; }
+        /* 🚨 [로그인 버튼 하얀 상자 기준 정중앙] 블록 레벨 정렬 후 가로 140px 고정 */
+        div[data-testid="stFormSubmitButton"] {
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin: 15px auto 0 auto !important;
+        }
+        button[kind="primaryFormSubmit"], button[kind="primary"] {
+            background-color: #4a69bd !important; /* 예쁜 인디고 블루 색상 고정 */
+            border-color: #4a69bd !important;
+            color: white !important;
+            font-weight: bold !important;
+            padding: 9px 0px !important;
+            border-radius: 8px !important;
+            font-size: 15px !important;
+            width: 140px !important; /* 🎯 글자보다 약간 큰 최적화 규격 */
+            min-width: 140px !important;
+            max-width: 140px !important;
+            box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
+        }
+        button[kind="primaryFormSubmit"]:hover, button[kind="primary"]:hover {
+            background-color: #3b54b1 !important;
+            border-color: #3b54b1 !important;
+        }
+        
+        h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; width: 100% !important; }
         hr { width: 300px !important; margin: 12px auto !important; border: none !important; border-top: 1px solid #e2e8f0 !important; }
-        .footer-notice { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 12px; font-weight: 600; width: 300px; margin: 25px auto 0 auto; }
+        
+        .footer-notice {
+            text-align: center; font-size: 11px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600; width: 300px; margin: 30px auto 0 auto;
+        }
     </style>
 """, unsafe_allow_html=True)
 
+
 # =========================================================================
-# 🔄 실시간 분기 처리
+# 🔄 완벽하게 정돈된 순정 일체형 폼 구동부
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
-    # 🏠 [로그인 전] 학생 조회 및 로그인 통합 창
+    
     with st.form("master_unified_form"):
         st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+        
+        # 라디오 버튼 (상자 기준 정중앙 구속 완료)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
         
+        # 👨‍🏫 교사 모드
         if login_mode == "교사":
             admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
             admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
+            
+            # 로그인 버튼 (상자 기준 140px 아담한 크기로 정중앙 구속 완료)
             if st.form_submit_button("로그인", type="primary"):
                 if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
-                    st.session_state["admin_logged_in"] = True; st.rerun()
-                else: st.error("❌ ID 또는 비밀번호 오류")
+                    st.session_state["admin_logged_in"] = True
+                    st.rerun()
+                else:
+                    st.error("❌ ID 또는 비밀번호 오류")
+
+        # 🎒 학생 모드
         elif login_mode == "학생":
             active_dbs = get_active_databases()
-            if not active_dbs: st.warning("등록된 데이터가 없습니다.")
+            if not active_dbs:
+                st.warning("등록된 데이터가 없습니다.")
             else:
                 opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
                 sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed", key="sb_sub")
+                
                 if sel_s != "과목 및 학기를 선택하세요.":
                     db = active_dbs[opts_s.index(sel_s)-1]
                     cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
+                    
                     if config:
                         st.markdown("<hr>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
+                        
                         b_in = st.selectbox("반", classes, key="sb_class", label_visibility="collapsed")
                         n_in = st.number_input("번호", 1, 50, 1, key="ni_num", label_visibility="collapsed")
                         name_in = st.text_input("이름", placeholder="이름", key="ti_name", label_visibility="collapsed")
                         pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
+                        
                         if st.form_submit_button("점수 조회", type="primary"):
                             df_st = load_sheet_to_df(sf_id)
                             if not df_st.empty:
@@ -225,25 +282,28 @@ if not st.session_state["admin_logged_in"]:
                                     idx = res.index[0]
                                     scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
                                     show_result_dialog(name_in, scores)
-                                else: st.error("❌ 일치하는 학생 정보가 없습니다.")
+                                else:
+                                    st.error("❌ 일치하는 학생 정보가 없습니다.")
+                                    
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
+# -------------------------------------------------------------------------
+# 교사용 관리자 제어판
+# -------------------------------------------------------------------------
 else:
-    # ⚙️ [로그인 후] 사진 속 마스터 제어판 틀 원본 그대로 작동
     with st.form("teacher_dashboard_form"):
         st.markdown("<h2>⚙️ 마스터 제어판</h2>", unsafe_allow_html=True)
         
-        # 버튼 정렬 상단 가둠
-        c_btn1, c_btn2 = st.columns(2)
-        with c_btn1:
-            if st.form_submit_button("🔐 계정 수정"): account_update_dialog()
-        with c_btn2:
-            if st.form_submit_button("🎒 로그아웃"):
+        btn_c1, btn_col2 = st.columns(2)
+        with btn_c1:
+            if st.form_submit_button("🔐 계정 수정", type="primary", use_container_width=True): password_update_dialog()
+        with btn_col2:
+            if st.form_submit_button("🎒 로그아웃", type="primary", use_container_width=True):
                 st.session_state["admin_logged_in"] = False
-                st.session_state["activated_confirm"] = False; st.rerun()
+                st.rerun()
                 
         st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h3>📁 1. 대상 과목 세팅</h3>", unsafe_allow_html=True)
+        st.markdown("<h4>📂 1. 대상 과목 세팅</h4>", unsafe_allow_html=True)
         
         g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
         sel_g = st.selectbox("교과군 분류", options=g_opts, label_visibility="collapsed")
@@ -260,29 +320,20 @@ else:
         sel_gr = st.selectbox("학년 지정", options=GRADE_OPTIONS)
         sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS)
         
-        if st.form_submit_button("🚀 활성화 및 저장"):
-            if final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
-                if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
-                st.session_state.active_subject = final_sub
-                st.session_state.active_grade = sel_gr.replace("학년", "")
-                st.session_state.active_semester = sel_se
-                st.session_state["activated_confirm"] = True
-            else:
-                st.error("과목 정보를 모두 올바르게 채워주세요.")
+        if st.form_submit_button("🚀 활성화 및 저장", type="primary") and final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
+            if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
+            st.session_state.active_subject = final_sub
+            st.session_state.active_grade = sel_gr.replace("학년", "")
+            st.session_state.active_semester = sel_se
+            st.success(f"✅ 활성화 완료!")
 
-    # 🚨 [진짜 차이점] 활성화 버튼을 누르면 이 하얀 상자 밑에 성적 대장 업로드 칸이 동적으로 이어집니다!
-    if st.session_state["activated_confirm"]:
-        st.markdown("<div class='custom-dashboard-card'>", unsafe_allow_html=True)
-        st.markdown(f"<h3>📤 2. [{st.session_state.active_subject}] 성적 대장 연동</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size:12px; color:#64748b; text-align:center;'>선택하신 과목의 성적 대장 CSV 파일을 클라우드에 연동합니다.</p>", unsafe_allow_html=True)
-        
-        up_f = st.file_uploader("성적 데이터 업로드", type="csv", label_visibility="collapsed", key="work_csv_uploader")
-        if up_f:
-            try:
+        if "active_subject" in st.session_state and st.session_state.active_subject:
+            sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
+            cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
+            
+            st.markdown("<hr>", unsafe_allow_html=True)
+            up_f = st.file_uploader("CSV 업로드", type="csv", label_visibility="collapsed")
+            if up_f:
                 df_up = pd.read_csv(up_f, encoding='cp949')
-                _, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
                 if save_df_to_sheet(sf_id, df_up):
-                    st.success("🎉 구글 클라우드 동기화 성공!")
-            except:
-                st.error("인코딩 타입을 확인하세요. (ANSI/CP949 포맷 필수)")
-        st.markdown("</div>", unsafe_allow_html=True)
+                    st.success("🎉 클라우드 동기화 완료!")
