@@ -13,9 +13,10 @@ import csv
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
+# --- 🎯 전체 화면centered 고정 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
-# --- 데이터 로드/저장 시스템 ---
+# --- 데이터 로드/저장 시스템 (기존 구글 시트 엔진 로직 100% 보존) ---
 def load_master_subjects():
     default_structure = {
         "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
@@ -140,96 +141,110 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [수학적 정밀 CSS] 모든 꼼수(columns)를 버리고 순정 가득 채우기 + 중앙 정렬
+# 🎯 [디자인 최종 마감 CSS] 하얀 상자 기준 완벽 정중앙 배치 및 단추 규격 정밀화
 # =========================================================================
 st.markdown("""
     <style>
-        /* 다크 네이비 배경 고정 */
+        /* 배경 고정 */
         .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
         div[data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
         
-        /* 🚨 [아담한 500px 상자] 그림 1의 가로폭 크기로 설정하여 입력창들이 시원하게 꽉 차게 만듭니다 */
+        /* 🚨 하얀색 상자 크기 원상 복구 (아담하고 안정적인 원래 비율) */
         div[data-testid="stForm"] {
             background-color: #ffffff !important;
-            border-radius: 20px !important;
-            padding: 45px 40px !important;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15) !important;
-            max-width: 500px !important;
-            margin: 80px auto 0 auto !important;
-            border: none !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 40px 30px 30px 30px !important;
+            border-radius: 24px !important;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
+            max-width: 440px !important;
+            margin: 60px auto 0 auto !important;
         }
         
-        /* 🚨 [교정 1] 라디오 버튼 완벽 정중앙 고정 */
+        /* 🚨 [하얀 상자 기준] 라디오 버튼 정중앙 완전 구속 */
         div[role="radiogroup"] {
+            justify-content: center !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+            gap: 40px !important;
+        }
+        div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
+        div[data-testid="stForm"] { border: none !important; box-shadow: none !important; }
+        
+        /* 🚨 [하얀 상자 기준] ID, 비밀번호 입력창 슬림 정돈 및 중앙 배치 */
+        .stTextInput, .stNumberInput, .stSelectbox { 
+            width: 300px !important;
+            max-width: 300px !important;
+            margin: 0 auto 5px auto !important;
+        }
+        
+        /* 🚨 [교정 핵심] 로그인 버튼 정중앙 배치 + "로그인" 글자보다 약간 큰 최적화 사이즈(140px) 강제 지정 */
+        div[data-testid="stFormSubmitButton"] {
             display: flex !important;
             justify-content: center !important;
             width: 100% !important;
-            gap: 40px !important;
-            margin: 10px 0 !important;
+            margin-top: 15px !important;
         }
-        div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
-        
-        /* 🚨 [교정 2 & 3] 버튼 색상 주입 및 크기 1:1 매칭 (입력창 너비와 동일하게 100% 꽉 채움) */
         button[kind="primaryFormSubmit"], button[kind="primary"] {
-            background-color: #4a69bd !important;
+            background-color: #4a69bd !important; /* 요청하신 그림2의 예쁜 인디고 블루 색상 */
             border-color: #4a69bd !important;
             color: white !important;
             font-weight: bold !important;
-            padding: 12px 0px !important;
+            padding: 9px 0px !important;
             border-radius: 8px !important;
-            font-size: 16px !important;
-            width: 100% !important; /* 상자 가로폭에 꽉 차게! */
-            margin-top: 15px !important;
+            font-size: 15px !important;
+            width: 140px !important; /* 🎯 길게 찢어지지 않고 딱 적당한 최적의 140px 크기로 마감 */
+            min-width: 140px !important;
+            max-width: 140px !important;
+            box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
         }
         button[kind="primaryFormSubmit"]:hover, button[kind="primary"]:hover {
             background-color: #3b54b1 !important;
             border-color: #3b54b1 !important;
         }
         
-        h2 { font-size: 26px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 15px 0 !important; }
-        hr { margin: 15px 0 25px 0 !important; border: none !important; border-top: 1px solid #e2e8f0 !important; }
+        h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; }
+        h4 { display: none !important; } 
+        hr { width: 300px !important; margin: 12px auto !important; border: none !important; border-top: 1px solid #e2e8f0 !important; }
         
         .footer-notice {
-            text-align: center; font-size: 12px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600;
+            text-align: center; font-size: 11px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600; width: 300px; margin: 30px auto 0 auto;
         }
     </style>
 """, unsafe_allow_html=True)
 
 
 # =========================================================================
-# 🔄 쪼개기 없는 일체형 폼 구동부
+# 🔄 완벽 분할 진압용 일체형 폼 구동부
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 라디오 버튼 (CSS에서 강제 중앙 정렬 처리됨)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
         
-        # 👨‍🏫 교사 모드 (기둥 없이 순정으로 꽉 채움)
+        # 👨‍🏫 교사 모드
         if login_mode == "교사":
-            admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed")
-            admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
+            admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
+            admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
             
-            # 로그인 버튼 (CSS에서 100% 너비 + 인디고 블루 강제 처리됨)
-            if st.form_submit_button("로그인", type="primary", use_container_width=True):
+            if st.form_submit_button("로그인", type="primary"):
                 if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
                     st.session_state["admin_logged_in"] = True
                     st.rerun()
                 else:
                     st.error("❌ ID 또는 비밀번호 오류")
 
-        # 🎒 학생 모드 (기둥 없이 순정으로 꽉 채움)
+        # 🎒 학생 모드
         elif login_mode == "학생":
             active_dbs = get_active_databases()
             if not active_dbs:
                 st.warning("등록된 데이터가 없습니다.")
             else:
                 opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
-                sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed")
+                sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed", key="sb_sub")
                 
                 if sel_s != "과목 및 학기를 선택하세요.":
                     db = active_dbs[opts_s.index(sel_s)-1]
@@ -237,18 +252,15 @@ if not st.session_state["admin_logged_in"]:
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
                     
                     if config:
-                        st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
+                        st.markdown("<hr>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
                         
-                        # 학생 정보도 한 줄에 꽉 차게
-                        c1, c2, c3 = st.columns(3)
-                        with c1: b_in = st.selectbox("반", classes, label_visibility="collapsed")
-                        with c2: n_in = st.number_input("번호", 1, 50, 1, label_visibility="collapsed")
-                        with c3: name_in = st.text_input("이름", placeholder="이름", label_visibility="collapsed")
+                        b_in = st.selectbox("반", classes, key="sb_class", label_visibility="collapsed")
+                        n_in = st.number_input("번호", 1, 50, 1, key="ni_num", label_visibility="collapsed")
+                        name_in = st.text_input("이름", placeholder="이름", key="ti_name", label_visibility="collapsed")
+                        pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
                         
-                        pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", label_visibility="collapsed")
-                        
-                        if st.form_submit_button("점수 조회", type="primary", use_container_width=True):
+                        if st.form_submit_button("점수 조회", type="primary"):
                             df_st = load_sheet_to_df(sf_id)
                             if not df_st.empty:
                                 res = df_st[(df_st['반'].astype(int)==int(b_in.replace("반",""))) & (df_st['번호'].astype(int)==n_in) & (df_st['이름'].astype(str)==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
@@ -277,6 +289,7 @@ else:
                 st.rerun()
                 
         st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<h4>📂 1. 대상 과목 세팅</h4>", unsafe_allow_html=True)
         
         g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
         sel_g = st.selectbox("교과군 분류", options=g_opts, label_visibility="collapsed")
@@ -293,7 +306,7 @@ else:
         sel_gr = st.selectbox("학년 지정", options=GRADE_OPTIONS)
         sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS)
         
-        if st.form_submit_button("🚀 활성화 및 저장", type="primary", use_container_width=True) and final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
+        if st.form_submit_button("🚀 활성화 및 저장", type="primary") and final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
             if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
             st.session_state.active_subject = final_sub
             st.session_state.active_grade = sel_gr.replace("학년", "")
