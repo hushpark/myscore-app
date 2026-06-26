@@ -140,108 +140,103 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [수학적 정밀 CSS] 꼼수 없는 완벽한 가운대 정렬 & 1:1 크기 매칭
+# 🎯 [디자인 핵심 CSS] Form 버튼 고유 태그를 완벽하게 조준한 색상 강제 덮어쓰기
 # =========================================================================
 st.markdown("""
     <style>
-        /* 배경 고정 */
         .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
         div[data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
         
-        /* 400px 아담한 컴팩트 상자 틀 */
+        /* 440px 슬림 카드 상자 */
         div[data-testid="stForm"] {
             background-color: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 35px 0px 25px 0px !important;
+            padding: 35px 25px 30px 25px !important;
             border-radius: 20px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.15) !important;
-            max-width: 400px !important;
+            max-width: 440px !important;
             margin: 80px auto 0 auto !important;
         }
         
-        /* 🚨 [교정 1] 라디오 버튼 완벽 정중앙 고정 */
+        /* 🚨 라디오 버튼 내부 수평 중앙 강제 정렬 */
         div[role="radiogroup"] {
             justify-content: center !important;
             margin: 0 auto !important;
-            width: 100% !important;
-            gap: 40px !important;
         }
         div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
-        div[data-testid="stForm"] { border: none !important; box-shadow: none !important; }
+        div[data-testid="stForm"] { border: none !important; padding: 0px !important; box-shadow: none !important; }
         
-        /* 🚨 [교정 2] 모든 입력창 너비를 '280px'로 대폭 축소 & 무조건 정중앙 */
-        .stTextInput, .stNumberInput, .stSelectbox { 
-            width: 280px !important;
-            max-width: 280px !important;
-            margin: 0 auto 5px auto !important;
-        }
-        
-        /* 🚨 [교정 3] 로그인 버튼도 입력창과 똑같이 '280px'로 축소 & 무조건 정중앙 + 컬러 도색 */
-        div[data-testid="stFormSubmitButton"] {
-            display: flex !important;
-            justify-content: center !important;
-            width: 100% !important;
-            margin-top: 10px !important;
-        }
+        /* 🚨 [버튼 도색 마스터키] 스트림릿 Form 전용 프라이머리 버튼 심장부 타격 */
         button[kind="primaryFormSubmit"], button[kind="primary"] {
             background-color: #4a69bd !important;
             border-color: #4a69bd !important;
             color: white !important;
             font-weight: bold !important;
-            padding: 10px 0px !important;
+            padding: 8px 0px !important;
             border-radius: 8px !important;
-            font-size: 15px !important;
-            width: 280px !important; /* 입력창과 소름 돋게 일치하는 280px */
-            min-width: 280px !important;
+            font-size: 16px !important;
         }
         button[kind="primaryFormSubmit"]:hover, button[kind="primary"]:hover {
             background-color: #3b54b1 !important;
             border-color: #3b54b1 !important;
         }
         
+        .stTextInput, .stNumberInput, .stSelectbox { margin-bottom: -5px !important; }
         h2 { font-size: 22px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 15px 0 !important; }
         h4 { display: none !important; } 
-        hr { width: 280px !important; margin: 10px auto !important; border: none !important; border-top: 1px solid #e2e8f0 !important; }
         
         .footer-notice {
-            text-align: center; font-size: 11px; color: #94a3b8; margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 12px; font-weight: 600; width: 280px; margin: 25px auto 0 auto;
+            text-align: center; font-size: 11px; color: #94a3b8; margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 12px; font-weight: 600;
         }
     </style>
 """, unsafe_allow_html=True)
 
 
 # =========================================================================
-# 🔄 깔끔하게 털어낸 폼 구동부 (기둥 제거)
+# 🔄 물리적 기둥(st.columns)을 활용한 절대 중앙 정렬 구동부
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
-        st.markdown("<hr>", unsafe_allow_html=True)
+        # 🎯 [물리적 중앙 정렬 1] 라디오 버튼 좌우 기둥 가둠 + horizontal 속성 추가
+        r1, r_mid, r2 = st.columns([0.5, 4, 0.5])
+        with r_mid:
+            login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
+            
+        st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         # 👨‍🏫 교사 모드
         if login_mode == "교사":
-            admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
-            admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
+            in1, in_mid, in2 = st.columns([0.3, 5, 0.3])
+            with in_mid:
+                admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
+                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
+                st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
             
-            if st.form_submit_button("로그인", type="primary"):
-                if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
-                    st.session_state["admin_logged_in"] = True
-                    st.rerun()
-                else:
-                    st.error("❌ ID 또는 비밀번호 오류")
+            # 🎯 [물리적 중앙 정렬 2] 로그인 버튼 좌우 기둥 가둠 + type="primary" 선언
+            b1, b_mid, b2 = st.columns([0.3, 5, 0.3])
+            with b_mid:
+                if st.form_submit_button("로그인", type="primary", use_container_width=True):
+                    if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
+                        st.session_state["admin_logged_in"] = True
+                        st.rerun()
+                    else:
+                        st.error("❌ ID 또는 비밀번호 오류")
 
         # 🎒 학생 모드
         elif login_mode == "학생":
             active_dbs = get_active_databases()
             if not active_dbs:
-                st.warning("등록된 데이터가 없습니다.")
+                st.warning("등록된 평가 데이터가 없습니다.")
             else:
-                opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
-                sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed", key="sb_sub")
+                in1, in_mid, in2 = st.columns([0.3, 5, 0.3])
+                with in_mid:
+                    opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
+                    sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed", key="sb_sub")
                 
                 if sel_s != "과목 및 학기를 선택하세요.":
                     db = active_dbs[opts_s.index(sel_s)-1]
@@ -249,24 +244,33 @@ if not st.session_state["admin_logged_in"]:
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
                     
                     if config:
-                        st.markdown("<hr>", unsafe_allow_html=True)
+                        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
                         
-                        b_in = st.selectbox("반", classes, key="sb_class", label_visibility="collapsed")
-                        n_in = st.number_input("번호", 1, 50, 1, key="ni_num", label_visibility="collapsed")
-                        name_in = st.text_input("이름", placeholder="이름", key="ti_name", label_visibility="collapsed")
-                        pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
+                        stu1, stu_mid, stu2 = st.columns([0.3, 5, 0.3])
+                        with stu_mid:
+                            c1, c2, c3 = st.columns(3)
+                            with c1: b_in = st.selectbox("반", classes, key="sb_class", label_visibility="collapsed")
+                            with c2: n_in = st.number_input("번호", 1, 50, 1, key="ni_num", label_visibility="collapsed")
+                            with c3: name_in = st.text_input("이름", placeholder="이름", key="ti_name", label_visibility="collapsed")
+                            
+                            st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+                            pw_in = st.text_input("비밀번호", type="password", placeholder="학생 개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
+                            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
                         
-                        if st.form_submit_button("점수 조회", type="primary"):
-                            df_st = load_sheet_to_df(sf_id)
-                            if not df_st.empty:
-                                res = df_st[(df_st['반'].astype(int)==int(b_in.replace("반",""))) & (df_st['번호'].astype(int)==n_in) & (df_st['이름'].astype(str)==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
-                                if not res.empty:
-                                    idx = res.index[0]
-                                    scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
-                                    show_result_dialog(name_in, scores)
-                                else:
-                                    st.error("❌ 일치하는 학생 정보가 없습니다.")
+                        # 🎯 [물리적 중앙 정렬 2] 점수 조회 버튼
+                        b1, b_mid, b2 = st.columns([0.3, 5, 0.3])
+                        with b_mid:
+                            if st.form_submit_button("점수 조회", type="primary", use_container_width=True):
+                                df_st = load_sheet_to_df(sf_id)
+                                if not df_st.empty:
+                                    res = df_st[(df_st['반'].astype(int)==int(b_in.replace("반",""))) & (df_st['번호'].astype(int)==n_in) & (df_st['이름'].astype(str)==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
+                                    if not res.empty:
+                                        idx = res.index[0]
+                                        scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
+                                        show_result_dialog(name_in, scores)
+                                    else:
+                                        st.error("❌ 일치하는 학생 정보가 없습니다.")
                                     
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
@@ -279,13 +283,13 @@ else:
         
         btn_c1, btn_col2 = st.columns(2)
         with btn_c1:
-            if st.form_submit_button("🔐 계정 수정", type="primary", use_container_width=True): password_update_dialog()
+            if st.form_submit_button("🔐 계정 정보 수정", type="primary", use_container_width=True): password_update_dialog()
         with btn_col2:
             if st.form_submit_button("🎒 로그아웃", type="primary", use_container_width=True):
                 st.session_state["admin_logged_in"] = False
                 st.rerun()
                 
-        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
         
         g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
         sel_g = st.selectbox("교과군 분류", options=g_opts, label_visibility="collapsed")
@@ -299,10 +303,11 @@ else:
             sel_s = st.selectbox("세부 과목", options=s_opts, label_visibility="collapsed")
             if sel_s != "과목 선택": final_sub = sel_s
             
-        sel_gr = st.selectbox("학년 지정", options=GRADE_OPTIONS)
-        sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS)
+        c_gr, c_se = st.columns(2)
+        with c_gr: sel_gr = st.selectbox("학년 지정", options=GRADE_OPTIONS)
+        with c_se: sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS)
         
-        if st.form_submit_button("🚀 활성화 및 저장", type="primary") and final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
+        if st.form_submit_button("🚀 활성화 및 저장", type="primary", use_container_width=True) and final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
             if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
             st.session_state.active_subject = final_sub
             st.session_state.active_grade = sel_gr.replace("학년", "")
@@ -313,8 +318,8 @@ else:
             sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
             cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
             
-            st.markdown("<hr>", unsafe_allow_html=True)
-            up_f = st.file_uploader("CSV 업로드", type="csv", label_visibility="collapsed")
+            st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+            up_f = st.file_uploader("CSV 파일 업로드", type="csv", label_visibility="collapsed")
             if up_f:
                 df_up = pd.read_csv(up_f, encoding='cp949')
                 if save_df_to_sheet(sf_id, df_up):
