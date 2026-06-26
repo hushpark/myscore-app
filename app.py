@@ -141,59 +141,57 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [디자인 최종 마감] 정중앙 정렬 및 바탕색 매칭 버튼 컬러 스타일 세팅
+# 🎯 [디자인 최종 보정 CSS] 미니 흰색 상자 및 인디고 블루 단추 테마
 # =========================================================================
 st.markdown("""
     <style>
-        /* 바탕 화면 전체 다크 네이비 테마 유지 */
+        /* 배경 전체 테마 다크 네이비 고정 */
         .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
         div[data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
         
-        /* 슬림 미니 화이트 카드 상자 틀 */
+        /* 가로 380px 슬림 컴팩트 흰색 상자 테두리 지정 */
         div[data-testid="stForm"] {
             background-color: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 30px 25px 25px 25px !important;
+            padding: 30px 20px 25px 25px !important;
             border-radius: 20px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
             max-width: 380px !important;
             margin: 80px auto 0 auto !important;
         }
         
-        /* 🎯 [교정 ①] 교사 / 학생 라디오 버튼 가로 정중앙 배치 정렬 */
+        /* 라디오 버튼 정중앙 배치 보강 */
+        div[data-testid="stRadio"] { display: flex; justify-content: center !important; }
         div[data-testid="stRadio"] > div {
             flex-direction: row !important;
             justify-content: center !important;
             align-items: center !important;
-            gap: 40px !important;
-            margin: 10px 0 15px 0 !important;
+            gap: 30px !important;
         }
         div[data-testid="stRadio"] label p { font-size: 15px !important; font-weight: bold !important; color: #1e293b !important; }
         div[data-testid="stForm"] { border: none !important; padding: 0px !important; box-shadow: none !important; }
         
-        /* 입력창 간격 압축 */
+        /* 입력창 세로 마진 압축 */
         .stTextInput, .stNumberInput, .stSelectbox { margin-bottom: -5px !important; }
         
-        /* 🎯 [교정 ② + ③] 로그인 단추 중앙 가득 정렬 + 예쁜 테마색(#4a69bd) 입히기 */
+        /* 로그인/조회 버튼 인디고 블루 예쁜 색상 입히기 */
         div.stButton button {
-            background-color: #4a69bd !important; /* 바탕색인 네이비 계열과 세련되게 매칭되는 인디고 컬러 */
+            background-color: #4a69bd !important; /* 세련된 딥 블루 테마색 */
             color: white !important;
             border: none !important;
             font-weight: bold !important;
-            padding: 10px 0px !important;
+            padding: 8px 0px !important;
             border-radius: 8px !important;
-            font-size: 15px !important;
-            width: 100% !important; /* 미니 상자 폭에 맞춰 꽉 차게 조절되어 자동 중앙 정렬 효과 */
-            display: block !important;
-            margin: 15px auto 0 auto !important;
-            box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
+            font-size: 14px !important;
+            width: 100% !important;
+            transition: background-color 0.2s;
         }
         div.stButton button:hover {
             background-color: #3b54b1 !important;
         }
         
-        h2 { font-size: 21px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 15px 0 !important; }
+        h2 { font-size: 20px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 15px 0 !important; }
         h4 { display: none !important; } 
         
         .footer-notice {
@@ -204,31 +202,38 @@ st.markdown("""
 
 
 # =========================================================================
-# 🔄 일체형 폼 구동 컨트롤러
+# 🔄 일체형 폼 구동 컨트롤러 (정밀 정렬 기법 적용)
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 교사 / 학생 선택 단추 (가운데 정렬 교정 완료)
-        login_mode = st.radio("접속 모드", ["교사", "학생"], label_visibility="collapsed")
+        # 🎯 [교정 ①] 교사/학생 선택 토글 기둥을 양옆 여백을 주어 정중앙에 고정
+        r_col1, r_col2, r_col3 = st.columns([1, 4, 1])
+        with r_col2:
+            login_mode = st.radio("접속 모드", ["교사", "학생"], label_visibility="collapsed")
         st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         # 👨‍🏫 1. 교사 모드 입력 컴포넌트
         if login_mode == "교사":
-            admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
-            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+            # 🎯 [교정 ②] 입력창 양옆에 미세 여백 기둥을 세워 가로 너비를 슬림하게 대폭 축소
+            in_col1, in_col2, in_col3 = st.columns([0.4, 5, 0.4])
+            with in_col2:
+                admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
+                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
+                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             
-            admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-            
-            if st.form_submit_button("로그인"):
-                if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
-                    st.session_state["admin_logged_in"] = True
-                    st.rerun()
-                else:
-                    st.error("❌ ID 또는 비밀번호 오류")
+            # 🎯 [교정 ③] 로그인 단추 또한 입력창 너비와 칼같이 맞추어 정중앙에 정렬 배치
+            btn_col1, btn_col2, btn_col3 = st.columns([0.4, 5, 0.4])
+            with btn_col2:
+                if st.form_submit_button("로그인"):
+                    if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
+                        st.session_state["admin_logged_in"] = True
+                        st.rerun()
+                    else:
+                        st.error("❌ ID 또는 비밀번호 오류")
 
         # 🎒 2. 학생 모드 입력 컴포넌트
         elif login_mode == "학생":
@@ -236,8 +241,10 @@ if not st.session_state["admin_logged_in"]:
             if not active_dbs:
                 st.warning("등록된 평가 데이터가 없습니다.")
             else:
-                opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
-                sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed", key="sb_sub")
+                in_col1, in_col2, in_col3 = st.columns([0.4, 5, 0.4])
+                with in_col2:
+                    opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
+                    sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed", key="sb_sub")
                 
                 if sel_s != "과목 및 학기를 선택하세요.":
                     db = active_dbs[opts_s.index(sel_s)-1]
@@ -248,30 +255,35 @@ if not st.session_state["admin_logged_in"]:
                         st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
                         
-                        c1, c2, c3 = st.columns(3)
-                        with c1: b_in = st.selectbox("반", classes, key="sb_class", label_visibility="collapsed")
-                        with c2: n_in = st.number_input("번호", 1, 50, 1, key="ni_num", label_visibility="collapsed")
-                        with c3: name_in = st.text_input("이름", placeholder="이름", key="ti_name", label_visibility="collapsed")
+                        # 학생 인적사항 컴포넌트 배치
+                        in_col1, in_col2, in_col3 = st.columns([0.4, 5, 0.4])
+                        with in_col2:
+                            c1, c2, c3 = st.columns(3)
+                            with c1: b_in = st.selectbox("반", classes, key="sb_class", label_visibility="collapsed")
+                            with c2: n_in = st.number_input("번호", 1, 50, 1, key="ni_num", label_visibility="collapsed")
+                            with c3: name_in = st.text_input("이름", placeholder="이름", key="ti_name", label_visibility="collapsed")
+                            
+                            st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+                            pw_in = st.text_input("비밀번호", type="password", placeholder="학생 개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
+                            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
                         
-                        st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
-                        pw_in = st.text_input("비밀번호", type="password", placeholder="학생 개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
-                        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-                        
-                        if st.form_submit_button("점수 조회"):
-                            df_st = load_sheet_to_df(sf_id)
-                            if not df_st.empty:
-                                res = df_st[(df_st['반'].astype(int)==int(b_in.replace("반",""))) & (df_st['번호'].astype(int)==n_in) & (df_st['이름'].astype(str)==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
-                                if not res.empty:
-                                    idx = res.index[0]
-                                    scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
-                                    show_result_dialog(name_in, scores)
-                                else:
-                                    st.error("❌ 일치하는 학생 정보가 없습니다.")
+                        btn_col1, btn_col2, btn_col3 = st.columns([0.4, 5, 0.4])
+                        with btn_col2:
+                            if st.form_submit_button("점수 조회"):
+                                df_st = load_sheet_to_df(sf_id)
+                                if not df_st.empty:
+                                    res = df_st[(df_st['반'].astype(int)==int(b_in.replace("반",""))) & (df_st['번호'].astype(int)==n_in) & (df_st['이름'].astype(str)==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
+                                    if not res.empty:
+                                        idx = res.index[0]
+                                        scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
+                                        show_result_dialog(name_in, scores)
+                                    else:
+                                        st.error("❌ 일치하는 학생 정보가 없습니다.")
                                     
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 교사용 관리자 제어판 (동일 규칙 가둠 가동)
+# 교사용 관리자 제어판
 # -------------------------------------------------------------------------
 else:
     with st.form("teacher_dashboard_form"):
