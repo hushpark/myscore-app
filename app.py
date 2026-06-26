@@ -141,7 +141,7 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [디자인 최종 마감 CSS] 하얀 상자 기준 완벽 정중앙 배치 및 단추 규격 정밀화
+# 🎯 [디자인 대수술] 브라우저 창 크기와 무관하게 하얀 상자 종속형 정중앙 고정 CSS
 # =========================================================================
 st.markdown("""
     <style>
@@ -150,7 +150,7 @@ st.markdown("""
         div[data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
         
-        /* 🚨 하얀색 상자 크기 원상 복구 (아담하고 안정적인 원래 비율) */
+        /* 🚨 가로 440px 컴팩트 하얀 상자 정의 */
         div[data-testid="stForm"] {
             background-color: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
@@ -159,41 +159,54 @@ st.markdown("""
             box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
             max-width: 440px !important;
             margin: 60px auto 0 auto !important;
+            position: relative !important;
         }
         
-        /* 🚨 [하얀 상자 기준] 라디오 버튼 정중앙 완전 구속 */
+        /* 🚨 [하얀 상자 종속 절대 정중앙 구속] 브라우저 중앙이 아니라 하얀 박스 기준 정중앙 처리 */
+        div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important; /* 내부의 모든 요소를 가로 정중앙으로 강제 정렬 */
+            width: 100% !important;
+        }
+        
+        /* 라디오 버튼 정중앙 배치 정밀화 */
+        div[data-testid="stRadio"] {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+        }
         div[role="radiogroup"] {
             justify-content: center !important;
             margin: 0 auto !important;
-            width: 100% !important;
             gap: 40px !important;
         }
         div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
         div[data-testid="stForm"] { border: none !important; box-shadow: none !important; }
         
-        /* 🚨 [하얀 상자 기준] ID, 비밀번호 입력창 슬림 정돈 및 중앙 배치 */
+        /* 입력창 너비 슬림하게 맞춤 및 중앙 고정 */
         .stTextInput, .stNumberInput, .stSelectbox { 
             width: 300px !important;
             max-width: 300px !important;
             margin: 0 auto 5px auto !important;
         }
         
-        /* 🚨 [교정 핵심] 로그인 버튼 정중앙 배치 + "로그인" 글자보다 약간 큰 최적화 사이즈(140px) 강제 지정 */
+        /* 🚨 [로그인 버튼 하얀 상자 기준 정중앙] 블록 레벨 정렬 후 가로 140px 고정 */
         div[data-testid="stFormSubmitButton"] {
             display: flex !important;
             justify-content: center !important;
             width: 100% !important;
-            margin-top: 15px !important;
+            margin: 15px auto 0 auto !important;
         }
         button[kind="primaryFormSubmit"], button[kind="primary"] {
-            background-color: #4a69bd !important; /* 요청하신 그림2의 예쁜 인디고 블루 색상 */
+            background-color: #4a69bd !important; /* 예쁜 인디고 블루 색상 고정 */
             border-color: #4a69bd !important;
             color: white !important;
             font-weight: bold !important;
             padding: 9px 0px !important;
             border-radius: 8px !important;
             font-size: 15px !important;
-            width: 140px !important; /* 🎯 길게 찢어지지 않고 딱 적당한 최적의 140px 크기로 마감 */
+            width: 140px !important; /* 🎯 글자보다 약간 큰 최적화 규격 */
             min-width: 140px !important;
             max-width: 140px !important;
             box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
@@ -203,8 +216,7 @@ st.markdown("""
             border-color: #3b54b1 !important;
         }
         
-        h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; }
-        h4 { display: none !important; } 
+        h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; width: 100% !important; }
         hr { width: 300px !important; margin: 12px auto !important; border: none !important; border-top: 1px solid #e2e8f0 !important; }
         
         .footer-notice {
@@ -215,13 +227,14 @@ st.markdown("""
 
 
 # =========================================================================
-# 🔄 완벽 분할 진압용 일체형 폼 구동부
+# 🔄 완벽하게 정돈된 순정 일체형 폼 구동부
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
+        # 라디오 버튼 (상자 기준 정중앙 구속 완료)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
         
@@ -230,6 +243,7 @@ if not st.session_state["admin_logged_in"]:
             admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
             admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
             
+            # 로그인 버튼 (상자 기준 140px 아담한 크기로 정중앙 구속 완료)
             if st.form_submit_button("로그인", type="primary"):
                 if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
                     st.session_state["admin_logged_in"] = True
