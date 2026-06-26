@@ -13,7 +13,7 @@ import csv
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
-# --- 데이터 로드/저장 시스템 (기존 구글 시트 엔진 로직 100% 보존) ---
+# --- 데이터 로드/저장 시스템 (기존 구글 시트 백엔드 무결점 보존) ---
 def load_master_subjects():
     default_structure = {
         "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
@@ -133,15 +133,14 @@ def get_active_databases():
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 
 SUBJECT_MAP = load_master_subjects()
-GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
+GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🔄 1단계: 동적 레이아웃 주입 컨트롤러 (로그인 여부에 따라 전체 구조 대전환)
+# 🔄 1단계: 하이엔드 인프라 스타일링 (드롭박스 시인성 대폭 업그레이드 패치)
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
-    # 🏠 로그인 전: 가로 440px 모바일/스마트폰 대응 아담한 상자 유지
     st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
     st.markdown("""
         <style>
@@ -223,21 +222,26 @@ if not st.session_state["admin_logged_in"]:
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 else:
-    # ⚙️ 교사 로그인 후: 대형 모니터 화면 전체를 사용하는 100% 'Wide' 대시보드 강제 주입
+    # ⚙️ 교사 로그인 후: 100% 시원한 대형 와이드 스크린 대시보드
     st.set_page_config(page_title="교사용 마스터 관리 시스템", layout="wide")
     st.markdown("""
         <style>
-            /* 전체 배경을 차분하고 전문적인 그레이/화이트 톤으로 전환 */
             .main, [data-testid="stAppViewContainer"] { background-color: #f1f5f9 !important; }
-            
-            /* 🚨 교사 전용 좌측 사이드바 스타일링 고정 */
-            [data-testid="stSidebar"] {
-                background-color: #1e293b !important;
-                box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important;
-            }
+            [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
             [data-testid="stSidebar"] * { color: #f8fafc !important; font-weight: 600; }
             
-            /* 와이드 카드 컴포넌트 */
+            /* 🚨 [드롭박스 시인성 전면 개조 패치] 테두리를 선명하게 하고 투명도를 없애 눈에 확 띄게 조절 */
+            div[data-testid="stSelectbox"] div[data-baseweb="select"] {
+                border: 2px solid #4a69bd !important;
+                border-radius: 8px !important;
+                background-color: #ffffff !important;
+            }
+            div[data-testid="stSelectbox"] div[data-baseweb="select"] * {
+                color: #0f172a !important;
+                font-weight: 700 !important;
+                font-size: 15px !important;
+            }
+            
             .wide-dashboard-card {
                 background-color: #ffffff !important;
                 border-radius: 16px !important;
@@ -246,62 +250,57 @@ else:
                 margin-bottom: 25px !important;
                 border: 1px solid #e2e8f0 !important;
             }
-            
-            /* 테이블 및 위젯 공통 마감 */
             .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
             h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 28px !important; margin-bottom: 5px !important; }
             h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
-            
-            /* 전용 버튼 스타일 지정 */
-            button {
-                background-color: #4a69bd !important; color: white !important; font-weight: bold !important;
-                border-radius: 6px !important; padding: 8px 16px !important; border: none !important;
-            }
         </style>
     """, unsafe_allow_html=True)
 
-    # 🗂️ 2단계: 요청하신 이미지 형태의 좌측 퀵 메뉴바(사이드바) 배치
+    # 🎯 [선생님 요청] "학내망 성적 시스템" ➔ "수행평가 관리 시스템"으로 명칭 격상
     with st.sidebar:
-        st.markdown("## ⚙️ 학내망 성적 시스템")
+        st.markdown("<h2>⚙️ 수행평가 관리 시스템</h2>", unsafe_allow_html=True)
         st.markdown("---")
         menu_selection = st.radio(
             "📋 관리자 메뉴",
-            ["▶ 학적 및 응시현황 확인", "▶ 채점단 구성 & 과목 세팅", "▶ 성적 데이터 연동 (CSV)", "▶ 시스템 보안 설정"]
+            ["▶ 학적 및 응시현황 확인", "▶ 평가 대상 과목 구성", "▶ 성적 데이터 연동 (CSV)", "▶ 시스템 보안 설정"]
         )
         st.markdown("---")
         if st.button("🚪 시스템 로그아웃", use_container_width=True):
             st.session_state["admin_logged_in"] = False
             st.rerun()
 
-    # 🖥️ 3단계: 선택된 메뉴별 대형 100% 와이드 관리 제어판 구현
     st.markdown(f"<h2>교사용 마스터 통합 워크스테이션</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    if menu_selection == "▶ 채점단 구성 & 과목 세팅":
+    # 모듈 1: 평가 대상 과목 구성 (채점단 삭제 및 미학적 텍스트 라벨 완전 제거 완수)
+    if menu_selection == "▶ 평가 대상 과목 구성":
         st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
-        st.markdown("<h3>📁 1. 대상 과목 세팅 및 파티션 활성화</h3>", unsafe_allow_html=True)
+        st.markdown("<h3>📁 1. 평가 과목 세팅 및 파티션 활성화</h3>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         with col1:
+            # 🎯 불필요하게 위에 따로 써놓았던 텍스트 라벨을 삭제하여 드롭다운 박스가 바로 정돈되게 배치
             g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
-            sel_g = st.selectbox("교과군 분류", options=g_opts)
+            sel_g = st.selectbox("교과군 분류 선택", options=g_opts, label_visibility="collapsed")
             
             final_sub, t_g = "", ""
             if sel_g == "➕ 신규 과목 개설":
-                t_g = st.selectbox("위치 지정", ["인문·사회군", "수리·과학군", "예체능군"])
-                final_sub = st.text_input("새 과목명").strip()
+                t_g = st.selectbox("위치 지정 분류", ["인문·사회군", "수리·과학군", "예체능군"])
+                final_sub = st.text_input("새 과목명 입력").strip()
             elif sel_g != "교과군 선택":
                 s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
-                sel_s = st.selectbox("세부 과목", options=s_opts)
+                sel_s = st.selectbox("세부 과목 지정", options=s_opts, label_visibility="collapsed")
                 if sel_s != "과목 선택": final_sub = sel_s
         
         with col2:
-            sel_gr = st.selectbox("학년 지정", options=GRADE_OPTIONS)
-            sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS)
+            sel_gr = st.selectbox("학년 선택", options=GRADE_OPTIONS, label_visibility="collapsed")
+            st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+            sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS, label_visibility="collapsed")
             
+        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🚀 이 과목 활성화 및 서버 로드"):
-            if final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
+            if final_sub and sel_gr != "학년 지정" and sel_se != "학기 선택":
                 if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
                 st.session_state.active_subject = final_sub
                 st.session_state.active_grade = sel_gr.replace("학년", "")
@@ -311,11 +310,11 @@ else:
                 st.error("과목 정보를 빠짐없이 선택해 주세요.")
         st.markdown("</div>", unsafe_allow_html=True)
 
+    # 모듈 2: 학적 및 응시현황 모니터링 Grid
     elif menu_selection == "▶ 학적 및 응시현황 확인":
         st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
         st.markdown("<h3>📊 실시간 학생 응시 및 점수 모니터링 Grid</h3>", unsafe_allow_html=True)
         
-        # 큰 화면에 적합한 넓은 데이터 테이블 렌더링
         sample_df = pd.DataFrame({
             "반": [1, 1, 1, 2, 2, 3],
             "번호": [1, 2, 3, 1, 2, 1],
@@ -326,18 +325,34 @@ else:
         })
         st.dataframe(sample_df, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
-        
-        # 시각화 통계 차트 배치
-        st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
-        st.markdown("<h3>📈 반별 성적 조회 활성화 분포도</h3>", unsafe_allow_html=True)
-        st.bar_chart({"1반": 15, "2반": 32, "3반": 24, "4반": 8})
-        st.markdown("</div>", unsafe_allow_html=True)
 
+    # 모듈 3: 성적 데이터 연동 (검증된 정밀 샘플 데이터 이식 탑재)
     elif menu_selection == "▶ 성적 데이터 연동 (CSV)":
         st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
-        st.markdown("<h3>📤 CSV 파일 기반 대용량 클라우드 연동 동기화</h3>", unsafe_allow_html=True)
+        st.markdown("<h3>📥 CSV 파일 기반 대용량 클라우드 연동 동기화</h3>", unsafe_allow_html=True)
+        
         if "active_subject" in st.session_state and st.session_state.active_subject:
             st.info(f"현재 선택된 연동 타겟 과목: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
+            
+            # 🎯 [선생님 요청] 완벽한 실제 다운로드용 예시 샘플 레코드 생성
+            example_data = io.StringIO()
+            cw = csv.writer(example_data)
+            cw.writerow(["반", "번호", "이름", "비밀번호", "형성평가", "포트폴리오", "태도점수"])
+            cw.writerow([1, 1, "홍길동", "1024", 20, 18, 25])
+            cw.writerow([1, 2, "이영희", "3925", 19, 20, 22])
+            cw.writerow([2, 1, "강백호", "8254", 15, 15, 20])
+            cw.writerow([2, 2, "소연지", "7711", 20, 19, 25])
+            
+            st.markdown("##### 💡 실제 가이드라인 예시 양식을 먼저 다운로드하여 성적을 연동하세요.")
+            st.download_button(
+                label="📥 수행평가 성적 대장 실제 데이터 예시 파일(.CSV) 다운로드",
+                data=example_data.getvalue(),
+                file_name=f"수행평가_실제양식예시_{st.session_state.active_subject}.csv",
+                mime="text/csv",
+                key="download_sample_csv"
+            )
+            st.markdown("<br>", unsafe_allow_html=True)
+            
             up_f = st.file_uploader("성적 대장 CSV 파일 업로드", type="csv")
             if up_f:
                 df_up = pd.read_csv(up_f, encoding='cp949')
@@ -345,9 +360,10 @@ else:
                 if save_df_to_sheet(sf_id, df_up):
                     st.success("🎉 구글 스프레드시트 클라우드로 실시간 데이터 동기화가 완벽히 완료되었습니다!")
         else:
-            st.warning("먼저 '▶ 채점단 구성 & 과목 세팅' 메뉴에서 대상 과목을 지정 및 활성화해 주세요.")
+            st.warning("먼저 '▶ 평가 대상 과목 구성' 메뉴에서 대상 과목을 지정 및 활성화해 주세요.")
         st.markdown("</div>", unsafe_allow_html=True)
 
+    # 모듈 4: 시스템 보안 설정
     elif menu_selection == "▶ 시스템 보안 설정":
         st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
         st.markdown("<h3>🔐 마스터 관리자 인증 계정 변경</h3>", unsafe_allow_html=True)
