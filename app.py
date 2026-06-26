@@ -141,30 +141,31 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [디자인 핵심 고정] 극도로 슬림하고 아담하게 압축된 미니멀 멀티 박스 가둠 CSS
+# 🎯 [디자인 최종 마감] 정중앙 정렬 및 바탕색 매칭 버튼 컬러 스타일 세팅
 # =========================================================================
 st.markdown("""
     <style>
-        /* 바탕 화면 전체를 차분한 오리지널 다크 네이비로 처리 */
+        /* 바탕 화면 전체 다크 네이비 테마 유지 */
         .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
         div[data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
         
-        /* 🚨 [넓이 대폭 축소]: 가로폭을 수첩 크기인 380px 수준으로 대폭 슬림화 */
+        /* 슬림 미니 화이트 카드 상자 틀 */
         div[data-testid="stForm"] {
             background-color: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 30px 25px 25px 25px !important; /* 내부 패딩을 줄여 높이 최소화 */
+            padding: 30px 25px 25px 25px !important;
             border-radius: 20px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
             max-width: 380px !important;
             margin: 80px auto 0 auto !important;
         }
         
-        /* 🎯 교사 / 학생 라디오 버튼 정중앙 정렬 정돈 */
+        /* 🎯 [교정 ①] 교사 / 학생 라디오 버튼 가로 정중앙 배치 정렬 */
         div[data-testid="stRadio"] > div {
             flex-direction: row !important;
             justify-content: center !important;
+            align-items: center !important;
             gap: 40px !important;
             margin: 10px 0 15px 0 !important;
         }
@@ -174,25 +175,26 @@ st.markdown("""
         /* 입력창 간격 압축 */
         .stTextInput, .stNumberInput, .stSelectbox { margin-bottom: -5px !important; }
         
-        /* 🎯 [로그인 단추 미학]: 중앙 정렬 및 바탕색과 조화를 이루는 예쁜 인디고 블루(#4a69bd) 세팅 */
+        /* 🎯 [교정 ② + ③] 로그인 단추 중앙 가득 정렬 + 예쁜 테마색(#4a69bd) 입히기 */
         div.stButton button {
-            background-color: #4a69bd !important;
+            background-color: #4a69bd !important; /* 바탕색인 네이비 계열과 세련되게 매칭되는 인디고 컬러 */
             color: white !important;
             border: none !important;
             font-weight: bold !important;
             padding: 10px 0px !important;
             border-radius: 8px !important;
             font-size: 15px !important;
-            width: 100% !important;
+            width: 100% !important; /* 미니 상자 폭에 맞춰 꽉 차게 조절되어 자동 중앙 정렬 효과 */
             display: block !important;
-            margin: 10px auto 0 auto !important;
+            margin: 15px auto 0 auto !important;
+            box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
         }
         div.stButton button:hover {
             background-color: #3b54b1 !important;
         }
         
         h2 { font-size: 21px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 15px 0 !important; }
-        h4 { display: none !important; } /* 🎯 [라벨 삭제 원천 차단] 불필요한 라벨 글자를 브라우저 단에서 완전 소멸 */
+        h4 { display: none !important; } 
         
         .footer-notice {
             text-align: center; font-size: 11px; color: #94a3b8; margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 12px; font-weight: 600;
@@ -202,20 +204,19 @@ st.markdown("""
 
 
 # =========================================================================
-# 🔄 380px 슬림 폼 구동부
+# 🔄 일체형 폼 구동 컨트롤러
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 교사 / 학생 선택 단추 (가운데 정렬)
+        # 교사 / 학생 선택 단추 (가운데 정렬 교정 완료)
         login_mode = st.radio("접속 모드", ["교사", "학생"], label_visibility="collapsed")
         st.markdown("<hr style='margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
-        # 👨‍🏫 1. 교사 모드 입력 컴포넌트 (높이 및 너비 최소화 적용)
+        # 👨‍🏫 1. 교사 모드 입력 컴포넌트
         if login_mode == "교사":
-            # 🎯 글자를 지우고 placeholder 힌트로 완벽하게 대체
             admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
             st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
             
@@ -229,7 +230,7 @@ if not st.session_state["admin_logged_in"]:
                 else:
                     st.error("❌ ID 또는 비밀번호 오류")
 
-        # 🎒 2. 학생 모드 입력 컴포넌트 (높이 및 너비 최소화 적용)
+        # 🎒 2. 학생 모드 입력 컴포넌트
         elif login_mode == "학생":
             active_dbs = get_active_databases()
             if not active_dbs:
@@ -270,7 +271,7 @@ if not st.session_state["admin_logged_in"]:
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 교사용 관리자 제어판 (로그인 성공 모드)
+# 교사용 관리자 제어판 (동일 규칙 가둠 가동)
 # -------------------------------------------------------------------------
 else:
     with st.form("teacher_dashboard_form"):
