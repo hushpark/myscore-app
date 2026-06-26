@@ -13,81 +13,10 @@ import csv
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
-# =========================================================================
-# 🔐 [구글 시트 API 연동 설정] secrets.toml 기반 안전 접속 엔진 (기존 로직 보존)
-# =========================================================================
-@st.cache_resource
-def init_google_sheet_client():
-    try:
-        credentials_info = st.secrets["gcp_service_account"]
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        creds = Credentials.from_service_account_info(credentials_info, scopes=scopes)
-        return gspread.authorize(creds)
-    except Exception as e:
-        return None
+# --- 🎯 대시보드 및 가로 레이아웃 매칭을 위해 wide 모드로 유지 ---
+st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
-gc = init_google_sheet_client()
-SPREADSHEET_NAME = "수행평가_데이터베이스"  # 👈 구글 드라이브 파일명
-
-def get_google_sheet(sheet_name):
-    if gc is None: return None
-    try:
-        sh = gc.open(SPREADSHEET_NAME)
-        try:
-            return sh.worksheet(sheet_name)
-        except gspread.exceptions.WorksheetNotFound:
-            return sh.add_worksheet(title=sheet_name, rows="1000", cols="30")
-    except:
-        return None
-
-# 원격 데이터를 긁어올 때 메모리 버퍼 캐시 보존
-@st.cache_data(ttl=5)
-def load_sheet_to_df(sheet_name, default_cols=None):
-    wks = get_google_sheet(sheet_name)
-    if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
-    try:
-        records = wks.get_all_records()
-        if not records: return pd.DataFrame(columns=default_cols if default_cols else [])
-        return pd.DataFrame(records)
-    except:
-        return pd.DataFrame(columns=default_cols if default_cols else [])
-
-def save_df_to_sheet(sheet_name, df):
-    wks = get_google_sheet(sheet_name)
-    if wks is None: return False
-    try:
-        wks.clear()
-        df_filled = df.fillna("").astype(str)
-        wks.update([df_filled.columns.values.tolist()] + df_filled.values.tolist())
-        return True
-    except:
-        return False
-
-# 메뉴 조작 및 타이핑 시 구글 트래픽 제어 캐시 보존
-@st.cache_data(ttl=15)
-def get_active_databases():
-    active_list = []
-    if gc is None: return active_list
-    try:
-        sh = gc.open(SPREADSHEET_NAME)
-        for wks in sh.worksheets():
-            name = wks.title
-            if name.startswith("cfg_"):
-                core_name = name.replace("cfg_", "")
-                match = re.search(r"(.+?)_(1|2|3)_(.+)", core_name)
-                if match:
-                    sub_name = match.group(1).replace("_", " ")
-                    grd_name = f"{match.group(2)}학년"
-                    sem_name = match.group(3).replace("_", " ")
-                    active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
-    except: pass
-    return active_list
-
-# 마스터 데이터 로드 트래픽 캐시 보존
-@st.cache_data(ttl=60)
+# --- 데이터 로드/저장 시스템 ---
 def load_master_subjects():
     default_structure = {
         "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
@@ -110,16 +39,33 @@ def save_new_subject_to_master(group, subject):
         df = pd.concat([df, new_row], ignore_index=True)
         save_df_to_sheet("master_subjects", df)
 
-@st.cache_data(ttl=60)
-def load_admin_password():
-    df = load_sheet_to_df("admin_meta", ["password"])
+@st.cache_data(ttl=10)
+def load_admin_credentials():
+    """구글 시트에서 관리자 ID와 패스워드를 함께 로드합니다."""
+    df = load_sheet_to_df("admin_meta", ["username", "password"])
     if not df.empty:
-        return str(df.iloc[0]['password']).strip()
-    return "1234"
+        username = str(df.iloc[0].get('username', 'hushpark')).strip()
+        password = str(df.iloc[0].get('password', '1234')).strip()
+        return username, password
+    return "hushpark", "1234"
 
-def save_admin_password(new_pw):
-    df = pd.DataFrame([{"password": str(new_pw).strip()}])
+def save_admin_credentials(new_id, new_pw):
+    """구글 시트에 새로운 관리자 ID와 패스워드를 저장합니다."""
+    df = pd.DataFrame([{"username": str(new_id).strip(), "password": str(new_pw).strip()}])
     save_df_to_sheet("admin_meta", df)
+
+def get_file_names(subject, grade):
+    safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
+    return f"config_{safe_subject}_{grade}grade.csv", f"students_{safe_subject}_{grade}grade.csv"
+
+def load_config(file):
+    if os.path.exists(file):
+        try: return pd.read_csv(file).iloc[0].to_dict()
+        except: return None
+    return None
+
+def load_students(file):
+    return pd.read_csv(file) if os.path.exists(file) else pd.DataFrame()
 
 def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
@@ -148,28 +94,37 @@ def show_result_dialog(student_name, scores_dict):
         st.session_state.clear()
         st.rerun()
 
-@st.dialog("🔐 관리자 암호 수정")
-def password_update_dialog():
+@st.dialog("🔐 관리자 계정 정보 수정")
+def account_update_dialog():
     st.markdown("<div style='padding: 5px;'></div>", unsafe_allow_html=True)
+    curr_id, curr_pw = load_admin_credentials()
+    
+    new_id = st.text_input("새 관리자 ID 입력", value=curr_id, key="dialog_new_id")
     new_pw = st.text_input("새 암호 입력", type="password", key="dialog_new_pw")
     confirm_pw = st.text_input("새 암호 확인", type="password", key="dialog_confirm_pw")
+    
     is_valid, msg = is_strong_password(new_pw)
     if new_pw:
         if new_pw == confirm_pw and is_valid:
-            st.markdown("<div style='background-color:#E8F5E9; border-radius:4px; padding:10px; color:#2E7D32; font-weight:500; margin-bottom:10px;'>✅ 두 암호가 완벽하게 일치합니다.</div>", unsafe_allow_html=True)
+            st.markdown("<div style='background-color:#E8F5E9; border-radius:4px; padding:10px; color:#2E7D32; font-weight:500; margin-bottom:10px;'>✅ 비밀번호 조건 및 확인이 일치합니다.</div>", unsafe_allow_html=True)
         elif confirm_pw and new_pw != confirm_pw:
             st.error("❌ 암호 확인 칸이 일치하지 않습니다.")
         else:
             st.warning(msg)
+            
     st.markdown("""<div style="font-size: 13px; color: #57606a; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px;">
     <b>[안전 암호 규칙]</b><br>- 최소 12자 이상 필수<br>- 영문 + 숫자 + 특수기호 조합
     </div>""", unsafe_allow_html=True)
     st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
-    can_submit = is_valid and (new_pw == confirm_pw)
+    
+    can_submit = is_valid and (new_pw == confirm_pw) and (len(new_id.strip()) > 0)
     b_col1, b_col2 = st.columns(2)
     with b_col1:
         if st.button("저장 후 적용", disabled=not can_submit, use_container_width=True, type="primary"):
-            save_admin_password(new_pw); st.toast("🎉 암호가 변경되었습니다!"); st.rerun()
+            save_admin_credentials(new_id, new_pw)
+            st.session_state["login_user_id"] = new_id.strip()
+            st.toast("🎉 계정 정보가 성공적으로 변경되었습니다!")
+            st.rerun()
     with b_col2:
         if st.button("수정 취소", use_container_width=True): st.rerun()
 
@@ -178,6 +133,7 @@ def reset_all_data():
     st.cache_data.clear()
     keep_keys = {
         "admin_logged_in": st.session_state.get("admin_logged_in", True),
+        "login_user_id": st.session_state.get("login_user_id", "hushpark"),
         "sel_group_idx": st.session_state.get("sel_group_idx", 0),
         "sel_sub_idx": st.session_state.get("sel_sub_idx", 0),
         "sel_grade_idx": st.session_state.get("sel_grade_idx", 0),
@@ -200,8 +156,79 @@ def is_strong_password(pw):
     if not re.search("[!@#$%^&*(),.?\":{}|<>]", pw): return False, "❌ 특수문자가 포함되어야 합니다."
     return True, "✅ 사용 가능한 안전한 암호 조건입니다."
 
-# --- 세션 상태 초기화 및 고정 보존 ---
+@st.cache_resource
+def init_google_sheet_client():
+    try:
+        credentials_info = st.secrets["gcp_service_account"]
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        creds = Credentials.from_service_account_info(credentials_info, scopes=scopes)
+        return gspread.authorize(creds)
+    except Exception as e:
+        return None
+
+gc = init_google_sheet_client()
+SPREADSHEET_NAME = "수행평가_데이터베이스"
+
+def get_google_sheet(sheet_name):
+    if gc is None: return None
+    try:
+        sh = gc.open(SPREADSHEET_NAME)
+        try:
+            return sh.worksheet(sheet_name)
+        except gspread.exceptions.WorksheetNotFound:
+            # 시트가 없으면 열 헤더만 가진 빈 시트 생성 처리
+            wks = sh.add_worksheet(title=sheet_name, rows="100", cols="20")
+            return wks
+    except:
+        return None
+
+def save_df_to_sheet(sheet_name, df):
+    wks = get_google_sheet(sheet_name)
+    if wks is None: return False
+    try:
+        wks.clear()
+        df_filled = df.fillna("")
+        data = [df_filled.columns.tolist()] + df_filled.values.tolist()
+        wks.update(range_name="A1", values=data)
+        return True
+    except:
+        return False
+
+@st.cache_data(ttl=5)
+def load_sheet_to_df(sheet_name, default_cols=None):
+    wks = get_google_sheet(sheet_name)
+    if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
+    try:
+        records = wks.get_all_records()
+        if not records: return pd.DataFrame(columns=default_cols if default_cols else [])
+        return pd.DataFrame(records)
+    except:
+        return pd.DataFrame(columns=default_cols if default_cols else [])
+
+@st.cache_data(ttl=15)
+def get_active_databases():
+    active_list = []
+    if gc is None: return active_list
+    try:
+        sh = gc.open(SPREADSHEET_NAME)
+        for wks in sh.worksheets():
+            name = wks.title
+            if name.startswith("cfg_"):
+                core_name = name.replace("cfg_", "")
+                match = re.search(r"(.+?)_(1|2|3)_(.+)", core_name)
+                if match:
+                    sub_name = match.group(1).replace("_", " ")
+                    grd_name = f"{match.group(2)}학년"
+                    sem_name = match.group(3).replace("_", " ")
+                    active_list.append({"subject": sub_name, "grade": grd_name, "semester": sem_name})
+    except: pass
+    return active_list
+
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
+if "login_user_id" not in st.session_state: st.session_state["login_user_id"] = "hushpark"
 if "show_monitor_view" not in st.session_state: st.session_state["show_monitor_view"] = False
 if "show_delete_panel" not in st.session_state: st.session_state["show_delete_panel"] = False
 if "sel_group_idx" not in st.session_state: st.session_state.sel_group_idx = 0
@@ -213,20 +240,18 @@ if "teacher_sidebar_menu" not in st.session_state: st.session_state["teacher_sid
 SUBJECT_MAP = load_master_subjects()
 GRADE_OPTIONS = ["학년 선택", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
-CURRENT_ADMIN_PW = load_admin_password()
+CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
 # 🎯 [대시보드 및 일체형 로그인 허브 디자인 통합 CSS]
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
-    # 🎒 [모드 1] 로그인 전 일체형 미니 카드 레이아웃 스타일링 (두 번째 사진 완벽 동기화)
     st.markdown("""
         <style>
             .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
             div[data-testid="stHeader"] { display: none !important; }
             footer { display: none !important; }
             
-            /* 🎯 550px 하얀색 미니 카드 본체 바인딩 */
             div[data-testid="stVerticalBlockBorderWrapper"] {
                 max-width: 530px !important;
                 margin: 70px auto 0 auto !important;
@@ -237,7 +262,6 @@ if not st.session_state["admin_logged_in"]:
                 box-shadow: 0 20px 45px rgba(0,0,0,0.18) !important;
             }
             
-            /* 라디오 버튼 정렬 가이드 (교사 / 학생 가로 배열) */
             div[data-testid="stRadio"] > div {
                 flex-direction: row !important;
                 justify-content: center !important;
@@ -245,13 +269,10 @@ if not st.session_state["admin_logged_in"]:
                 margin: 20px 0 25px 0 !important;
             }
             div[data-testid="stRadio"] label p { font-size: 17px !important; font-weight: bold !important; color: #1e293b !important; }
-            
             div[data-testid="stForm"] { border: none !important; padding: 0px !important; box-shadow: none !important; }
             
-            h2 { font-size: 26px !important; color: #000000 !important; font-weight: 800 !important; text-align: center !important; margin: 0px 0px 8px 0px !important; }
-            h3 { font-size: 20px !important; color: #000000 !important; text-align: center !important; margin: 0px 0px 10px 0px !important; font-weight: 700 !important; }
+            h2 { font-size: 26px !important; color: #000000 !important; font-weight: 800 !important; text-align: center !important; margin: 0px 0px 10px 0px !important; }
             
-            /* 파란색 로그인/조회 버튼 최적화 스타일링 */
             div.stButton button {
                 background-color: #5c7cfa !important;
                 color: white !important;
@@ -264,12 +285,11 @@ if not st.session_state["admin_logged_in"]:
             }
             
             .card-footer-notice {
-                text-align: center; font-size: 12px; color: #94a3b8; margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 500;
+                text-align: center; font-size: 13px; color: #94a3b8; margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600; font-style: italic;
             }
         </style>
     """, unsafe_allow_html=True)
 else:
-    # 👨‍🏫 [모드 2] 로그인 후 개방되는 통합 대시보드 ERP 스타일링 (첫 번째 사진 양식 매핑)
     st.markdown("""
         <style>
             .main, [data-testid="stAppViewContainer"] { background-color: #f8fafc !important; }
@@ -277,7 +297,6 @@ else:
             footer { display: none !important; }
             .block-container { padding-top: 0rem !important; padding-left: 0rem !important; padding-right: 0rem !important; }
             
-            /* 🔵 상단 파란색 전체 메뉴 네비게이션 탑 바 시스템 */
             .blue-top-nav-bar {
                 background-color: #0056b3 !important;
                 color: #ffffff !important;
@@ -296,13 +315,10 @@ else:
             .top-bar-right { display: flex; align-items: center; gap: 25px; color: #e2e8f0; }
             .top-bar-right b { color: #ffffff !important; }
             
-            /* 본문 폼 디자인 정돈 */
             div[data-testid="stVerticalBlockBorderWrapper"] {
                 border: none !important; padding: 25px 35px !important; box-shadow: none !important; background-color: transparent !important; max-width: 100% !important;
             }
             div[data-testid="stForm"] { border: none !important; padding: 0px !important; box-shadow: none !important; }
-            
-            /* 좌측 트리형 메뉴 사이드바 색상 가이드 */
             [data-testid="stSidebar"] { background-color: #f1f5f9 !important; border-right: 1px solid #cbd5e1 !important; }
             [data-testid="stSidebar"] h3 { font-size: 16px !important; font-weight: 800 !important; color: #334155 !important; margin-bottom: 12px !important; }
             
@@ -316,22 +332,20 @@ else:
 
 
 # =========================================================================
-# 구역 1. 로그인 전 일체형 분기 스위칭 허브 (두 번째 이미지 구조 적용)
+# 구역 1. 로그인 전 일체형 분기 스위칭 허브
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
-    st.markdown("<h2>양현고등학교</h2>", unsafe_allow_html=True)
-    st.markdown("<h3>학내망(온라인) 성적처리 시스템</h3>", unsafe_allow_html=True)
+    st.markdown("<h2>학내망 수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     
-    # 🎯 [핵심 교정]: 라디오 단추 기어로 '교사' / '학생' 기능을 완벽 분리 전환
     login_mode = st.radio("접속 권한 선택", ["교사", "학생"], label_visibility="collapsed")
     st.markdown("<hr style='margin: 15px 0 20px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
     
-    # 👨‍🏫 Case 1. 교과 통합 관리자 로그인 작동
     if login_mode == "교사":
         with st.form("teacher_login_secure_form"):
             st.markdown("<div style='font-size:14px; font-weight:700; color:#1e293b; margin-bottom:6px;'>사용자 ID</div>", unsafe_allow_html=True)
-            st.text_input("아이디", value="hushpark", disabled=True, label_visibility="collapsed")
+            # 🎯 [핵심 교정]: 고정값을 지우고 자유롭게 입력받는 폼 인터페이스로 전면 개선 완료!
+            admin_id = st.text_input("아이디 입력", placeholder="ID를 입력하세요", label_visibility="collapsed", key="ti_admin_id_field")
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             
             st.markdown("<div style='font-size:14px; font-weight:700; color:#1e293b; margin-bottom:6px;'>비밀번호 입력</div>", unsafe_allow_html=True)
@@ -339,13 +353,13 @@ if not st.session_state["admin_logged_in"]:
             st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
             
             if st.form_submit_button("로그인", use_container_width=True, type="primary"):
-                if admin_pw == CURRENT_ADMIN_PW:
+                if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
                     st.session_state["admin_logged_in"] = True
+                    st.session_state["login_user_id"] = admin_id.strip()
                     st.rerun()
                 else:
-                    st.error("❌ 관리자 인증 비밀번호가 틀렸습니다.")
+                    st.error("❌ 입력한 ID 또는 비밀번호가 올바르지 않습니다.")
 
-    # 🎒 Case 2. 학생용 개인 성적 조회 시스템 작동
     elif login_mode == "학생":
         active_dbs = get_active_databases()
         if not active_dbs:
@@ -407,44 +421,42 @@ if not st.session_state["admin_logged_in"]:
                                 else:
                                     st.error("❌ 입력한 인적 사항 또는 학생 비밀번호가 틀렸습니다.")
                                     
-    # 하단 카피라이트 이미지 맞춤 적용
-    st.markdown("<div class='card-footer-notice'>copyright hushpark @ 재미니 </div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<div class='card-footer-notice'>🤝 Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 
 # =========================================================================
-# 구역 2. 로그인 성공 후 개방되는 와이드 ERP 제어판 (첫 번째 이미지 프레임 적용)
+# 구역 2. 로그인 성공 후 개방되는 와이드 ERP 제어판
 # =========================================================================
 else:
-    # 🎯 [첫 번째 이미지 양식]: 파란색 와이드 마스터 네비게이션 탑 바 배치
-    st.markdown("""
+    # 로그인 성공한 ID를 탑바 인터페이스에 실시간 바인딩
+    active_user_id = st.session_state.get("login_user_id", "admin")
+    st.markdown(f"""
         <div class="blue-top-nav-bar">
             <div class="top-bar-left">
-                <span>💻 v2.2611.1_PRO</span><span style="color:#93c5fd; margin:0 12px;">|</span><span>양현고등학교 성적처리 데이터 포털</span>
+                <span>💻 v2.2611.1_PRO</span><span style="color:#93c5fd; margin:0 12px;">|</span><span>성적처리 데이터 마스터 포털</span>
             </div>
             <div class="top-bar-right">
-                <span>접속계정: 박성제 [ <b>hushpark</b> ]</span>
+                <span>접속계정: [ <b>{active_user_id}</b> ]</span>
                 <span style="color:#93c5fd;">|</span>
                 <span>권한: 과목 통합 관리자</span>
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    # 🎯 [첫 번째 이미지 양식]: 좌측 메뉴 트리 사이드바 대시보드 구조화
     with st.sidebar:
         st.markdown("### 📋 서담형 채점 제어")
         choice = st.radio("메뉴 트리 구성", ["과목 구성 지정", "평가 기본 세팅", "데이터 연동(CSV)", "통합 관리 센터"], label_visibility="collapsed")
         st.session_state["teacher_sidebar_menu"] = choice
         
         st.markdown("<br><hr style='margin:10px 0;'><br>", unsafe_allow_html=True)
-        if st.button("🔐 마스터 암호 변경", use_container_width=True): password_update_dialog()
+        # ID와 패스워드를 동시에 관리 및 교정하는 다이얼로그 연동
+        if st.button("🔐 마스터 계정 수정", use_container_width=True): account_update_dialog()
         if st.button("🎒 시스템 로그아웃", key="side_logout_btn", use_container_width=True):
             st.session_state["admin_logged_in"] = False
             st.session_state["show_monitor_view"] = False
             st.session_state["show_delete_panel"] = False
             st.rerun()
 
-    # 우측 실시간 본문 영역 가동
     st.markdown(f"<h3 style='text-align:left !important; font-size:22px !important; font-weight:800 !important; color:#0f172a; margin-top:-10px;'>📌 현재 메뉴: {st.session_state['teacher_sidebar_menu']}</h3>", unsafe_allow_html=True)
     has_active = "active_subject" in st.session_state and st.session_state.active_subject
     
@@ -455,6 +467,7 @@ else:
             st.markdown("<h4>📂 제어판 작동 스위치</h4>", unsafe_allow_html=True)
             st.markdown("<hr style='margin:8px 0;'>", unsafe_allow_html=True)
             
+            g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
             sel_g = st.selectbox("1단계: 교과군 분류", options=g_opts, index=st.session_state.sel_group_idx, key="dashboard_sel_g")
             
             final_sub, t_g = "", ""
@@ -498,7 +511,6 @@ else:
                 else: st.warning("과목 정보를 빠짐없이 선택해 주세요.")
 
     with frame_right:
-        # [메뉴 1] 과목 구성 지정
         if st.session_state["teacher_sidebar_menu"] == "과목 구성 지정":
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
@@ -572,7 +584,6 @@ else:
                     """, unsafe_allow_html=True)
             else: st.info("👈 왼쪽 서랍창에서 과목 사양 분류를 맞추신 뒤 [🚀 대상 과목 활성화] 버튼을 실행해 주세요.")
 
-        # [메뉴 2] 평가 기본 세팅
         elif st.session_state["teacher_sidebar_menu"] == "평가 기본 세팅":
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
@@ -601,7 +612,6 @@ else:
                     st.download_button(label="📥 전용 CSV 포맷 템플릿 파일 다운로드", data=csv_data, file_name=f"upload_format_{sub}_{sem}.csv", mime="text/csv", use_container_width=True)
             else: st.info("과목을 먼저 활성화한 후 템플릿을 생성할 수 있습니다.")
 
-        # [메뉴 3] 데이터 연동(CSV)
         elif st.session_state["teacher_sidebar_menu"] == "데이터 연동(CSV)":
             if has_active:
                 sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
@@ -618,7 +628,6 @@ else:
                         except: st.error("인코딩 타입을 확인하세요. (ANSI/CP949 포맷 필수)")
             else: st.info("대상을 먼저 연동 및 활성화해 주세요.")
 
-        # [메뉴 4] 통합 관리 센터
         elif st.session_state["teacher_sidebar_menu"] == "통합 관리 센터":
             tab_del, tab_mon = st.tabs(["🔒 데이터 삭제 및 클렌징", "📊 실시간 연동 현황 확인"])
             
