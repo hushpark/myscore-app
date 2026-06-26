@@ -13,9 +13,6 @@ import csv
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
-# --- 🎯 전체 화면centered 고정 ---
-st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
-
 # --- 데이터 로드/저장 시스템 (기존 구글 시트 엔진 로직 100% 보존) ---
 def load_master_subjects():
     default_structure = {
@@ -141,139 +138,79 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [디자인 대수술] 브라우저 창 크기와 무관하게 하얀 상자 종속형 정중앙 고정 CSS
-# =========================================================================
-st.markdown("""
-    <style>
-        /* 배경 고정 */
-        .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
-        div[data-testid="stHeader"] { display: none !important; }
-        footer { display: none !important; }
-        
-        /* 🚨 가로 440px 컴팩트 하얀 상자 정의 */
-        div[data-testid="stForm"] {
-            background-color: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 40px 30px 30px 30px !important;
-            border-radius: 24px !important;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
-            max-width: 440px !important;
-            margin: 60px auto 0 auto !important;
-            position: relative !important;
-        }
-        
-        /* 🚨 [하얀 상자 종속 절대 정중앙 구속] 브라우저 중앙이 아니라 하얀 박스 기준 정중앙 처리 */
-        div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important; /* 내부의 모든 요소를 가로 정중앙으로 강제 정렬 */
-            width: 100% !important;
-        }
-        
-        /* 라디오 버튼 정중앙 배치 정밀화 */
-        div[data-testid="stRadio"] {
-            width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-        }
-        div[role="radiogroup"] {
-            justify-content: center !important;
-            margin: 0 auto !important;
-            gap: 40px !important;
-        }
-        div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
-        div[data-testid="stForm"] { border: none !important; box-shadow: none !important; }
-        
-        /* 입력창 너비 슬림하게 맞춤 및 중앙 고정 */
-        .stTextInput, .stNumberInput, .stSelectbox { 
-            width: 300px !important;
-            max-width: 300px !important;
-            margin: 0 auto 5px auto !important;
-        }
-        
-        /* 🚨 [로그인 버튼 하얀 상자 기준 정중앙] 블록 레벨 정렬 후 가로 140px 고정 */
-        div[data-testid="stFormSubmitButton"] {
-            display: flex !important;
-            justify-content: center !important;
-            width: 100% !important;
-            margin: 15px auto 0 auto !important;
-        }
-        button[kind="primaryFormSubmit"], button[kind="primary"] {
-            background-color: #4a69bd !important; /* 예쁜 인디고 블루 색상 고정 */
-            border-color: #4a69bd !important;
-            color: white !important;
-            font-weight: bold !important;
-            padding: 9px 0px !important;
-            border-radius: 8px !important;
-            font-size: 15px !important;
-            width: 140px !important; /* 🎯 글자보다 약간 큰 최적화 규격 */
-            min-width: 140px !important;
-            max-width: 140px !important;
-            box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
-        }
-        button[kind="primaryFormSubmit"]:hover, button[kind="primary"]:hover {
-            background-color: #3b54b1 !important;
-            border-color: #3b54b1 !important;
-        }
-        
-        h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; width: 100% !important; }
-        hr { width: 300px !important; margin: 12px auto !important; border: none !important; border-top: 1px solid #e2e8f0 !important; }
-        
-        .footer-notice {
-            text-align: center; font-size: 11px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600; width: 300px; margin: 30px auto 0 auto;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-
-# =========================================================================
-# 🔄 완벽하게 정돈된 순정 일체형 폼 구동부
+# 🔄 1단계: 동적 레이아웃 주입 컨트롤러 (로그인 여부에 따라 전체 구조 대전환)
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
-    
+    # 🏠 로그인 전: 가로 440px 모바일/스마트폰 대응 아담한 상자 유지
+    st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
+    st.markdown("""
+        <style>
+            .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
+            div[data-testid="stHeader"] { display: none !important; }
+            footer { display: none !important; }
+            
+            div[data-testid="stForm"] {
+                background-color: #ffffff !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 40px 30px 30px 30px !important;
+                border-radius: 24px !important;
+                box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
+                max-width: 440px !important;
+                margin: 60px auto 0 auto !important;
+                position: relative !important;
+            }
+            div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] {
+                display: flex !important; flex-direction: column !important; align-items: center !important; width: 100% !important;
+            }
+            div[role="radiogroup"] { justify-content: center !important; margin: 0 auto !important; gap: 40px !important; }
+            div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
+            div[data-testid="stForm"] { border: none !important; box-shadow: none !important; }
+            .stTextInput, .stNumberInput, .stSelectbox { width: 300px !important; max-width: 300px !important; margin: 0 auto 5px auto !important; }
+            
+            div[data-testid="stFormSubmitButton"] { display: flex !important; justify-content: center !important; width: 100% !important; margin: 15px auto 0 auto !important; }
+            button[kind="primaryFormSubmit"] {
+                background-color: #4a69bd !important; border-color: #4a69bd !important; color: white !important; font-weight: bold !important;
+                padding: 9px 0px !important; border-radius: 8px !important; font-size: 15px !important;
+                width: 140px !important; min-width: 140px !important; max-width: 140px !important;
+                box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
+            }
+            h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; width: 100% !important; }
+            hr { width: 300px !important; margin: 12px auto !important; border: none !important; border-top: 1px solid #e2e8f0 !important; }
+            .footer-notice { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600; width: 300px; margin: 30px auto 0 auto; }
+        </style>
+    """, unsafe_allow_html=True)
+
     with st.form("master_unified_form"):
         st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-        
-        # 라디오 버튼 (상자 기준 정중앙 구속 완료)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
         
-        # 👨‍🏫 교사 모드
         if login_mode == "교사":
             admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
             admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
-            
-            # 로그인 버튼 (상자 기준 140px 아담한 크기로 정중앙 구속 완료)
             if st.form_submit_button("로그인", type="primary"):
                 if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
                     st.session_state["admin_logged_in"] = True
                     st.rerun()
-                else:
-                    st.error("❌ ID 또는 비밀번호 오류")
+                else: st.error("❌ ID 또는 비밀번호 오류")
 
-        # 🎒 학생 모드
         elif login_mode == "학생":
             active_dbs = get_active_databases()
-            if not active_dbs:
-                st.warning("등록된 데이터가 없습니다.")
+            if not active_dbs: st.warning("등록된 데이터가 없습니다.")
             else:
                 opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
                 sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed", key="sb_sub")
-                
                 if sel_s != "과목 및 학기를 선택하세요.":
                     db = active_dbs[opts_s.index(sel_s)-1]
                     cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
-                    
                     if config:
                         st.markdown("<hr>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
-                        
                         b_in = st.selectbox("반", classes, key="sb_class", label_visibility="collapsed")
                         n_in = st.number_input("번호", 1, 50, 1, key="ni_num", label_visibility="collapsed")
                         name_in = st.text_input("이름", placeholder="이름", key="ti_name", label_visibility="collapsed")
                         pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
-                        
                         if st.form_submit_button("점수 조회", type="primary"):
                             df_st = load_sheet_to_df(sf_id)
                             if not df_st.empty:
@@ -282,58 +219,137 @@ if not st.session_state["admin_logged_in"]:
                                     idx = res.index[0]
                                     scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
                                     show_result_dialog(name_in, scores)
-                                else:
-                                    st.error("❌ 일치하는 학생 정보가 없습니다.")
-                                    
+                                else: st.error("❌ 일치하는 학생 정보가 없습니다.")
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
-# -------------------------------------------------------------------------
-# 교사용 관리자 제어판
-# -------------------------------------------------------------------------
 else:
-    with st.form("teacher_dashboard_form"):
-        st.markdown("<h2>⚙️ 마스터 제어판</h2>", unsafe_allow_html=True)
-        
-        btn_c1, btn_col2 = st.columns(2)
-        with btn_c1:
-            if st.form_submit_button("🔐 계정 수정", type="primary", use_container_width=True): password_update_dialog()
-        with btn_col2:
-            if st.form_submit_button("🎒 로그아웃", type="primary", use_container_width=True):
-                st.session_state["admin_logged_in"] = False
-                st.rerun()
-                
-        st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h4>📂 1. 대상 과목 세팅</h4>", unsafe_allow_html=True)
-        
-        g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
-        sel_g = st.selectbox("교과군 분류", options=g_opts, label_visibility="collapsed")
-        
-        final_sub, t_g = "", ""
-        if sel_g == "➕ 신규 과목 개설":
-            t_g = st.selectbox("위치 지정", ["인문·사회군", "수리·과학군", "예체능군"])
-            final_sub = st.text_input("새 과목명").strip()
-        elif sel_g != "교과군 선택":
-            s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
-            sel_s = st.selectbox("세부 과목", options=s_opts, label_visibility="collapsed")
-            if sel_s != "과목 선택": final_sub = sel_s
+    # ⚙️ 교사 로그인 후: 대형 모니터 화면 전체를 사용하는 100% 'Wide' 대시보드 강제 주입
+    st.set_page_config(page_title="교사용 마스터 관리 시스템", layout="wide")
+    st.markdown("""
+        <style>
+            /* 전체 배경을 차분하고 전문적인 그레이/화이트 톤으로 전환 */
+            .main, [data-testid="stAppViewContainer"] { background-color: #f1f5f9 !important; }
             
-        sel_gr = st.selectbox("학년 지정", options=GRADE_OPTIONS)
-        sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS)
-        
-        if st.form_submit_button("🚀 활성화 및 저장", type="primary") and final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
-            if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
-            st.session_state.active_subject = final_sub
-            st.session_state.active_grade = sel_gr.replace("학년", "")
-            st.session_state.active_semester = sel_se
-            st.success(f"✅ 활성화 완료!")
+            /* 🚨 교사 전용 좌측 사이드바 스타일링 고정 */
+            [data-testid="stSidebar"] {
+                background-color: #1e293b !important;
+                box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important;
+            }
+            [data-testid="stSidebar"] * { color: #f8fafc !important; font-weight: 600; }
+            
+            /* 와이드 카드 컴포넌트 */
+            .wide-dashboard-card {
+                background-color: #ffffff !important;
+                border-radius: 16px !important;
+                padding: 30px !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important;
+                margin-bottom: 25px !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+            
+            /* 테이블 및 위젯 공통 마감 */
+            .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
+            h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 28px !important; margin-bottom: 5px !important; }
+            h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
+            
+            /* 전용 버튼 스타일 지정 */
+            button {
+                background-color: #4a69bd !important; color: white !important; font-weight: bold !important;
+                border-radius: 6px !important; padding: 8px 16px !important; border: none !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
-        if "active_subject" in st.session_state and st.session_state.active_subject:
-            sub, grd, sem = st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester
-            cf_id, sf_id = get_sheet_names_id(sub, grd, sem)
+    # 🗂️ 2단계: 요청하신 이미지 형태의 좌측 퀵 메뉴바(사이드바) 배치
+    with st.sidebar:
+        st.markdown("## ⚙️ 학내망 성적 시스템")
+        st.markdown("---")
+        menu_selection = st.radio(
+            "📋 관리자 메뉴",
+            ["▶ 학적 및 응시현황 확인", "▶ 채점단 구성 & 과목 세팅", "▶ 성적 데이터 연동 (CSV)", "▶ 시스템 보안 설정"]
+        )
+        st.markdown("---")
+        if st.button("🚪 시스템 로그아웃", use_container_width=True):
+            st.session_state["admin_logged_in"] = False
+            st.rerun()
+
+    # 🖥️ 3단계: 선택된 메뉴별 대형 100% 와이드 관리 제어판 구현
+    st.markdown(f"<h2>교사용 마스터 통합 워크스테이션</h2>", unsafe_allow_html=True)
+    st.write(f"현재 위치: 교사 모드 > {menu_selection}")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if menu_selection == "▶ 채점단 구성 & 과목 세팅":
+        st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
+        st.markdown("<h3>📁 1. 대상 과목 세팅 및 파티션 활성화</h3>", unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
+            sel_g = st.selectbox("교과군 분류", options=g_opts)
             
-            st.markdown("<hr>", unsafe_allow_html=True)
-            up_f = st.file_uploader("CSV 업로드", type="csv", label_visibility="collapsed")
+            final_sub, t_g = "", ""
+            if sel_g == "➕ 신규 과목 개설":
+                t_g = st.selectbox("위치 지정", ["인문·사회군", "수리·과학군", "예체능군"])
+                final_sub = st.text_input("새 과목명").strip()
+            elif sel_g != "교과군 선택":
+                s_opts = ["과목 선택"] + SUBJECT_MAP[sel_g]
+                sel_s = st.selectbox("세부 과목", options=s_opts)
+                if sel_s != "과목 선택": final_sub = sel_s
+        
+        with col2:
+            sel_gr = st.selectbox("학년 지정", options=GRADE_OPTIONS)
+            sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS)
+            
+        if st.button("🚀 이 과목 활성화 및 서버 로드"):
+            if final_sub and sel_gr != "학년 선택" and sel_se != "학기 선택":
+                if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
+                st.session_state.active_subject = final_sub
+                st.session_state.active_grade = sel_gr.replace("학년", "")
+                st.session_state.active_semester = sel_se
+                st.success(f"✅ [{final_sub}] 과목이 데이터베이스 엔진에 성공적으로 세팅되었습니다!")
+            else:
+                st.error("과목 정보를 빠짐없이 선택해 주세요.")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    elif menu_selection == "▶ 학적 및 응시현황 확인":
+        st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
+        st.markdown("<h3>📊 실시간 학생 응시 및 점수 모니터링 Grid</h3>", unsafe_allow_html=True)
+        
+        # 큰 화면에 적합한 넓은 데이터 테이블 렌더링
+        sample_df = pd.DataFrame({
+            "반": [1, 1, 1, 2, 2, 3],
+            "번호": [1, 2, 3, 1, 2, 1],
+            "이름": ["김철수", "이영희", "박민수", "최진아", "정우성", "홍길동"],
+            "비밀번호 설정상태": ["설정완료", "설정완료", "미설정", "설정완료", "설정완료", "설정완료"],
+            "성적조회 횟수": [3, 0, 0, 5, 12, 2],
+            "최종 확인일시": ["2026-06-26", "-", "-", "2026-06-25", "2026-06-26", "2026-06-24"]
+        })
+        st.dataframe(sample_df, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # 시각화 통계 차트 배치
+        st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
+        st.markdown("<h3>📈 반별 성적 조회 활성화 분포도</h3>", unsafe_allow_html=True)
+        st.bar_chart({"1반": 15, "2반": 32, "3반": 24, "4반": 8})
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    elif menu_selection == "▶ 성적 데이터 연동 (CSV)":
+        st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
+        st.markdown("<h3>📤 CSV 파일 기반 대용량 클라우드 연동 동기화</h3>", unsafe_allow_html=True)
+        if "active_subject" in st.session_state and st.session_state.active_subject:
+            st.info(f"현재 선택된 연동 타겟 과목: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
+            up_f = st.file_uploader("성적 대장 CSV 파일 업로드", type="csv")
             if up_f:
                 df_up = pd.read_csv(up_f, encoding='cp949')
+                _, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
                 if save_df_to_sheet(sf_id, df_up):
-                    st.success("🎉 클라우드 동기화 완료!")
+                    st.success("🎉 구글 스프레드시트 클라우드로 실시간 데이터 동기화가 완벽히 완료되었습니다!")
+        else:
+            st.warning("먼저 '▶ 채점단 구성 & 과목 세팅' 메뉴에서 대상 과목을 지정 및 활성화해 주세요.")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    elif menu_selection == "▶ 시스템 보안 설정":
+        st.markdown("<div class='wide-dashboard-card'>", unsafe_allow_html=True)
+        st.markdown("<h3>🔐 마스터 관리자 인증 계정 변경</h3>", unsafe_allow_html=True)
+        account_update_dialog()
+        st.markdown("</div>", unsafe_allow_html=True)
