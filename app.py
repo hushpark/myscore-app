@@ -13,7 +13,7 @@ import csv
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
-# --- 🎯 화면 전체가 양옆으로 퍼지지 않도록 centered 고정 ---
+# --- 🎯 화면 전체가 퍼지거나 찢어지지 않도록 centered 강제 고정 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
 # --- 데이터 로드/저장 시스템 (원본 로직 100% 보존) ---
@@ -141,43 +141,34 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [디자인 최종본] 두 번째 사진의 어두운 배경 + 첫 번째 사진의 확실한 530px 흰 상자 고정
+# 🎯 [디자인 전면 교정] 따로 노는 조각 상자 레이아웃을 하나의 완전체로 봉인
 # =========================================================================
 st.markdown("""
     <style>
-        /* 배경 전체를 두 번째 사진처럼 차분한 다크 네이비 톤으로 고정 */
+        /* 1. 배경을 차분한 다크 네이비로 완전 통일 */
         .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
         div[data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
         
-        /* 🚨 [상자 강제 노출] 스트림릿 고유 레이아웃 틀을 하얀색 박스로 완전히 개조 */
-        div[data-testid="stVerticalBlockBorderWrapper"], .stElementContainer {
+        /* 2. 🚨 스트림릿이 자체적으로 만드는 모든 투명 테두리 및 쪼개진 상자 여백을 제로화 */
+        div[data-testid="stVerticalBlockBorderWrapper"], 
+        div[data-testid="stVerticalBlock"] > div {
             background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         
-        /* 메인 콘텐츠 블록에 하얀색 카드 디자인 강제 주입 */
-        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stForm"]),
-        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stRadio"]) {
-            background-color: #ffffff !important;
-            max-width: 530px !important;
-            margin: 0 auto !important;
-            border-radius: 20px !important;
-        }
-        
-        /* 전체 정중앙 구속용 글로벌 스타일 */
-        div[data-testid="stColumn"] { background-color: transparent !important; }
-        
-        /* 라디오 버튼 수평 배치 */
+        /* 3. 라디오 버튼(교사/학생) 가로 정렬 스타일 */
         div[data-testid="stRadio"] > div {
             flex-direction: row !important;
             justify-content: center !important;
             gap: 50px !important;
-            margin: 10px 0 !important;
+            margin: 5px 0 !important;
         }
         div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
         div[data-testid="stForm"] { border: none !important; padding: 0px !important; box-shadow: none !important; }
         
-        /* 버튼 스타일 */
+        /* 4. 로그인 / 조회 버튼 파란색 스타일 */
         div.stButton button {
             background-color: #5c7cfa !important;
             color: white !important;
@@ -189,48 +180,41 @@ st.markdown("""
             width: 100% !important;
         }
         
-        h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 15px 0 !important; }
+        /* 가이드 텍스트 정돈 */
         h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin: 15px 0 5px 0 !important; }
-        
-        .footer-text {
-            text-align: center; font-size: 12px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600;
-        }
     </style>
 """, unsafe_allow_html=True)
 
 
-# =========================================================================
-# 🔄 일체형 출력 샌드박스 (st.html 레이어로 상자를 감싸 물리적으로 뚫고 나옴)
-# =========================================================================
+# ==========================================
+# 🔄 하나의 진짜 통합 530px 하얀 상자 구현부
+# ==========================================
 if not st.session_state["admin_logged_in"]:
     
-    # 🎯 [진짜 마스터 가둠 락] HTML 스트레이트 렌더링 기법으로 가로 530px 흰 상자 강제 팝업
+    # 🎯 [해결의 핵심] 제목부터 하단 문구까지 단 하나의 백그라운드 틀로 강제 묶음 처리
     st.html("""
         <div style="
             max-width: 530px;
-            margin: 50px auto -30px auto;
+            margin: 60px auto 25px auto;
             background-color: #ffffff;
-            padding: 35px 35px 10px 35px;
-            border-radius: 24px 24px 0 0;
-            border-top: 1px solid #cbd5e1;
-            border-left: 1px solid #cbd5e1;
-            border-right: 1px solid #cbd5e1;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            padding: 40px 35px;
+            border-radius: 24px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.15);
         ">
-            <h2 style="font-size: 24px; color: #1e293b; font-weight: 800; text-align: center; margin: 0;">수행평가 점수 확인 시스템</h2>
+            <h2 style="font-size: 24px; color: #1e293b; font-weight: 800; text-align: center; margin: 0 0 20px 0; padding: 0;">수행평가 점수 확인 시스템</h2>
+            <div id="inject-hub"></div>
         </div>
     """)
     
-    # 상자 내부 본체 영역
-    st.html("<div style='max-width: 530px; margin: 0 auto; background-color: #ffffff; padding: 0 35px; border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1;'>")
+    # 🚨 스트림릿 컴포넌트들을 강제로 정중앙 530px 크기에 밀착시키기 위한 가이드 단추 배치
     login_mode = st.radio("접속 모드", ["교사", "학생"], label_visibility="collapsed")
-    st.markdown("<hr style='margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-    st.html("</div>")
+    st.markdown("<hr style='max-width:460px; margin: 5px auto 15px auto; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
     
-    # 👨‍🏫 1. 교사 로그인 입력단
+    # 👨‍🏫 1. 교사용 로그인 내용물
     if login_mode == "교사":
-        st.html("<div style='max-width: 530px; margin: 0 auto; background-color: #ffffff; padding: 0 35px; border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1;'>")
         with st.form("teacher_login_form"):
+            st.markdown("<div style='max-width:460px; margin: 0 auto;'>", unsafe_allow_html=True)
             st.markdown("<h4>사용자 ID</h4>", unsafe_allow_html=True)
             admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed")
             
@@ -243,26 +227,26 @@ if not st.session_state["admin_logged_in"]:
                     st.session_state["admin_logged_in"] = True
                     st.rerun()
                 else: st.error("❌ ID 또는 비밀번호가 올바르지 않습니다.")
-        st.html("</div>")
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    # 🎒 2. 학생 점수 조회 입력단
+    # 🎒 2. 학생용 점수 조회 내용물
     elif login_mode == "학생":
-        st.html("<div style='max-width: 530px; margin: 0 auto; background-color: #ffffff; padding: 0 35px; border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1;'>")
         active_dbs = get_active_databases()
         if not active_dbs:
             st.warning("현재 등록된 평가 데이터가 없습니다.")
         else:
-            st.markdown("<h4>🎯 대상 과목 선택</h4>", unsafe_allow_html=True)
-            opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
-            sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed")
-            
-            if sel_s != "과목 및 학기를 선택하세요.":
-                db = active_dbs[opts_s.index(sel_s)-1]
-                cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
-                config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
+            with st.form("student_form"):
+                st.markdown("<div style='max-width:460px; margin: 0 auto;'>", unsafe_allow_html=True)
+                st.markdown("<h4>🎯 대상 과목 선택</h4>", unsafe_allow_html=True)
+                opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} - {d['semester']})" for d in active_dbs]
+                sel_s = st.selectbox("과목", opts_s, label_visibility="collapsed")
                 
-                if config:
-                    with st.form("student_form"):
+                if sel_s != "과목 및 학기를 선택하세요.":
+                    db = active_dbs[opts_s.index(sel_s)-1]
+                    cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
+                    config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
+                    
+                    if config:
                         st.markdown("<h4>🔐 학생 인적 정보 입력</h4>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
                         
@@ -283,38 +267,17 @@ if not st.session_state["admin_logged_in"]:
                                     scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
                                     show_result_dialog(name_in, scores)
                                 else: st.error("❌ 일치하는 학생 정보가 없습니다.")
-        st.html("</div>")
+                st.markdown("</div>", unsafe_allow_html=True)
                                 
-    # 하얀 상자 바닥 하단 마무리 닫기 영역
-    st.html("""
-        <div style="
-            max-width: 530px;
-            margin: -10px auto 0 auto;
-            background-color: #ffffff;
-            padding: 5px 35px 35px 35px;
-            border-radius: 0 0 24px 24px;
-            border-bottom: 1px solid #cbd5e1;
-            border-left: 1px solid #cbd5e1;
-            border-right: 1px solid #cbd5e1;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        ">
-            <div style="text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600;">
-                Designed & Developed by User & AI Creator
-            </div>
-        </div>
-    """)
+    # 하단 카피라이트 고정 마감
+    st.markdown("<div style='text-align: center; font-size: 12px; color: #94a3b8; max-width:460px; margin: 25px auto 0 auto; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600;'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 교사용 관리자 제어판 (로그인 완료 시 구동)
+# 교사용 관리자 제어판 화면 (로그인 성공 시 열림)
 # -------------------------------------------------------------------------
 else:
-    st.html("""
-        <div style="max-width: 530px; margin: 50px auto -30px auto; background-color: #ffffff; padding: 35px 35px 10px 35px; border-radius: 24px 24px 0 0; border-top: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; box-shadow: 0 15px 35px rgba(0,0,0,0.15);">
-            <h2 style="font-size: 24px; color: #1e293b; font-weight: 800; text-align: center; margin: 0;">⚙️ 데이터베이스 마스터 제어판</h2>
-        </div>
-    """)
+    st.markdown("<h2>⚙️ 데이터베이스 마스터 제어판</h2>", unsafe_allow_html=True)
     
-    st.html("<div style='max-width: 530px; margin: 0 auto; background-color: #ffffff; padding: 10px 35px; border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1;'>")
     btn_c1, btn_col2 = st.columns(2)
     with btn_c1:
         if st.button("🔐 계정 정보 수정"): account_update_dialog()
@@ -356,11 +319,10 @@ else:
         st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
         st.markdown(f"<h4>📊 2. [{sub}] 데이터 연동 (CSV)</h4>", unsafe_allow_html=True)
         
-        up_f = st.file_uploader("CSV 파일 업로드", type="csv", label_visibility="collapsed")
+        up_f = st.file_uploader("성적 데이터 업로드", type="csv", label_visibility="collapsed")
         if up_f:
-            df_up = pd.read_csv(up_f, encoding='cp949')
-            if save_df_to_sheet(sf_id, df_up):
-                st.success("🎉 구글 클라우드 동기화 완료!")
-    st.html("</div>")
-    
-    st.html('<div style="max-width: 530px; margin: 0 auto 50px auto; background-color: #ffffff; padding: 10px 35px 25px 35px; border-radius: 0 0 24px 24px; border-bottom: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; box-shadow: 0 15px 35px rgba(0,0,0,0.15);"></div>')
+            try:
+                df_up = pd.read_csv(up_f, encoding='cp949')
+                if save_df_to_sheet(sf_id, df_up): st.success("🎉 성적 데이터베이스 연동 성공!"); st.rerun()
+                else: st.error("시트 기록 실패")
+            except: st.error("인코딩 타입을 확인하세요. (ANSI/CP949 포맷 필수)")
