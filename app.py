@@ -13,10 +13,10 @@ import csv
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
-# --- 🎯 화면 전체가 옆으로 퍼지지 않도록 centered로 고정 ---
+# --- 🎯 화면 전체가 절대 옆으로 퍼지지 않도록 centered 고정 ---
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
 
-# --- 데이터 로드/저장 함수 (원본 로직 100% 보존) ---
+# --- 데이터 로드/저장 시스템 (원본 로직 100% 보존) ---
 def load_master_subjects():
     default_structure = {
         "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
@@ -141,23 +141,23 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🎯 [디자인 전면 리셋] 깔끔하게 딱 떨어지는 550px 하얀 상자 고정 CSS
+# 🎯 [디자인 핵심 마감] 10.65 : 9.6 비율 전용 컴팩트 슬림 카드 CSS 세팅
 # =========================================================================
 st.markdown("""
     <style>
-        /* 배경 전체를 두 번째 사진의 다크 네이비 테마로 단일화 */
+        /* 배경 전체를 다크 네이비 테마로 유지 */
         .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
         div[data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
         
-        /* 🚨 [분리 현상 차단] 스트림릿 내장 폼을 가로 550px 하얀색 카드 상자로 완벽 변조 */
+        /* 🚨 [황금 비율 구속] 10.65 : 9.6 비율을 맞추기 위해 가로폭을 440px로 정밀 슬림화 */
         div[data-testid="stForm"] {
             background-color: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 40px 35px !important;
-            border-radius: 20px !important;
+            padding: 35px 35px 30px 35px !important; /* 상하좌우 여백 압축 */
+            border-radius: 24px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.15) !important;
-            max-width: 550px !important;
+            max-width: 440px !important; /* 가로폭을 아담하게 축소 */
             margin: 60px auto 0 auto !important;
         }
         
@@ -165,55 +165,62 @@ st.markdown("""
         div[data-testid="stRadio"] > div {
             flex-direction: row !important;
             justify-content: center !important;
-            gap: 50px !important;
-            margin: 10px 0 20px 0 !important;
+            gap: 40px !important;
+            margin: 10px 0 15px 0 !important;
         }
-        div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
+        div[data-testid="stRadio"] label p { font-size: 15px !important; font-weight: bold !important; color: #1e293b !important; }
         
-        /* 로그인 / 조회 버튼 가로 너비 및 디자인 고정 */
+        /* 🎯 [입력창 및 버튼 연동 축소]: 가로폭 100%를 주어 상자 크기에 맞게 자동으로 작아지도록 고정 */
+        div[data-testid="stForm"] .stTextInput input, 
+        div[data-testid="stForm"] .stSelectbox select {
+            font-size: 14px !important;
+        }
+        
         div.stButton button {
             background-color: #5c7cfa !important;
             color: white !important;
             border: none !important;
             font-weight: bold !important;
-            padding: 10px 0px !important;
+            padding: 11px 0px !important;
             border-radius: 8px !important;
             font-size: 15px !important;
-            width: 100% !important;
+            width: 100% !important; /* 상자가 줄어든 만큼 단추도 아담하게 줄어듦 */
+            display: block !important;
+        }
+        div.stButton button:hover {
+            background-color: #4263eb !important;
         }
         
-        h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; }
-        h4 { font-size: 14px !important; font-weight: 700 !important; color: #475569 !important; margin: 15px 0 5px 0 !important; }
+        h2 { font-size: 22px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; }
+        h4 { font-size: 13px !important; font-weight: 700 !important; color: #475569 !important; margin: 12px 0 4px 0 !important; }
         
         .footer-notice {
-            text-align: center; font-size: 12px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600;
+            text-align: center; font-size: 11px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600;
         }
     </style>
 """, unsafe_allow_html=True)
 
 
 # =========================================================================
-# 🔄 단일 폼 제어부 (모든 요소가 절대로 상자 밖으로 나갈 수 없음)
+# 🔄 440px 미니 일체형 폼 구동부
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
-    # 🎯 전체 화면 상태를 라디오 버튼 값에 따라 완전히 단일 폼 안에서만 스위칭합니다.
-    # 이 구조는 하나의 하얀 상자 안에서 모든 내용이 동적으로 교체됩니다.
     with st.form("master_unified_form"):
         st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 교사 / 학생 스위칭 라디오 단추
+        # 교사 / 학생 토글 라디오 버튼
         login_mode = st.radio("접속 모드", ["교사", "학생"], label_visibility="collapsed")
-        st.markdown("<hr style='margin: 10px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin: 10px 0 12px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
-        # 👨‍🏫 A-1. 교사 모드 선택 시 출력물
+        # 👨‍🏫 1. 교사 모드 입력 컴포넌트 (상자 크기에 맞춰 자동 슬림화)
         if login_mode == "교사":
             st.markdown("<h4>사용자 ID</h4>", unsafe_allow_html=True)
             admin_id = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="ti_id")
             
             st.markdown("<h4>비밀번호</h4>", unsafe_allow_html=True)
             admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
-            st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
             
             if st.form_submit_button("로그인"):
                 if admin_id.strip() == CURRENT_ADMIN_ID and admin_pw == CURRENT_ADMIN_PW:
@@ -222,7 +229,7 @@ if not st.session_state["admin_logged_in"]:
                 else:
                     st.error("❌ ID 또는 비밀번호가 올바르지 않습니다.")
 
-        # 🎒 A-2. 학생 모드 선택 시 출력물
+        # 🎒 2. 학생 모드 입력 컴포넌트 (상자 크기에 맞춰 자동 슬림화)
         elif login_mode == "학생":
             active_dbs = get_active_databases()
             if not active_dbs:
@@ -238,7 +245,7 @@ if not st.session_state["admin_logged_in"]:
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
                     
                     if config:
-                        st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
+                        st.markdown("<hr style='margin: 12px 0;'>", unsafe_allow_html=True)
                         st.markdown("<h4>🔐 학생 인적 정보 입력</h4>", unsafe_allow_html=True)
                         classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
                         
@@ -248,7 +255,7 @@ if not st.session_state["admin_logged_in"]:
                         with c3: name_in = st.text_input("이름", placeholder="홍길동", key="ti_name")
                         
                         pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", key="ti_st_pw")
-                        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+                        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
                         
                         if st.form_submit_button("점수 조회"):
                             df_st = load_sheet_to_df(sf_id)
@@ -261,11 +268,10 @@ if not st.session_state["admin_logged_in"]:
                                 else:
                                     st.error("❌ 일치하는 학생 정보가 없습니다.")
                                     
-        # 마감 문구를 폼 내부 가장 아래에 확실하게 배치
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 교사용 관리자 제어판 (로그인 완료 후 모드)
+# 교사용 관리자 제어판 (로그인 성공 시 자동으로 미니 보드로 통합)
 # -------------------------------------------------------------------------
 else:
     with st.form("teacher_dashboard_form"):
@@ -311,6 +317,4 @@ else:
             
             st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
             st.markdown(f"<h4>📊 2. [{sub}] 데이터 연동 (CSV)</h4>", unsafe_allow_html=True)
-            
-            # 제어판 내 연동 기능 활성화
-            st.info("💡 CSV 업로드 및 성적 대장 연동을 원하시면 과목 구성을 마친 후 메인 탭을 활성화하세요.")
+            st.info("💡 CSV 업로드 및 성적 대장 연동을 원하시면 과목 구성을 마친 후 마스터 관리자 탭을 활성화하세요.")
