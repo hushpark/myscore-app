@@ -138,7 +138,7 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🔄 1단계: 하이엔드 인프라 스타일링 (글자 크기 축소 및 드롭박스 라인 교정 패치)
+# 🔄 1단계: 하이엔드 인프라 스타일링 (UI 레이아웃 보존 규칙)
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
@@ -222,51 +222,37 @@ if not st.session_state["admin_logged_in"]:
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 else:
-    # ⚙️ 교사 로그인 후: 100% 와이드 스크린 종합 제어판 모드 활성화
     st.set_page_config(page_title="교사용 마스터 관리 시스템", layout="wide")
     st.markdown("""
         <style>
             .main, [data-testid="stAppViewContainer"] { background-color: #f1f5f9 !important; }
             [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
             
-            /* 🚨 [교정 1] 사이드바 제목 글씨 크기 하향 조절 패치 (글자 내려감 완벽 방지) */
             [data-testid="stSidebar"] h4 {
-                color: #f8fafc !important;
-                font-weight: 800 !important;
-                font-size: 21px !important; /* 기존 h2 규격에서 h4 패널 규격으로 슬림 다운 */
-                letter-spacing: -0.5px !important;
-                margin-top: 10px !important;
-                margin-bottom: 5px !important;
+                color: #f8fafc !important; font-weight: 800 !important; font-size: 21px !important;
+                letter-spacing: -0.5px !important; margin-top: 10px !important; margin-bottom: 5px !important;
             }
             [data-testid="stSidebar"] * { color: #f8fafc !important; font-weight: 600; }
             
-            /* 🚨 [교정 2] 선택창 테두리를 선명한 푸른색으로 고정하고 내부 폰트 두께 가시성 업그레이드 */
             div[data-testid="stSelectbox"] div[data-baseweb="select"] {
-                border: 2px solid #4a69bd !important;
-                border-radius: 8px !important;
-                background-color: #ffffff !important;
+                border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important;
             }
             div[data-testid="stSelectbox"] div[data-baseweb="select"] * {
-                color: #0f172a !important;
-                font-weight: 700 !important;
-                font-size: 15px !important;
+                color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important;
             }
             
-            /* 순정 보정형 흰색 레이아웃 카드 전용 마감 */
+            .wide-dashboard-card {
+                background-color: #ffffff !important; border-radius: 16px !important; padding: 30px !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important; margin-bottom: 25px !important; border: 1px solid #e2e8f0 !important;
+            }
             .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
             h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 5px !important; }
             h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
-            
-            /* 전용 버튼 통합 */
-            button {
-                background-color: #4a69bd !important; color: white !important; font-weight: bold !important;
-                border-radius: 6px !important; padding: 8px 20px !important; border: none !important;
-            }
+            button { background-color: #4a69bd !important; color: white !important; font-weight: bold !important; border-radius: 6px !important; padding: 8px 20px !important; border: none !important; }
         </style>
     """, unsafe_allow_html=True)
 
     with st.sidebar:
-        # 🎯 명칭 변경 및 글씨 크기 한단계 하향 세팅 완료
         st.markdown("<h4>⚙️ 수행평가 관리 시스템</h4>", unsafe_allow_html=True)
         st.markdown("---")
         menu_selection = st.radio(
@@ -282,14 +268,13 @@ else:
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 🚨 [교정 3] 외부 HTMLdiv를 전면 폐기하고, 순정 st.container(border=True) 내부 가둠 기법 전면 전개
+    # 📁 모듈 1: 평가 대상 과목 구성
     if menu_selection == "▶ 평가 대상 과목 구성":
-        with st.container(border=True): # 내용물이 100% 상자 안에 들어가도록 순정 테두리 상자 활성화
+        with st.container(border=True):
             st.markdown("<h3>📁 1. 평가 과목 세팅 및 파티션 활성화</h3>", unsafe_allow_html=True)
-            st.markdown("<p style='font-size:13px; color:#64748b;'>평가 대상 과목을 선택하고 클라우드 파티션을 연동하세요.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:13px; color:#64748b;'>평가 대상 과목과 수행평가 항목 세부 구성을 연동하세요.</p>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 🎯 [교정 2] 첫 번째 행과 두 번째 행의 좌우 너비 및 위젯 배치를 1:1 완벽 가로 정렬 처리
             row1_col1, row1_col2 = st.columns(2)
             with row1_col1:
                 g_opts = ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"]
@@ -312,24 +297,51 @@ else:
             with row2_col2:
                 sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS, label_visibility="collapsed")
                 
+            # 🚨 [긴급 복구 완료] 사라졌던 수행평가 세부 항목 제목 개설 동적 컴포넌트 이식
+            st.markdown("<hr style='border-top: 1px dashed #cbd5e1; margin:20px 0;'>", unsafe_allow_html=True)
+            st.markdown("##### 📝 2. 수행평가 세부 반영 항목 구성")
+            
+            cc1, cc2 = st.columns([1, 2])
+            with cc1:
+                item_count = st.selectbox("🎯 평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2)
+            
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            
+            # 선택한 개수만큼 동적으로 가로 칸 분할하여 제목 입력기 렌더링
+            item_titles = []
+            cols_items = st.columns(item_count)
+            for i in range(item_count):
+                with cols_items[i]:
+                    t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가{i+1}", key=f"item_title_in_{i}")
+                    item_titles.append(t_in.strip())
+            
             st.markdown("<br><br>", unsafe_allow_html=True)
             if st.button("🚀 이 과목 활성화 및 서버 로드"):
                 if final_sub and sel_gr != "학년 지정" and sel_se != "학기 선택":
                     if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
+                    
+                    # 구글 시트 마스터 환경설정 파티션(cfg_)에 항목 구성 정보 영구 저장
+                    cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
+                    config_df = pd.DataFrame([{
+                        "선택된반 목록": "1,2,3,4,5,6,7,8,9,10,11,12",
+                        "항목개수": item_count,
+                        **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}
+                    }])
+                    save_df_to_sheet(cf_id, config_df)
+                    
                     st.session_state.active_subject = final_sub
                     st.session_state.active_grade = sel_gr.replace("학년", "")
                     st.session_state.active_semester = sel_se
-                    st.success(f"✅ [{final_sub}] 과목이 데이터베이스 엔진에 성공적으로 세팅되었습니다!")
+                    st.success(f"✅ [{final_sub}] 과목 아키텍처 및 {item_count}개 평가 항목 데이터베이스 세팅 완료!")
                 else:
                     st.error("과목 정보를 빠짐없이 선택해 주세요.")
 
-    # 모듈 2: 학적 및 응시현황 모니터링 Grid
+    # 📊 모듈 2: 학적 및 응시현황 모니터링 Grid
     elif menu_selection == "▶ 학적 및 응시현황 확인":
         with st.container(border=True):
             st.markdown("<h3>📊 실시간 학생 응시 및 점수 모니터링 Grid</h3>", unsafe_allow_html=True)
             sample_df = pd.DataFrame({
-                "반": [1, 1, 1, 2, 2, 3],
-                "번호": [1, 2, 3, 1, 2, 1],
+                "반": [1, 1, 1, 2, 2, 3], "번호": [1, 2, 3, 1, 2, 1],
                 "이름": ["김철수", "이영희", "박민수", "최진아", "정우성", "홍길동"],
                 "비밀번호 설정상태": ["설정완료", "설정완료", "미설정", "설정완료", "설정완료", "설정완료"],
                 "성적조회 횟수": [3, 0, 0, 5, 12, 2],
@@ -337,26 +349,41 @@ else:
             })
             st.dataframe(sample_df, use_container_width=True)
 
-    # 모듈 3: 성적 데이터 연동 (CSV)
+    # 📤 모듈 3: 성적 데이터 연동 (동적 헤더 연동 완료)
     elif menu_selection == "▶ 성적 데이터 연동 (CSV)":
         with st.container(border=True):
             st.markdown("<h3>📥 CSV 파일 기반 대용량 클라우드 연동 동기화</h3>", unsafe_allow_html=True)
             if "active_subject" in st.session_state and st.session_state.active_subject:
-                st.info(f"현재 선택된 연동 타겟 과목: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
+                cf_id, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
+                cfg_df = load_sheet_to_df(cf_id)
                 
-                example_data = io.StringIO()
-                cw = csv.writer(example_data)
-                cw.writerow(["반", "번호", "이름", "비밀번호", "형성평가", "포트폴리오", "태도점수"])
-                cw.writerow([1, 1, "홍길동", "1024", 20, 18, 25])
-                cw.writerow([1, 2, "이영희", "3925", 19, 20, 22])
-                cw.writerow([2, 1, "강백호", "8254", 15, 15, 20])
-                cw.writerow([2, 2, "소연지", "7711", 20, 19, 25])
+                # 활성화된 과목설정 파티션이 존재하면 동적 헤더를 추출하고 없으면 기본값 적용
+                if not cfg_df.empty:
+                    cfg_dict = cfg_df.iloc[0].to_dict()
+                    cnt = int(cfg_dict.get('항목개수', 3))
+                    dynamic_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
+                else:
+                    dynamic_headers = ["형성평가", "포트폴리오", "태도점수"]
                 
-                st.markdown("##### 💡 실제 가이드라인 예시 양식을 먼저 다운로드하여 성적을 연동하세요.")
+                st.info(f"현재 활성화 타겟: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
+                
+                # 🎯 [연동 마감] 선생님이 지정하신 고유 수행평가 제목으로 첫 행 헤더 구성
+                rows = [
+                    ["반", "번호", "이름", "비밀번호"] + dynamic_headers,
+                    [1, 1, "홍길동", "1024"] + [20, 18, 25][:len(dynamic_headers)],
+                    [1, 2, "이영희", "3925"] + [19, 20, 22][:len(dynamic_headers)],
+                    [2, 1, "강백호", "8254"] + [15, 15, 20][:len(dynamic_headers)]
+                ]
+                
+                csv_string = ""
+                for r in rows: csv_string += ",".join(map(str, r)) + "\n"
+                csv_bytes = csv_string.encode('cp949') # 엑셀 한글 안 깨지게 무조건 사수
+                
+                st.markdown("##### 💡 세팅하신 과목 전용 맞춤 양식을 다운로드하여 성적을 연동하세요.")
                 st.download_button(
-                    label="📥 수행평가 성적 대장 실제 데이터 예시 파일(.CSV) 다운로드",
-                    data=example_data.getvalue(),
-                    file_name=f"수행평가_실제양식예시_{st.session_state.active_subject}.csv",
+                    label=f"📥 [{st.session_state.active_subject}] 전용 성적 대장 예시 파일(.CSV) 다운로드",
+                    data=csv_bytes,
+                    file_name=f"수행평가_실제양식_{st.session_state.active_subject}.csv",
                     mime="text/csv",
                     key="download_sample_csv"
                 )
@@ -365,7 +392,6 @@ else:
                 up_f = st.file_uploader("성적 대장 CSV 파일 업로드", type="csv")
                 if up_f:
                     df_up = pd.read_csv(up_f, encoding='cp949')
-                    _, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
                     if save_df_to_sheet(sf_id, df_up):
                         st.success("🎉 구글 스프레드시트 클라우드로 실시간 데이터 동기화가 완벽히 완료되었습니다!")
             else:
