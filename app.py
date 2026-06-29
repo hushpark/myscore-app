@@ -201,26 +201,49 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 [핵심 교정] 마우스 오버(Hover) 시 글자 실종 방지 및 버튼 바탕색 강제 지정 CSS
+# 🔄 CSS 스타일링 엔진 및 버튼 가독성 패키지 (강제 스펙 갱신 완료)
 # =========================================================================
+st.markdown("""
+    <style>
+        .main, [data-testid="stAppViewContainer"] { background-color: #f1f5f9 !important; }
+        [data-testid="stSidebar"] { background-color: #1e293b !important; }
+        [data-testid="stSidebar"] h4, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
+        div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 600 !important; }
+        
+        /* 🚨 사이드바 하단 버튼 호버 제어 완벽 마감: 모든 포커스/액티브/호버 상태에서 글자색 흰색 강제 유지 */
+        div.stButton > button[key="sidebar_account_btn"] {
+            background-color: #4f46e5 !important; color: #ffffff !important; border: none !important; font-weight: 700 !important;
+        }
+        div.stButton > button[key="sidebar_account_btn"]:hover, 
+        div.stButton > button[key="sidebar_account_btn"]:active, 
+        div.stButton > button[key="sidebar_account_btn"]:focus {
+            background-color: #4338ca !important; color: #ffffff !important; border: none !important; box-shadow: none !important;
+        }
+        
+        div.stButton > button[key="sidebar_logout_btn"] {
+            background-color: #ef4444 !important; color: #ffffff !important; border: none !important; font-weight: 800 !important;
+        }
+        div.stButton > button[key="sidebar_logout_btn"]:hover, 
+        div.stButton > button[key="sidebar_logout_btn"]:active, 
+        div.stButton > button[key="sidebar_logout_btn"]:focus {
+            background-color: #dc2626 !important; color: #ffffff !important; border: none !important; box-shadow: none !important;
+        }
+
+        /* 항목 제목 라벨 진하게 강조 */
+        div[data-testid="stTextInput"] label p {
+            font-weight: 900 !important; color: #1e3a8a !important; font-size: 15px !important; margin-bottom: 5px !important;
+        }
+        
+        /* 버튼 컬러맵 정의 */
+        div.stButton > button[key="btn_save_all_grid_changes"] { background-color: #3b82f6 !important; color: white !important; }
+        div.stButton > button[key="btn_trigger_student_dialog"] { background-color: #10b981 !important; color: white !important; }
+    </style>
+""", unsafe_allow_html=True)
+
 if not st.session_state["admin_logged_in"]:
     st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
-    st.markdown("""
-        <style>
-            .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
-            div[data-testid="stHeader"] { display: none !important; }
-            div[data-testid="stForm"] {
-                background-color: #ffffff !important; padding: 40px 30px !important; border-radius: 24px !important;
-                max-width: 440px !important; margin: 60px auto !important;
-            }
-            .stTextInput, .stNumberInput, .stSelectbox { width: 300px !important; margin: 0 auto !important; }
-            h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; }
-            button[kind="primaryFormSubmit"] { background-color: #4a69bd !important; color: white !important; width: 140px !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
     with st.form("master_unified_form"):
-        st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
         if login_mode == "교사":
@@ -255,44 +278,8 @@ if not st.session_state["admin_logged_in"]:
                                     scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
                                     show_result_dialog(res.iloc[0].get('이름', '학생'), scores, sf_id, idx, df_st)
                                 else: st.error("❌ 정보 불일치")
-        st.markdown("<div style='text-align:center; font-size:11px; color:#94a3b8; margin-top:30px;'>Designed & Developed by AI Creator</div>", unsafe_allow_html=True)
 
 else:
-    st.set_page_config(page_title="교사용 마스터 관리 시스템", layout="wide")
-    st.markdown("""
-        <style>
-            .main, [data-testid="stAppViewContainer"] { background-color: #f1f5f9 !important; }
-            [data-testid="stSidebar"] { background-color: #1e293b !important; }
-            [data-testid="stSidebar"] h4, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
-            
-            /* 🚨 사이드바 하단 버튼 호버 버그 완전 교정: 어떤 상태에서도 배경색 유지 및 글자색 흰색 고정 */
-            div.stButton > button[key="sidebar_account_btn"] {
-                background-color: #4f46e5 !important; color: #ffffff !important; border: none !important; font-weight: 700 !important;
-            }
-            div.stButton > button[key="sidebar_account_btn"]:hover, div.stButton > button[key="sidebar_account_btn"]:active, div.stButton > button[key="sidebar_account_btn"]:focus {
-                background-color: #4338ca !important; color: #ffffff !important; border: none !important;
-            }
-            div.stButton > button[key="sidebar_logout_btn"] {
-                background-color: #ef4444 !important; color: #ffffff !important; border: none !important; font-weight: 800 !important;
-            }
-            div.stButton > button[key="sidebar_logout_btn"]:hover, div.stButton > button[key="sidebar_logout_btn"]:active, div.stButton > button[key="sidebar_logout_btn"]:focus {
-                background-color: #dc2626 !important; color: #ffffff !important; border: none !important;
-            }
-
-            /* 🚨 [그림1 대응] 항목 제목 라벨 진하게 강조 */
-            div[data-testid="stTextInput"] label p {
-                font-weight: 900 !important; color: #1e3a8a !important; font-size: 15px !important; margin-bottom: 5px !important;
-            }
-            
-            /* 버튼 우측 정렬용 헬퍼 */
-            .float-right { display: flex; justify-content: flex-end; width: 100%; }
-            
-            /* 개인별 입력 메뉴 버튼 색상 */
-            div.stButton > button[key="btn_save_all_grid_changes"] { background-color: #3b82f6 !important; color: white !important; }
-            div.stButton > button[key="btn_trigger_student_dialog"] { background-color: #10b981 !important; color: white !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
     with st.sidebar:
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:12px; color:#94a3b8; margin-bottom:15px;'>👤 {st.session_state['teacher_name']} 선생님</div>", unsafe_allow_html=True)
@@ -362,7 +349,6 @@ else:
                     f_idx = db_df[db_df["반"].astype(int) == int(sel_cls.replace("반",""))].index if sel_cls != "전체" else db_df.index
                     e_df = st.data_editor(db_df.loc[f_idx, valid_cols], use_container_width=True, num_rows="dynamic", disabled=["반", "번호", "이름", "성적조회 횟수", "최종 확인일시"], hide_index=True)
                     st.markdown("<br>", unsafe_allow_html=True)
-                    # 🚨 버튼 우측 정렬 마감
                     bc_empty, bc1, bc2 = st.columns([4, 0.9, 0.9])
                     with bc1:
                         if st.button("➕ 학생 개별 추가", key="btn_trigger_student_dialog", use_container_width=True): student_individual_add_dialog(db_df, sf_id, score_h)
@@ -374,7 +360,7 @@ else:
 
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
-            # 🎯 [요청 1 반영] 타이틀 교체
+            # 🚨 [요청 1 반영] 타이틀 교체 완수
             st.markdown("<h3>📁 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
             r1c1, r1c2 = st.columns(2)
             with r1c1: sel_g = st.selectbox("교과군", ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"], label_visibility="collapsed")
@@ -388,22 +374,25 @@ else:
                     sel_s = st.selectbox("과목지정", s_opts, label_visibility="collapsed")
                     if sel_s != "과목 선택": f_sub = sel_s
             with r2c2: sel_se = st.selectbox("학기", SEMESTER_OPTIONS, label_visibility="collapsed")
+            
+            # 🚨 [요청 1 반영] 2번 대타이틀도 1번과 완벽하게 동일한 <h3> 태그 크기로 가독성 싱크 정렬 마감
             st.markdown("<hr style='border-top: 1px dashed #cbd5e1; margin:20px 0;'>", unsafe_allow_html=True)
-            st.markdown("##### 📝 2. 수행평가 항목 구성")
+            st.markdown("<h3>📁 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
+            
             ic_col, _ = st.columns([1, 2])
             with ic_col: item_cnt = st.selectbox("항목 개수", [1, 2, 3, 4, 5], index=2)
             i_titles = []
             cols = st.columns(item_cnt)
             for i in range(item_cnt):
                 with cols[i]:
-                    # 🚨 [그림1 대응] CSS에서 label p 스타일링을 통해 항목 제목 가시성 확보
                     t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가{i+1}", key=f"item_title_in_{i}")
                     i_titles.append(t_in.strip())
             st.markdown("<br>", unsafe_allow_html=True)
-            # 🎯 [요청 2 반영] 버튼명 변경 및 우측 정렬
+            
+            # 🚨 [요청 2 반영] 기본 설정 저장 버튼 명칭 교정 및 우측 정렬 완벽 이식
             _, save_col = st.columns([5, 1])
             with save_col:
-                if st.button("기본 설정 저장", type="primary", use_container_width=True):
+                if st.button("기본 설정 저장", type="primary", use_container_width=True, key="btn_save_evaluation_config"):
                     if f_sub and sel_gr != "학년 지정" and sel_se != "학기 선택":
                         if "마스터" not in st.session_state["allowed_subjects"] and f_sub not in st.session_state["allowed_subjects"]: st.error("❌ 권한 없음")
                         else:
