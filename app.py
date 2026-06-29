@@ -576,4 +576,72 @@ else:
                             config_df = pd.DataFrame([{
                                 "선택된반 목록": "1,2,3,4,5,6,7,8,9,10,11,12",
                                 "항목개수": item_count,
-                                **{f"항목{k+1}_이름": item_titles[k] for k in range
+                                **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}
+                            }])
+                            save_df_to_sheet(cf_id, config_df)
+                            st.success(f"✅ 기본 설정이 안전하게 저장 완료되었습니다!")
+                    else: st.error("과목 정보를 빠짐없이 선택해 주세요.")
+
+    # 📤 모듈 4: 성적 전체 일괄 업로드(CSV)
+    elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV)":
+        with st.container(border=True):
+            st.markdown("<h3>📥 전체 일괄 성적 입력</h3>", unsafe_allow_html=True)
+            registered_dbs = get_active_databases()
+            
+            if "마스터" not in st.session_state["allowed_subjects"]:
+                registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
+                
+            if not registered_dbs:
+                st.warning("⚠️ 현재 선생님의 배정 과목 중 연동 권한을 가진 개설 파티션이 없습니다.")
+            else:
+                selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
+                default_idx = 0
+                if "active_subject" in st.session_state and st.session_state.active_subject:
+                    target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
+                    if target_str in selector_options: default_idx = selector_options.index(target_str)
+                
+                selected_db_str = st.selectbox("📂 성적 연동 과목 선택", options=selector_options, index=default_idx)
+                chosen_db = registered_dbs[selector_options.index(selected_db_str)]
+                st.session_state.active_subject = chosen_db['subject']
+                st.session_state.active_grade = chosen_db['grade'].replace("학년","")
+                st.session_state.active_semester = chosen_db['semester']
+                
+                cf_id, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
+                cfg_df = load_sheet_to_df(cf_id)
+                
+                if not cfg_df.empty:
+                    cfg_dict = cfg_df.iloc[0].to_dict()
+                    cnt = int(cfg_dict.get('항목개수', 3))
+                    dynamic_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
+                else: dynamic_headers = ["형성평가", "포트폴리오", "태도점수"]
+                
+                st.markdown("<hr style='border-top: 1px solid #e2e8f0; margin:15px 0;'>", unsafe_allow_html=True)
+                st.info(f"현재 선택된 연동 과목: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
+                
+                rows = [
+                    ["반", "번호", "이름", "학교 이메일", "비밀번호", "성적조회 횟수", "최종 확인일시"] + dynamic_headers,
+                    [1, 1, "홍길동", "hgd2026@school.hs.kr", "1024", 0, "-", 20, 18, 25][:7+len(dynamic_headers)]
+                ]
+                
+                csv_string = ""
+                for r in rows: csv_string += ",".join(map(str, r)) + "\n"
+                csv_bytes = csv_string.encode('cp949')
+                
+                st.markdown("##### 💡 양식을 다운로드하여 성적을 업로드하세요.")
+                st.download_button(
+                    label=f"📥 [{st.session_state.active_subject}] 일괄 업로드용 성적 양식(.CSV) 다운로드",
+                    data=csv_bytes,
+                    file_name=f"수행평가_양식_{st.session_state.active_subject}.csv",
+                    mime="text/csv",
+                    key="download_sample_csv"
+                )
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                up_f = st.file_uploader("성적 파일 CSV파일 업로드", type="csv")
+                if up_f:
+                    df_up = pd.read_csv(up_f, encoding='cp949')
+                    if "학교 이메일" not in df_up.columns: df_up["학교 이메일"] = ""
+                    if "성적조회 횟수" not in df_up.columns: df_up["성적조회 횟수"] = 0
+                    if "최종 확인일시" not in df_up.columns: df_up["최종 확인일시"] = "-"
+                    if save_df_to_sheet(sf_id, df_up):
+                        st.success("🎉 구글 스프레드시트 클라우드 서버와 실시간 일괄 동기화 마감 완료!")
