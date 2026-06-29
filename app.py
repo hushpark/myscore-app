@@ -243,8 +243,7 @@ st.markdown("""
             box-shadow: none !important;
         }
         /* 호버 시 둥글게 흰색으로 번지는 버그 차단 및 미니멀한 순정 반응 유도 */
-        div[data-testid="stSidebar"] div.stButton > button:hover,
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+        div[data-testid="stSidebar"] div.stButton > button:hover {
             background-color: #334155 !important;
             border-color: #64748b !important;
             color: #ffffff !important;
@@ -255,7 +254,6 @@ st.markdown("""
         div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
         .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
         
-        item_title_in_
         h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 28px !important; margin-bottom: 5px !important; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 22px !important; margin-top: 0px !important; margin-bottom: 10px !important; }
         
@@ -288,7 +286,7 @@ if not st.session_state["admin_logged_in"]:
     """, unsafe_allow_html=True)
     
     with st.form("master_unified_form"):
-        # 🚨 [요청 반영] 로그인 박스 상단 헤더 명칭 롤백
+        # 🚨 [요청 반영] 로그인 박스 상단 헤더 명칭 고정
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
@@ -349,7 +347,7 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 새 고유 체인을 활용한 문자 단추 고정 마감
+        # 새 고유 체인을 활용한 문자 단추 고정 마감
         if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
             account_update_dialog()
         if st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True):
@@ -381,7 +379,7 @@ else:
                 with col_sub:
                     selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
                     default_idx = 0
-                    if "active_subject" in st.session_state and st.session_state.active_subject:
+                    if "active_subject" in st.session_state && st.session_state.active_subject:
                         target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
                         if target_str in selector_options: default_idx = selector_options.index(target_str)
                     
@@ -623,7 +621,7 @@ else:
                     label=f"📥 [{st.session_state.active_subject}] 일괄 업로드용 성적 양식(.CSV) 다운로드",
                     data=csv_bytes,
                     file_name=f"수행평가_양식_{st.session_state.active_subject}.csv",
-                    text/csv",
+                    mime="text/csv",
                     key="download_sample_csv"
                 )
                 st.markdown("<br>", unsafe_allow_html=True)
