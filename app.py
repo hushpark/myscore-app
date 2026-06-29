@@ -47,12 +47,13 @@ def verify_teacher_credentials(input_id, input_pw):
             row = match.iloc[0]
             return {
                 "success": True,
+                "teacher_id": str(row['교사_ID']).strip(),
                 "teacher_name": str(row['교사_성명']).strip(),
                 "authorized_subjects": [s.strip() for s in str(row['담당_과목']).split(",") if s.strip()]
             }
             
     if input_id.strip() == "admin" and input_pw.strip() == "1234":
-        return {"success": True, "teacher_name": "최고관리자", "authorized_subjects": ["마스터"]}
+        return {"success": True, "teacher_id": "admin", "teacher_name": "최고관리자", "authorized_subjects": ["마스터"]}
     return {"success": False, "teacher_name": "", "authorized_subjects": []}
 
 def get_sheet_names_id(subject, grade, semester_str):
@@ -81,12 +82,68 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
-# 🔐 내 정보 수정 모달 팝업 가동기
-@st.dialog("🔐 내 정보 수정 안내")
+# 🚨 [요청 1, 2 반영] 로그인한 선생님이 자신의 비밀번호와 담당과목을 시트와 다이렉트 연동하여 직접 수정하는 모달창 완공
+@st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
-    st.info("💡 개별 교사 ID, 패스워드 및 담당 교과 권한 변경은 구글 스프레드시트의 'teacher_accounts' 시트 탭에서 실시간으로 직접 제어 및 수정하실 수 있습니다.")
-    if st.button("확인 및 닫기", use_container_width=True, type="primary"):
-        st.rerun()
+    st.markdown(f"##### 👤 **{st.session_state['teacher_name']}** 선생님의 보안 정보 수정")
+    df_teachers = load_sheet_to_df("teacher_accounts", ["교사_ID", "비밀번호", "교사_성명", "담당_과목"])
+    
+    if not df_teachers.empty and st.session_state["logged_teacher_id"] != "admin":
+        target_idx = df_teachers[df_teachers['교사_ID'].astype(str).str.strip() == str(st.session_state["logged_teacher_id"]).strip()].index
+        if not target_idx.empty:
+            idx = target_idx[0]
+            curr_pw = str(df_teachers.loc[idx, "비밀번호"]).strip()
+            curr_sub = str(df_teachers.loc[idx, "담당_과목"]).strip()
+            
+            new_pw = st.text_input("새 비밀번호 변경", value=curr_pw, type="password")
+            new_sub = st.text_input("담당 과목 변경 (여러 과목은 콤마 분리)", value=curr_sub)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("💾 변경사항 클라우드 시트에 즉시 반영", use_container_width=True, type="primary"):
+                if new_pw and new_sub:
+                    df_teachers.loc[idx, "비밀번호"] = new_pw.strip()
+                    df_teachers.loc[idx, "담당_과목"] = new_sub.strip()
+                    if save_df_to_sheet("teacher_accounts", df_teachers):
+                        st.success("🎉 교사 정보가 실시간으로 안전하게 변경 저장되었습니다! 시스템을 재시작합니다.")
+                        st.session_state["allowed_subjects"] = [s.strip() for s in new_sub.split(",") if s.strip()]
+                        st.rerun()
+                else: st.error("빈 칸을 남겨둘 수 없습니다.")
+        else: st.error("계정 매핑 인덱스를 찾을 수 없습니다.")
+    else:
+        st.warning("최고관리자(admin) 계정은 마스터 권한 고정이므로 시트 수정이 필요 없습니다.")
+
+# 🚨 [요청 4, 5, 6 반영] 학생 개별 추가 입력 전용 단독 팝업 다이얼로그 모달창 구현
+@st.dialog("➕ 학생 개별 추가")
+def student_individual_add_dialog(db_df, sf_id, score_headers):
+    st.markdown("##### 📝 신규 누락 학생 1명 개별 등록")
+    st.write("아래 인적사항을 입력하시면 현재 성적부 하단에 즉시 추가됩니다.")
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    ac1, ac2 = st.columns(2)
+    with ac1: add_b = st.number_input("반", min_value=1, max_value=30, value=1)
+    with ac2: add_n = st.number_input("번호", min_value=1, max_value=60, value=1)
+    
+    add_name = st.text_input("학생 이름", placeholder="성명 입력")
+    add_email = st.text_input("학교 이메일", placeholder="아이디@도메인.hs.kr")
+    add_pw = st.text_input("개인 비밀번호", placeholder="학생 전용 조회 암호")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    # 문구 교체: 학생 추가 등록
+    if st.button("🚀 학생 추가 등록", use_container_width=True, type="primary"):
+        if add_name and add_email and add_pw:
+            new_student_row = {
+                "반": int(add_b), "번호": int(add_n), "이름": str(add_name).strip(),
+                "학교 이메일": str(add_email).strip(), "비밀번호": str(add_pw).strip(),
+                "성적조회 횟수": 0, "최종 확인일시": "-"
+            }
+            for h in score_headers: new_student_row[h] = 0
+            
+            updated_master_df = pd.concat([db_df, pd.DataFrame([new_student_row])], ignore_index=True)
+            if save_df_to_sheet(sf_id, updated_master_df):
+                st.success(f"✅ [{add_b}반 {add_n}번 {add_name}] 학생이 클라우드 성적 대장에 안전하게 추가 등록 완료되었습니다!")
+                st.rerun()
+        else:
+            st.error("학생의 이름, 이메일, 비밀번호를 빠짐없이 채워주세요.")
 
 @st.cache_resource
 def init_google_sheet_client():
@@ -149,6 +206,7 @@ def get_active_databases():
     return active_list
 
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
+if "logged_teacher_id" not in st.session_state: st.session_state["logged_teacher_id"] = ""
 if "teacher_name" not in st.session_state: st.session_state["teacher_name"] = ""
 if "allowed_subjects" not in st.session_state: st.session_state["allowed_subjects"] = []
 
@@ -197,6 +255,7 @@ if not st.session_state["admin_logged_in"]:
                 auth_result = verify_teacher_credentials(admin_id, admin_pw)
                 if auth_result["success"]:
                     st.session_state["admin_logged_in"] = True
+                    st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
                     st.session_state["teacher_name"] = auth_result["teacher_name"]
                     st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
                     st.rerun()
@@ -243,13 +302,15 @@ else:
             [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
             div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 600 !important; }
             
-            /* 🚪 하단 내 정보 및 로그아웃 버튼 디자인 스펙 고정 패치 */
+            /* 🚨 [요청 2 반영] 내 정보 수정 버튼 인디고 블루(#4f46e5) 고유 색상 맵핑으로 로그아웃과 확실하게 차별화 */
             div.stButton > button[key="sidebar_account_btn"] {
-                background-color: #4b5563 !important; color: #ffffff !important; font-weight: 700 !important;
-                border-radius: 8px !important; padding: 8px 15px !important; border: none !important;
-                font-size: 13px !important; box-shadow: 0 4px 10px rgba(75, 85, 99, 0.15) !important;
-                margin-top: 25px !important; display: block !important;
+                background-color: #4f46e5 !important; color: #ffffff !important; font-weight: 700 !important;
+                border-radius: 8px !important; padding: 10px 15px !important; border: none !important;
+                font-size: 14px !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25) !important;
+                margin-top: 25px !important; display: block !important; transition: 0.2s;
             }
+            div.stButton > button[key="sidebar_account_btn"]:hover { background-color: #4338ca !important; }
+            
             div.stButton > button[key="sidebar_logout_btn"] {
                 background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important;
                 border-radius: 8px !important; padding: 10px 15px !important; border: none !important;
@@ -262,7 +323,14 @@ else:
             .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
             h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 5px !important; }
             h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
-            button { background-color: #4a69bd !important; color: white !important; font-weight: bold !important; border-radius: 6px !important; padding: 8px 20px !important; border: none !important; }
+            
+            /* 🚨 [요청 5 반영] 학생 개별 추가 버튼용 특화 에메랄드 그린(#10b981) 스타일 */
+            div.stButton > button[key="btn_trigger_student_dialog"] {
+                background-color: #10b981 !important; color: white !important; font-weight: bold !important;
+                border-radius: 6px !important; padding: 8px 20px !important; border: none !important;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important; transition: 0.2s;
+            }
+            div.stButton > button[key="btn_trigger_student_dialog"]:hover { background-color: #059669 !important; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -270,8 +338,6 @@ else:
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:12px; color:#94a3b8; margin-bottom:15px;'>👤 {st.session_state['teacher_name']} 선생님 접속 중</div>", unsafe_allow_html=True)
         st.markdown("---")
-        
-        # 🚨 [선생님 요청 반영] 메뉴 및 가이드 문구 100% 한글 맞춤 교체 및 보안설정 숙청 완수
         menu_selection = st.radio(
             "메뉴 선택",
             ["▶ 학생 조회 현황 모니터링", "▶ 개인별 성적 입력", "▶ 평가 대상 과목 구성", "▶ 성적 전체 일괄 업로드(CSV)"],
@@ -279,21 +345,22 @@ else:
         )
         st.markdown("---")
         
-        # 🎯 [선생님 요청] 로그아웃 바로 위에 '내 정보 수정' 버튼 나란히 배치 마감
+        # 🔐 내 정보 수정 버튼 및 로그아웃 버튼 나란히 배치 완수
         if st.button("🔐 내 정보 수정", key="sidebar_account_btn", use_container_width=True):
             account_update_dialog()
         if st.button("🚪 시스템 로그아웃", key="sidebar_logout_btn", use_container_width=True):
             st.session_state["admin_logged_in"] = False
+            st.session_state["logged_teacher_id"] = ""
             st.session_state["teacher_name"] = ""
             st.session_state["allowed_subjects"] = []
             st.rerun()
 
-    # 🎯 [선생님 요청] 상단 메인 대 타이틀 전면 변경
+    # 🎯 메인 대제목 리브랜딩 교체 완료
     st.markdown(f"<h2>수행평가 성적 관리 도우미</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 📊 모듈 1: 학생 조회 현황 모니터링 (반별 보기 유지)
+    # 📊 모듈 1: 학생 조회 현황 모니터링
     if menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown(f"<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
@@ -351,10 +418,9 @@ else:
                     st.dataframe(render_df[valid_cols].fillna("-"), use_container_width=True, hide_index=True)
                 else: st.warning("등록된 데이터가 없습니다. 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📝 모듈 2: 개인별 성적 입력 (요청 명칭 전면 교정 및 신규 학생 1명 개별 추가 기능 탑재부 완공)
+    # 📝 모듈 2: 개인별 성적 입력 (요청 대폭 수용: 일괄저장 옆 '학생 개별 추가' 팝업 이원화 인터페이스 기법 도입)
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
-            # 🎯 [선생님 요청] 패널 타이틀 명칭 교체 완료
             st.markdown(f"<h3>📝 개인별 성적 데이터 편집</h3>", unsafe_allow_html=True)
             st.markdown("<p style='font-size:13px; color:#64748b;'>학급별 필터링을 통해 시트 내부 셀을 엑셀처럼 더블클릭하여 바로 수정하실 수 있습니다.</p>", unsafe_allow_html=True)
             
@@ -413,43 +479,23 @@ else:
                         key="master_live_grid_editor", hide_index=True
                     )
                     
-                    if st.button("💾 위의 표 수정내역 구글 클라우드에 일괄 저장", key="btn_save_all_grid_changes"):
-                        for idx_pos, row_idx in enumerate(filtered_idx):
-                            for col in edited_df.columns:
-                                db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
-                        if save_df_to_sheet(sf_id, db_df):
-                            st.success(f"🎉 성적 데이터 수정 내역이 성공적으로 실시간 클라우드 동기화되었습니다!")
-                            st.rerun()
-                            
-                    # 🚨 [신설] 학생 1명만 전입/누락으로 별도 추가해야 할 때를 위한 원클릭 빌더
-                    st.markdown("<hr style='border-top: 1px dashed #cbd5e1; margin:25px 0;'>", unsafe_allow_html=True)
-                    st.markdown("##### ➕ 신규 학생 1명 개별 추가")
+                    st.markdown("<br>", unsafe_allow_html=True)
                     
-                    with st.form("single_student_add_form", clear_on_submit=True):
-                        ac1, ac2, ac3 = st.columns(3)
-                        with ac1: add_b = st.number_input("반", min_value=1, max_value=30, value=1)
-                        with ac2: add_n = st.number_input("번호", min_value=1, max_value=60, value=1)
-                        with ac3: add_name = st.text_input("학생 이름", placeholder="성명 입력")
-                        
-                        ac4, ac5 = st.columns(2)
-                        with ac4: add_email = st.text_input("학교 이메일", placeholder="아이디@도메인.hs.kr")
-                        with ac5: add_pw = st.text_input("개인 비밀번호", placeholder="학생 전용 조회 암호")
-                        
-                        if st.form_submit_button("🚀 이 학생 1명만 성적부에 즉시 등록"):
-                            if add_name and add_email and add_pw:
-                                # 새로운 행 생성 및 항목별 기본 점수 0점 바인딩
-                                new_student_row = {
-                                    "반": int(add_b), "번호": int(add_n), "이름": str(add_name).strip(),
-                                    "학교 이메일": str(add_email).strip(), "비밀번호": str(add_pw).strip(),
-                                    "성적조회 횟수": 0, "최종 확인일시": "-"
-                                }
-                                for h in score_headers: new_student_row[h] = 0
-                                
-                                updated_master_df = pd.concat([db_df, pd.DataFrame([new_student_row])], ignore_index=True)
-                                if save_df_to_sheet(sf_id, updated_master_df):
-                                    st.success(f"✅ [{add_b}반 {add_n}번 {add_name}] 학생 1명이 클라우드 성적 대장에 안전하게 추가 등록 완료되었습니다!")
-                                    st.rerun()
-                            else: st.error("추가할 학생의 이름, 이메일, 비밀번호를 누락 없이 채워주세요.")
+                    # 🚨 [요청 3, 5 반영] 가로 배열 컬럼 배치로 성적 일괄 저장과 학생 개별 추가 버튼을 나란히 수평 배치 마감
+                    btn_col1, btn_col2 = st.columns([3, 1])
+                    with btn_col1:
+                        # 문구 교체: 위의 표 수정내역 일괄 저장
+                        if st.button("💾 위의 표 수정내역 일괄 저장", key="btn_save_all_grid_changes", use_container_width=True):
+                            for idx_pos, row_idx in enumerate(filtered_idx):
+                                for col in edited_df.columns:
+                                    db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
+                            if save_df_to_sheet(sf_id, db_df):
+                                st.success("🎉 성적 데이터 수정 내역이 성공적으로 실시간 클라우드 동기화되었습니다!")
+                                st.rerun()
+                    with btn_col2:
+                        # 🎯 [선생님 요청] 독자적인 에메랄드 그린 컬러로 무장한 개별 팝업창 격리 트리거 작동
+                        if st.button("➕ 학생 개별 추가", key="btn_trigger_student_dialog", use_container_width=True):
+                            student_individual_add_dialog(db_df, sf_id, score_headers)
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
     # 📁 모듈 3: 평가 대상 과목 구성
@@ -517,10 +563,9 @@ else:
                     st.success(f"✅ [{final_sub}] 과목 아키텍처 및 데이터베이스 세팅 완료!")
                 else: st.error("과목 정보를 빠짐없이 선택해 주세요.")
 
-    # 📤 모듈 4: 성적 전체 일괄 업로드(CSV) (요청하신 모든 디테일 명칭 전면 대치 완료 패키지)
+    # 📤 모듈 3: 성적 전체 일괄 업로드(CSV) (문구 교정 완료)
     elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV)":
         with st.container(border=True):
-            # 🎯 [선생님 요청] 대제목 교체 완료
             st.markdown("<h3>📥 전체 일괄 성적 입력</h3>", unsafe_allow_html=True)
             registered_dbs = get_active_databases()
             
@@ -530,7 +575,6 @@ else:
             if not registered_dbs:
                 st.warning("⚠️ 현재 선생님의 배정 과목 중 연동 권한을 가진 개설 파티션이 없습니다.")
             else:
-                # 🎯 [선생님 요청] 라벨 문구 교체: 성적 연동 과목 선택
                 selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
                 default_idx = 0
                 if "active_subject" in st.session_state and st.session_state.active_subject:
@@ -553,7 +597,6 @@ else:
                 else: dynamic_headers = ["형성평가", "포트폴리오", "태도점수"]
                 
                 st.markdown("<hr style='border-top: 1px solid #e2e8f0; margin:15px 0;'>", unsafe_allow_html=True)
-                # 🎯 [선생님 요청] 문구 교체: 현재 선택된 연동 과목
                 st.info(f"현재 선택된 연동 과목: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
                 
                 rows = [
@@ -565,7 +608,6 @@ else:
                 for r in rows: csv_string += ",".join(map(str, r)) + "\n"
                 csv_bytes = csv_string.encode('cp949')
                 
-                # 🎯 [선생님 요청] 문구 교체: 양식을 다운로드하여 성적을 업로드하세요.
                 st.markdown("##### 💡 양식을 다운로드하여 성적을 업로드하세요.")
                 st.download_button(
                     label=f"📥 [{st.session_state.active_subject}] 일괄 업로드용 성적 양식(.CSV) 다운로드",
@@ -576,7 +618,6 @@ else:
                 )
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # 🎯 [선생님 요청] 문구 교체: 성적 파일 CSV파일 업로드
                 up_f = st.file_uploader("성적 파일 CSV파일 업로드", type="csv")
                 if up_f:
                     df_up = pd.read_csv(up_f, encoding='cp949')
