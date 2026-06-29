@@ -71,7 +71,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
     
     if "has_counted" not in st.session_state:
         try:
-            current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조회 횟수"]) else 0
+            current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조Free 횟수"]) else 0
         except:
             current_count = 0
             
@@ -236,12 +236,12 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
         
-        /* 🚨 [로그인 버튼 간섭 격리 완수] 오직 사이드바 내부 컴포넌트 버튼만 클래식 테두리 형태로 작동하도록 범위 한정 */
+        /* 🚨 [화이트 마스크 원천 해결] 모든 강제 범위 초기화 및 글자색을 무조건 '흰색(#ffffff)'으로 박는 고유 인프라 코딩 고정 */
         div[data-testid="stSidebar"] div.stButton > button,
         div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
         div[data-testid="stSidebar"] button {
             background-color: #2b3a4a !important;
-            color: #ffffff !important;
+            color: #ffffff !important;                      /* 🚨 흰색 글자로 무조건 복구하여 글씨 보장 */
             border: 2px solid #3f5164 !important;
             border-radius: 6px !important;
             padding: 0.5rem 1rem !important;
@@ -253,7 +253,8 @@ st.markdown("""
             text-align: center !important;
             transition: all 0.2s ease !important;
         }
-        div[data-testid="stSidebar"] div.stButton > button:hover {
+        div[data-testid="stSidebar"] div.stButton > button:hover,
+        div[data-testid="stSidebar"] button:hover {
             background-color: #3f5164 !important;
             border-color: #52667a !important;
             color: #ffffff !important;
@@ -275,16 +276,17 @@ st.markdown("""
             background-color: #ffffff !important;
         }
 
-        /* 🚨 [구분 고정] 본문 하단 저장 및 첫 화면 폼 내부 전용 버튼 스타일 지정 (로그인 버튼 원래의 파란색 완전 박음) */
-        button[kind="primaryFormSubmit"] {
-            background-color: #4f6ef7 !important;
-            color: white !important;
+        /* 🚨 [로그인 화면 파란 버튼 복원] 본문 내부 버튼과 분리하여 첫 로그인 버튼만 가로가 듬직하게 꽉 찬 파란색으로 고정 */
+        div[data-testid="stForm"] button[data-testid="baseButton-secondary"] {
+            background-color: #4a69bd !important;
+            color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
             width: 100% !important;
-            padding: 0.75rem !important;
+            padding: 0.6rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
+            box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
         }
         
         div.stButton > button[key="btn_save_all_grid_changes"] { background-color: #3b82f6 !important; color: white !important; font-weight: bold !important; border: none !important; }
@@ -315,7 +317,7 @@ if not st.session_state["admin_logged_in"]:
         if login_mode == "교사":
             admin_id = st.text_input("교사_ID", placeholder="교사 ID를 입력하세요", label_visibility="collapsed", key="ti_id")
             admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="ti_pw")
-            if st.form_submit_button("로그인", type="primary"):
+            if st.form_submit_button("로그인"):
                 auth_result = verify_teacher_credentials(admin_id, admin_pw)
                 if auth_result["success"]:
                     st.session_state["admin_logged_in"] = True
@@ -340,7 +342,7 @@ if not st.session_state["admin_logged_in"]:
                         st_email_in = st.text_input("학교 이메일", placeholder="학교 이메일을 입력하세요", label_visibility="collapsed", key="ti_st_email")
                         st_pw = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", label_visibility="collapsed", key="ti_st_pw")
                         
-                        if st.form_submit_button("점수 조회", type="primary"):
+                        if st.form_submit_button("점수 조회"):
                             df_st = load_sheet_to_df(sf_id)
                             if not df_st.empty:
                                 if "학교 이메일" in df_st.columns:
