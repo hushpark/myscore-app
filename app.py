@@ -9,14 +9,14 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
-# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 하얀 본문 바탕 인프라 복구 및 와이드 고정
+# 최상단 배치 규칙 엄수 - 와이드 모드 고정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
-# --- 데이터 로드/저장 시스템 (기존 구글 시트 백엔드 무결점 보존) ---
+# --- 데이터 로드/저장 시스템 ---
 def load_master_subjects():
     default_structure = {
         "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
@@ -143,7 +143,7 @@ def student_individual_add_dialog(db_df, sf_id, score_headers):
                 st.success(f"✅ [{add_b}반 {add_n}번 {add_name}] 학생이 클라우드 성적 대장에 안전하게 추가 등록 완료되었습니다!")
                 st.rerun()
         else:
-            st.error("학생의 이름, 이메일, 비밀번호를 빠жим없이 채워주세요.")
+            st.error("학생의 이름, 이메일, 비밀번호를 빠짐없이 채워주세요.")
 
 @st.cache_resource
 def init_google_sheet_client():
@@ -215,35 +215,53 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 전역 테마 마스터 스타일 (원본의 시원하고 선명한 텍스트 인프라 원복 부)
+# 🔄 전역 테마 스타일 개조 (사이드바 버튼 완전히 깔끔하게 초기화 및 박스 테두리 최적화)
 # =========================================================================
 st.markdown("""
     <style>
-        /* 🚨 본문 배경색 및 연회색 바탕 고정 */
+        /* 본문 및 전체 배경색 인프라 설정 */
         .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { background-color: #f1f5f9 !important; }
         div[data-testid="stHeader"] { display: none !important; }
         
-        /* 🚨 [그림 2 완벽 원상복구] 사이드바 배경색과 글씨체 두께 복원 */
+        /* [그림 2 완벽 반영] 시원시원한 대형 폰트 및 흰색 텍스트 복원 */
         [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
         [data-testid="stSidebar"] h4 { color: #ffffff !important; font-weight: 800; font-size: 24px !important; margin-top: 10px !important; }
         [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
         div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
 
-        /* 셀렉트박스 및 컴포넌트 규격 설정 */
+        /* 🚨 [요청 1 완벽 해결] 사이드바 하단 버튼의 색상 덩어리 완전히 지우고 그림 1처럼 깔끔하고 투명하게 원상복구 */
+        div[data-testid="stSidebar"] div.stButton > button {
+            background-color: transparent !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #475569 !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            font-size: 14px !important;
+            box-shadow: none !important;
+            transition: all 0.2s ease;
+        }
+        /* 마우스 오버 시 자연스러운 순정 리액션 제공 */
+        div[data-testid="stSidebar"] div.stButton > button:hover {
+            background-color: #334155 !important;
+            border-color: #64748b !important;
+            color: #ffffff !important;
+        }
+
+        /* 셀렉트박스 공통 스타일 */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
         div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
         .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
         h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 28px !important; margin-bottom: 5px !important; }
-        h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 22px !important; margin-top: 0px !important; }
+        h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 22px !important; margin-top: 0px !important; margin-bottom: 10px !important; }
         
-        /* 🚨 [그림 1 보정 완수] 수행평가 항목 입력 텍스트 박스 테두리 상시 활성화 고정 */
+        /* 텍스트 입력 박스 테두리 상시 활성화 */
         div[data-testid="stTextInput"] div[data-baseweb="input"], div[data-testid="stNumberInput"] div[data-baseweb="input"] {
             border: 2px solid #cbd5e1 !important;
             border-radius: 6px !important;
             background-color: #ffffff !important;
         }
 
-        /* 하단 제어 버튼 컬러 파트 */
+        /* 본문 하단 저장 관련 전용 버튼 스타일 유지 */
         div.stButton > button[key="btn_save_all_grid_changes"] { background-color: #3b82f6 !important; color: white !important; font-weight: bold !important; border: none !important; }
         div.stButton > button[key="btn_trigger_student_dialog"] { background-color: #10b981 !important; color: white !important; font-weight: bold !important; border: none !important; }
     </style>
@@ -325,7 +343,7 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [완벽 원상복구] 불필요한 강제 고정 CSS 오버롤 코드를 전부 지우고 순정 스트림릿 버튼 형식으로 안전 복구
+        # 버튼이 완전한 순정형/단정한 텍스트 느낌으로 변환되었습니다.
         if st.button("🔐 내 정보 수정", key="sidebar_account_btn", use_container_width=True):
             account_update_dialog()
         if st.button("🚪 시스템 로그아웃", key="sidebar_logout_btn", use_container_width=True):
@@ -335,15 +353,12 @@ else:
             st.session_state["allowed_subjects"] = []
             st.rerun()
 
-    # 교사 모드 전체 바탕색은 부드러운 연회색으로 고정
-    st.markdown("<style>.main, [data-testid=\"stAppViewContainer\"] { background-color: #f1f5f9 !important; }</style>", unsafe_allow_html=True)
-
-    # 대형 텍스트 이름 고정
+    # 상단 메인 위치 인덱서 노출
     st.markdown(f"<h2>교사용 마스터 통합 워크스테이션</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 📊 모듈 1: 학생 조회 현황 모니터링 [🚨 본문 대형 흰색 박스 배경 원상복구 연동]
+    # 📊 모듈 1: 학생 조회 현황 모니터링
     if menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown(f"<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
@@ -480,12 +495,12 @@ else:
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📁 모듈 3: 평가 대상 과목 구성 [🚨 대형 하얀 박스 배경 복구 완료]
+    # 📁 모듈 3: 평가 대상 과목 구성
     elif menu_selection == "▶ 평가 대상 과목 구성":
+        # 🚨 [요청 2 반영] 1번 설정 영역을 개별 흰색 사각형 박스로 독립 배치
         with st.container(border=True):
-            # 🚨 [싱크로율 100%] 이모지를 동반한 원본 타이틀 롤백 마감
             st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
-            st.markdown("<p style='font-size:13px; color:#64748b;'>평가 대상 과목과 수행평가 항목 세부 구성을 연동하세요.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:13px; color:#64748b;'>평가 대상 과목과 수행평가 학년을 연동하는 마스터 파트입니다.</p>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
             row1_col1, row1_col2 = st.columns(2)
@@ -510,9 +525,13 @@ else:
             with row2_col2:
                 sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS, label_visibility="collapsed")
                 
-            st.markdown("<hr style='border-top: 1px dashed #cbd5e1; margin:20px 0;'>", unsafe_allow_html=True)
-            # 🚨 [싱크로율 100%] 이모지를 동반한 과녁 명칭 복원 마감
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+        
+        # 🚨 [요청 2 반영] 2번 항목 구성 영역도 별도의 흰색 사각형 박스로 완벽히 격리 배치하여 그림 1 스타일 가동
+        with st.container(border=True):
             st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:13px; color:#64748b;'>반영할 항목 개수와 각각의 세부 명칭을 실시간 셋업하세요.</p>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             
             ic_col, _ = st.columns([1, 2])
             with ic_col: item_count = st.selectbox("🎯 평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2)
@@ -523,16 +542,13 @@ else:
             cols_items = st.columns(item_count)
             for i in range(item_count):
                 with cols_items[i]:
-                    # 🚨 [초기값 강제 적용 완수] 진짜 타이핑으로 지우고 수정할 수 있는 진하고 뚜렷한 리얼 초기값 삽입 마감
                     t_in = st.text_input(f"항목 {i+1} 제목", value="수행평가 항목 입력", key=f"item_title_in_{i}", label_visibility="collapsed")
                     item_titles.append(t_in.strip())
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 우측 정렬 유도 파티션
             col_space, col_btn = st.columns([5, 1])
-            with col_space:
-                st.write("")
+            with col_space: st.write("")
             with col_btn:
                 if st.button("기본 설정 저장", type="primary", use_container_width=True, key="btn_save_evaluation_config"):
                     if final_sub and sel_gr != "학년 지정" and sel_se != "학기 선택":
