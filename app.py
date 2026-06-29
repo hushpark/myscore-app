@@ -257,12 +257,12 @@ st.markdown("""
         }
         
         /* 마우스 오버(호버) 시 흰색 번짐 차단 및 부드러운 반응 */
-        div[data-testid="stSidebar"] div.stButton > button:hover,
+        /* div[data-testid="stSidebar"] div.stButton > button:hover,
         div[data-testid="stSidebar"] button:hover {
             background-color: #3f5164 !important;
             border-color: #52667a !important;
             color: #ffffff !important;
-            transform: translateY(-1px);
+            transform: translateY(-1px);*/
         }
 
         /* 셀렉트박스 공통 테두리 스타일 */
