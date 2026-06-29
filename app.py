@@ -251,13 +251,10 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
         
-        /* 🚨 [오버롤 원천 파괴 완수] 스트림릿 순정 위젯과의 마스크 간섭을 전면 차단하는 순수 독자적 HTML 폼 단추 전용 CSS */
-        .html-sidebar-form {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-        }
-        .html-sidebar-btn {
+        /* 🚨 [오버롤 버그 완전 진압] 사이드바 하단 st.button 위젯의 모든 스타일 우선권을 오버라이딩하여
+           처음 만드셨던 단정하고 굵직한 테두리의 클래식 어두운 블루 형태로 1:1 강제 고정 */
+        div[data-testid="stSidebar"] div.stButton > button,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
             background-color: #2b3a4a !important;
             color: #ffffff !important;
             border: 2px solid #3f5164 !important;
@@ -265,20 +262,22 @@ st.markdown("""
             padding: 10px 16px !important;
             font-weight: 700 !important;
             font-size: 14px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
             width: 100% !important;
             display: block !important;
             text-align: center !important;
-            margin-bottom: 8px !important;
-            cursor: pointer !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            font-family: inherit !important;
             transition: all 0.2s ease !important;
         }
-        .html-sidebar-btn:hover, .html-sidebar-btn:focus, .html-sidebar-btn:active {
+        
+        /* 마우스 오버(호버)나 클릭, 포커스 상태 시 하얀 상자로 치환되던 고질적 버그 원천 차단 */
+        div[data-testid="stSidebar"] div.stButton > button:hover,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
+        div[data-testid="stSidebar"] div.stButton > button:focus,
+        div[data-testid="stSidebar"] div.stButton > button:active {
             background-color: #3f5164 !important;
             border-color: #52667a !important;
             color: #ffffff !important;
-            outline: none !important;
+            transform: translateY(-1px);
         }
 
         /* 셀렉트박스 공통 테두리 스타일 */
@@ -314,12 +313,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 순정 백엔드 트리거 가동을 위한 숨겨진 세션 상태 리스너
-if "trigger_action" in st.session_state:
-    act = st.session_state["trigger_action"]
-    del st.session_state["trigger_action"]
-    if act == "account":
-        account_update_dialog()
+# 🚨 [세션 팅김 원천 방지용 콜백 함수 인프라 정의부]
+def sidebar_logout_callback():
+    st.session_state["admin_logged_in"] = False
+    st.session_state["logged_teacher_id"] = ""
+    st.session_state["teacher_name"] = ""
+    st.session_state["allowed_subjects"] = []
+
+if "open_profile_popup" not in st.session_state:
+    st.session_state["open_profile_popup"] = False
+
+if st.session_state["open_profile_popup"]:
+    st.session_state["open_profile_popup"] = False
+    account_update_dialog()
 
 if not st.session_state["admin_logged_in"]:
     st.markdown("""
@@ -386,19 +392,6 @@ if not st.session_state["admin_logged_in"]:
         st.markdown("<div style='text-align:center; font-size:11px; color:#94a3b8; margin-top:30px;'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 else:
-    # 숨겨진 데이터 변수 전동 수집
-    if st.query_params.get("raw_act") == "account":
-        st.query_params.clear()
-        st.session_state["trigger_action"] = "account"
-        st.rerun()
-    elif st.query_params.get("raw_act") == "logout":
-        st.query_params.clear()
-        st.session_state["admin_logged_in"] = False
-        st.session_state["logged_teacher_id"] = ""
-        st.session_state["teacher_name"] = ""
-        st.session_state["allowed_subjects"] = []
-        st.rerun()
-
     with st.sidebar:
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:12px; color:#94a3b8; margin-bottom:15px;'>👤 {st.session_state['teacher_name']} 선생님 접속 중</div>", unsafe_allow_html=True)
@@ -410,17 +403,15 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [하얀 마스크 완전 전멸 조치] 순수 불멸의 HTML 독립 폼 버튼 구조 배치로 오버롤 근본적 차단 가동
-        st.markdown('''
-            <form method="get" class="html-sidebar-form">
-                <input type="hidden" name="raw_act" value="account">
-                <button type="submit" class="html-sidebar-btn">🔐 내 정보 수정</button>
-            </form>
-            <form method="get" class="html-sidebar-form" style="margin-top:2px;">
-                <input type="hidden" name="raw_act" value="logout">
-                <button type="submit" class="html-sidebar-btn">🚪 시스템 로그아웃</button>
-            </form>
-        ''', unsafe_allow_html=True)
+        # 🚨 [무결점 복구 가동] 독립형 콜백과 세션 락 체인을 활용하여 서로의 위젯 상태가 겹쳐 튕기는 문제를 원천 차단
+        if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
+            st.session_state["open_profile_popup"] = True
+            st.rerun()
+            
+        st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
+        
+        # 🚨 로그아웃을 독립형 온클릭 콜백(on_click)으로 처리하여 다른 버튼이 눌렸을 때 로그아웃이 오작동하지 않도록 완벽 봉인
+        st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True, on_click=sidebar_logout_callback)
 
     # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
@@ -460,12 +451,8 @@ else:
                 
                 with col_class:
                     class_options = ["전체 학급 보기"]
-                    # 🚨 [에러 완벽 수리 가동 부] 오타나 변수 깨짐 없도록 바구니명 db_df로 완벽 일치 매칭
                     if not db_df.empty and "반" in db_df.columns:
-                        try:
-                            class_options = ["전체 학급 보기"] + [f"{int(x)}반" for x in sorted(db_df['반'].unique())]
-                        except:
-                            class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                        class_options = ["전체 학급 보기"] + [f"{int(x)}반" for x in sorted(db_df['반'].unique())]
                     selected_class = st.selectbox("🎯 필터링할 학급(반) 선택", options=class_options, key="sb_filter_class_monitor")
                 
                 if not db_df.empty:
@@ -666,7 +653,7 @@ else:
                 st.info(f"현재 선택된 연동 과목: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
                 
                 rows = [
-                    ["반", "번호", "이름", "학교 이메일", "비밀번호", "성적조회 횟수", "최종 확인일시"] + dynamic_headers,
+                    ["반", "번호", "이름", "school_email", "비밀번호", "성적조회 횟수", "최종 확인일시"] + dynamic_headers,
                     [1, 1, "홍길동", "hgd2026@school.hs.kr", "1024", 0, "-", 20, 18, 25][:7+len(dynamic_headers)]
                 ]
                 
@@ -687,7 +674,7 @@ else:
                 up_f = st.file_uploader("성적 파일 CSV파일 업로드", type="csv")
                 if up_f:
                     df_up = pd.read_csv(up_f, encoding='cp949')
-                    if "학교 이메일" not in df_up.columns: df_up["학교 이메일"] = ""
+                    if "school_email" not in df_up.columns: df_up["school_email"] = ""
                     if "성적조회 횟수" not in df_up.columns: df_up["성적조회 횟수"] = 0
                     if "최종 확인일시" not in df_up.columns: df_up["최종 확인일시"] = "-"
                     if save_df_to_sheet(sf_id, df_up):
