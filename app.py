@@ -257,13 +257,13 @@ st.markdown("""
         }
         
         /* 마우스 오버(호버) 시 흰색 번짐 차단 및 부드러운 반응 */
-        /* div[data-testid="stSidebar"] div.stButton > button:hover,
+        div[data-testid="stSidebar"] div.stButton > button:hover,
         div[data-testid="stSidebar"] button:hover {
             background-color: #3f5164 !important;
             border-color: #52667a !important;
-            color: #ffffff !important;
+            color: #000000 !important;
             transform: translateY(-1px);
-        } */
+        } 
 
         /* 셀렉트박스 공통 테두리 스타일 */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
@@ -293,7 +293,7 @@ if not st.session_state["admin_logged_in"]:
             div[data-testid="stHeader"] { display: none !important; }
             footer { display: none !important; }
             div[data-testid="stForm"] {
-                background-color: #000000 !important; border: 1px solid #cbd5e1 !important;
+                background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
                 padding: 40px 30px 30px 30px !important; border-radius: 24px !important;
                 box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; max-width: 440px !important; margin: 60px auto 0 auto !important; position: relative !important;
             }
