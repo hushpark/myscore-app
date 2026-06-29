@@ -212,7 +212,7 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 CSS 스타일링 엔진 및 버튼 가독성 패키지 (호버 버그 박멸 완전판)
+# 🔄 CSS 스타일링 엔진 및 버튼 가독성 패키지
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
@@ -299,28 +299,23 @@ else:
             [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
             div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 600 !important; }
             
-            /* 🚨 [마우스 호버 실종 버그 박멸 패치] 어떠한 마우스 오버 상태에서도 글자가 강제로 흰색(#ffffff)을 유지하도록 우선순위 고정 */
+            /* 🚪 사이드바 하단 제어용 마우스 호버 버그 완전 교정 코드 패치 */
             div.stButton > button[key="sidebar_account_btn"] {
                 background-color: #4f46e5 !important; color: #ffffff !important; font-weight: 700 !important;
                 border-radius: 8px !important; padding: 10px 15px !important; border: none !important;
                 font-size: 14px !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2) !important;
                 margin-top: 25px !important; display: block !important;
             }
-            div.stButton > button[key="sidebar_account_btn"]:hover, 
-            div.stButton > button[key="sidebar_account_btn"]:active, 
-            div.stButton > button[key="sidebar_account_btn"]:focus {
+            div.stButton > button[key="sidebar_account_btn"]:hover {
                 background-color: #3f37c9 !important; color: #ffffff !important;
             }
-            
             div.stButton > button[key="sidebar_logout_btn"] {
                 background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important;
                 border-radius: 8px !important; padding: 10px 15px !important; border: none !important;
                 font-size: 14px !important; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
                 margin-top: 5px !important; display: block !important;
             }
-            div.stButton > button[key="sidebar_logout_btn"]:hover,
-            div.stButton > button[key="sidebar_logout_btn"]:active,
-            div.stButton > button[key="sidebar_logout_btn"]:focus {
+            div.stButton > button[key="sidebar_logout_btn"]:hover {
                 background-color: #dc2626 !important; color: #ffffff !important;
             }
 
@@ -330,13 +325,13 @@ else:
             h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 5px !important; }
             h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
             
-            /* 💾 수정 사항 저장 전용 클래식 블루 및 호버 색상 강제 */
+            /* 💾 수정 사항 저장 전용 클래식 인디고 블루 커스텀 */
             div.stButton > button[key="btn_save_all_grid_changes"] {
                 background-color: #3b82f6 !important; color: white !important; font-weight: bold !important;
             }
             div.stButton > button[key="btn_save_all_grid_changes"]:hover { background-color: #2563eb !important; color: white !important; }
 
-            /* ➕ 학생 개별 추가 전용 화사한 에메랄드 그린 및 호버 색상 강제 */
+            /* ➕ 학생 개별 추가 전용 화사한 에메랄드 그린 커스텀 및 호버 보정 완료 */
             div.stButton > button[key="btn_trigger_student_dialog"] {
                 background-color: #10b981 !important; color: white !important; font-weight: bold !important;
                 border: none !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
@@ -368,7 +363,7 @@ else:
             st.rerun()
 
     st.markdown(f"<h2>수행평가 성적 관리 도우미</h2>", unsafe_allow_html=True)
-    st.write(f"현재 위치: 교사 모드 > {menu_selection}")
+    st.write(f"현재 위치: ... > {menu_selection}")
     st.markdown("<br>", unsafe_allow_html=True)
 
     # 📊 모듈 1: 학생 조회 현황 모니터링
@@ -420,7 +415,7 @@ else:
                     else: score_headers = []
                     
                     display_cols = ["반", "번호", "이름"]
-                    if "school_email" in render_df.columns: display_cols.append("school_email")
+                    if "학교 이메일" in render_df.columns: display_cols.append("학교 이메일")
                     if "비밀번호" in render_df.columns: display_cols.append("비밀번호")
                     display_cols.extend(score_headers)
                     display_cols.extend(["성적조회 횟수", "최종 확인일시"])
@@ -429,7 +424,7 @@ else:
                     st.dataframe(render_df[valid_cols].fillna("-"), use_container_width=True, hide_index=True)
                 else: st.warning("등록된 데이터가 없습니다. 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📝 모듈 2: 개인별 성적 입력 (요청 반영 - 우측 끝단 정렬 및 콤팩트 규격 이식부)
+    # 📝 모듈 2: 개인별 성적 입력 (요청 3, 5 반영 - 황금 비율 순서 스왑 인터페이스 완공)
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
             st.markdown(f"<h3>📝 개인별 성적 데이터 편집</h3>", unsafe_allow_html=True)
@@ -492,16 +487,16 @@ else:
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    # 🚨 [요청 반영] 앞에 넓은 여백 컬럼([4])을 배치하여 두 버튼을 우측 끝(오른쪽)으로 완전 밀착 패치
-                    # 두 버튼 역시 글자 길이에 비례해 부자연스럽게 늘어지지 않도록 고정 비율 마감
-                    btn_col3, btn_col1, btn_col2 = st.columns([4.2, 0.9, 0.9])
+                    # 🚨 [완벽 결속 완수] 버튼 순서를 스왑하여 학생 개별 추가를 앞(왼쪽)에, 수정 사항 저장을 뒤(오른쪽)에 배치
+                    # 컬럼의 비율 조정을 통해 가로 길이에 콤팩트하게 밀착되도록 마감
+                    btn_col1, btn_col2, btn_col3 = st.columns([0.8, 0.8, 4])
                     
-                    with btn_col3:
-                        st.write("") # 왼쪽을 전부 넓은 공백으로 처리하여 오른쪽 끝 정렬 효과 유도
                     with btn_col1:
+                        # 1순위 배치: ➕ 학생 개별 추가 (에메랄드 그린 컬러 보정)
                         if st.button("➕ 학생 개별 추가", key="btn_trigger_student_dialog", use_container_width=True):
                             student_individual_add_dialog(db_df, sf_id, score_headers)
                     with btn_col2:
+                        # 2순위 배치 및 문구 교체: 💾 수정 사항 저장 (인디고 블루 컬러 보정)
                         if st.button("💾 수정 사항 저장", key="btn_save_all_grid_changes", use_container_width=True):
                             for idx_pos, row_idx in enumerate(filtered_idx):
                                 for col in edited_df.columns:
@@ -509,6 +504,8 @@ else:
                             if save_df_to_sheet(sf_id, db_df):
                                 st.success("🎉 수행평가 성적 수정 사항이 성공적으로 클라우드 서버와 일괄 저장 동기화되었습니다!")
                                 st.rerun()
+                    with btn_col3:
+                        st.write("")
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
     # 📁 모듈 3: 평가 대상 과목 구성
