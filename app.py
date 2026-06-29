@@ -9,6 +9,9 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
+# 🚨 [원천 고정 마스터키] 최상단 배치 규칙 엄수 - 하얀 바탕 및 와이드 인프라 강제 고정
+st.set_page_config(page_title="수행평가 성적 관리 도우미", layout="wide")
+
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
@@ -212,36 +215,43 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 CSS 스타일링 엔진 및 버튼 가독성 패키지 (호버 버그 박멸 완전판)
+# 🔄 전역 테마 통합 제어 CSS 엔진 (하얀 바탕 인프라 및 순정 오버롤 롤백)
 # =========================================================================
+st.markdown("""
+    <style>
+        .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { background-color: #f1f5f9 !important; }
+        div[data-testid="stHeader"] { display: none !important; }
+        
+        /* 🚨 [요청 4 반영] 오버롤 해소: 마우스 오버 시 글자가 실종되던 임의의 가상 커스텀 CSS를 숙청하고 안전한 순정 제어로 복구 */
+        [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
+        [data-testid="stSidebar"] h4, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
+        div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 600 !important; }
+
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
+        .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
+        h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 5px !important; }
+        h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
+        
+        /* 하단 정렬 버튼 컬러 스펙트럼 */
+        div.stButton > button[key="btn_save_all_grid_changes"] { background-color: #3b82f6 !important; color: white !important; font-weight: bold !important; }
+        div.stButton > button[key="btn_trigger_student_dialog"] { background-color: #10b981 !important; color: white !important; font-weight: bold !important; border: none !important; }
+    </style>
+""", unsafe_allow_html=True)
+
 if not st.session_state["admin_logged_in"]:
-    st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
     st.markdown("""
         <style>
-            .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
-            div[data-testid="stHeader"] { display: none !important; }
-            footer { display: none !important; }
-            
             div[data-testid="stForm"] {
                 background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
-                padding: 40px 30px 30px 30px !important; border-radius: 24px !important;
-                box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; max-width: 440px !important; margin: 60px auto 0 auto !important; position: relative !important;
+                padding: 40px 30px !important; border-radius: 24px !important;
+                box-shadow: 0 15px 40px rgba(0,0,0,0.05) !important; max-width: 440px !important; margin: 60px auto !important;
             }
-            div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] { display: flex !important; flex-direction: column !important; align-items: center !important; width: 100% !important; }
-            div[role="radiogroup"] { justify-content: center !important; margin: 0 auto !important; gap: 40px !important; }
-            div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; color: #1e293b !important; }
-            div[data-testid="stForm"] { border: none !important; box-shadow: none !important; }
-            .stTextInput, .stNumberInput, .stSelectbox { width: 300px !important; max-width: 300px !important; margin: 0 auto 5px auto !important; }
-            div[data-testid="stFormSubmitButton"] { display: flex !important; justify-content: center !important; width: 100% !important; margin: 15px auto 0 auto !important; }
-            button[kind="primaryFormSubmit"] { background-color: #4a69bd !important; border-color: #4a69bd !important; color: white !important; font-weight: bold !important; padding: 9px 0px !important; border-radius: 8px !important; font-size: 15px !important; width: 140px !important; min-width: 140px !important; max-width: 140px !important; box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important; }
-            h2 { font-size: 24px !important; color: #1e293b !important; font-weight: 800 !important; text-align: center !important; margin: 0 0 20px 0 !important; width: 100% !important; }
-            hr { width: 300px !important; margin: 12px auto !important; border: none !important; border-top: 1px solid #e2e8f0 !important; }
-            .footer-notice { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; font-weight: 600; width: 300px; margin: 30px auto 0 auto; }
         </style>
     """, unsafe_allow_html=True)
-
+    
     with st.form("master_unified_form"):
-        st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
         
@@ -271,7 +281,7 @@ if not st.session_state["admin_logged_in"]:
                     if config:
                         st.markdown("<hr>", unsafe_allow_html=True)
                         st_email_in = st.text_input("학교 이메일", placeholder="학교 이메일을 입력하세요", label_visibility="collapsed", key="ti_st_email")
-                        pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
+                        pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", label_visibility="collapsed", key="ti_st_pw")
                         
                         if st.form_submit_button("점수 조회", type="primary"):
                             df_st = load_sheet_to_df(sf_id)
@@ -287,66 +297,9 @@ if not st.session_state["admin_logged_in"]:
                                     scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
                                     show_result_dialog(st_name, scores, sf_id, idx, df_st)
                                 else: st.error("❌ 정보가 일치하지 않습니다. 입력값을 다시 확인해 주세요.")
-        st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; font-size:11px; color:#94a3b8; margin-top:30px;'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 else:
-    st.set_page_config(page_title="교사용 마스터 관리 시스템", layout="wide")
-    st.markdown("""
-        <style>
-            .main, [data-testid="stAppViewContainer"] { background-color: #f1f5f9 !important; }
-            [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
-            [data-testid="stSidebar"] h4 { color: #f8fafc !important; font-weight: 800; font-size: 22px !important; letter-spacing: -0.5px !important; margin-top: 10px !important; margin-bottom: 5px !important; }
-            [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
-            div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 600 !important; }
-            
-            /* 🚨 [마우스 호버 실종 버그 박멸 패치] 어떠한 마우스 오버 상태에서도 글자가 강제로 흰색(#ffffff)을 유지하도록 우선순위 고정 */
-            div.stButton > button[key="sidebar_account_btn"] {
-                background-color: #4f46e5 !important; color: #ffffff !important; font-weight: 700 !important;
-                border-radius: 8px !important; padding: 10px 15px !important; border: none !important;
-                font-size: 14px !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2) !important;
-                margin-top: 25px !important; display: block !important;
-            }
-            div.stButton > button[key="sidebar_account_btn"]:hover, 
-            div.stButton > button[key="sidebar_account_btn"]:active, 
-            div.stButton > button[key="sidebar_account_btn"]:focus {
-                background-color: #3f37c9 !important; color: #ffffff !important;
-            }
-            
-            div.stButton > button[key="sidebar_logout_btn"] {
-                background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important;
-                border-radius: 8px !important; padding: 10px 15px !important; border: none !important;
-                font-size: 14px !important; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
-                margin-top: 5px !important; display: block !important;
-            }
-            div.stButton > button[key="sidebar_logout_btn"]:hover,
-            div.stButton > button[key="sidebar_logout_btn"]:active,
-            div.stButton > button[key="sidebar_logout_btn"]:focus {
-                background-color: #dc2626 !important; color: #ffffff !important;
-            }
-
-            div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
-            div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
-            .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
-            h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 5px !important; }
-            h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
-            
-            /* 💾 수정 사항 저장 전용 클래식 블루 및 호버 색상 강제 */
-            div.stButton > button[key="btn_save_all_grid_changes"] {
-                background-color: #3b82f6 !important; color: white !important; font-weight: bold !important;
-            }
-            div.stButton > button[key="btn_save_all_grid_changes"]:hover { background-color: #2563eb !important; color: white !important; }
-
-            /* ➕ 학생 개별 추가 전용 화사한 에메랄드 그린 및 호버 색상 강제 */
-            div.stButton > button[key="btn_trigger_student_dialog"] {
-                background-color: #10b981 !important; color: white !important; font-weight: bold !important;
-                border: none !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
-            }
-            div.stButton > button[key="btn_trigger_student_dialog"]:hover { 
-                background-color: #059669 !important; color: white !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
     with st.sidebar:
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:12px; color:#94a3b8; margin-bottom:15px;'>👤 {st.session_state['teacher_name']} 선생님 접속 중</div>", unsafe_allow_html=True)
@@ -420,7 +373,7 @@ else:
                     else: score_headers = []
                     
                     display_cols = ["반", "번호", "이름"]
-                    if "school_email" in render_df.columns: display_cols.append("school_email")
+                    if "학교 이메일" in render_df.columns: display_cols.append("학교 이메일")
                     if "비밀번호" in render_df.columns: display_cols.append("비밀번호")
                     display_cols.extend(score_headers)
                     display_cols.extend(["성적조회 횟수", "최종 확인일시"])
@@ -429,7 +382,7 @@ else:
                     st.dataframe(render_df[valid_cols].fillna("-"), use_container_width=True, hide_index=True)
                 else: st.warning("등록된 데이터가 없습니다. 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📝 모듈 2: 개인별 성적 입력 (요청 반영 - 우측 끝단 정렬 및 콤팩트 규격 이식부)
+    # 📝 모듈 2: 개인별 성적 입력
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
             st.markdown(f"<h3>📝 개인별 성적 데이터 편집</h3>", unsafe_allow_html=True)
@@ -491,13 +444,10 @@ else:
                     )
                     
                     st.markdown("<br>", unsafe_allow_html=True)
-                    
-                    # 🚨 [요청 반영] 앞에 넓은 여백 컬럼([4])을 배치하여 두 버튼을 우측 끝(오른쪽)으로 완전 밀착 패치
-                    # 두 버튼 역시 글자 길이에 비례해 부자연스럽게 늘어지지 않도록 고정 비율 마감
                     btn_col3, btn_col1, btn_col2 = st.columns([4.2, 0.9, 0.9])
                     
                     with btn_col3:
-                        st.write("") # 왼쪽을 전부 넓은 공백으로 처리하여 오른쪽 끝 정렬 효과 유도
+                        st.write("")
                     with btn_col1:
                         if st.button("➕ 학생 개별 추가", key="btn_trigger_student_dialog", use_container_width=True):
                             student_individual_add_dialog(db_df, sf_id, score_headers)
@@ -511,10 +461,11 @@ else:
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📁 모듈 3: 평가 대상 과목 구성
+    # 📁 모듈 3: 평가 대상 과목 구성 (요청 1, 2, 3 정밀 이식 부)
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
-            st.markdown("<h3>📁 1. 평가 과목 세팅 및 파티션 활성화</h3>", unsafe_allow_html=True)
+            # 🚨 [요청 1 반영] 타이틀 간소화 마감 완료
+            st.markdown("<h3>📁 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
             st.markdown("<p style='font-size:13px; color:#64748b;'>평가 대상 과목과 수행평가 항목 세부 구성을 연동하세요.</p>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
@@ -541,10 +492,10 @@ else:
                 sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS, label_visibility="collapsed")
                 
             st.markdown("<hr style='border-top: 1px dashed #cbd5e1; margin:20px 0;'>", unsafe_allow_html=True)
-            st.markdown("##### 📝 2. 수행평가 세부 반영 항목 구성")
+            st.markdown("<h3>📁 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
             
-            cc1, cc2 = st.columns([1, 2])
-            with cc1: item_count = st.selectbox("🎯 평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2)
+            ic_col, _ = st.columns([1, 2])
+            with ic_col: item_count = st.selectbox("🎯 평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2)
             
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             
@@ -552,29 +503,33 @@ else:
             cols_items = st.columns(item_count)
             for i in range(item_count):
                 with cols_items[i]:
-                    t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가{i+1}", key=f"item_title_in_{i}")
+                    # 🚨 [요청 3 반영] 상단 라벨 글씨 싹 제거(label_visibility=\"collapsed\")하고 텍스트박스 내부 힌트(placeholder)로 원클릭 가독성 세팅
+                    t_in = st.text_input(f"항목 {i+1} 제목", placeholder="수행평가 항목 입력", key=f"item_title_in_{i}", label_visibility="collapsed")
                     item_titles.append(t_in.strip())
             
-            st.markdown("<br><br>", unsafe_allow_html=True)
-            if st.button("🚀 이 과목 활성화 및 서버 로드"):
-                if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
-                    st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설/수정 권한이 없습니다.")
-                elif final_sub and sel_gr != "학년 지정" and sel_se != "학기 선택":
-                    if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
-                    
-                    cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
-                    config_df = pd.DataFrame([{
-                        "선택된반 목록": "1,2,3,4,5,6,7,8,9,10,11,12",
-                        "항목개수": item_count,
-                        **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}
-                    }])
-                    save_df_to_sheet(cf_id, config_df)
-                    
-                    st.session_state.active_subject = final_sub
-                    st.session_state.active_grade = sel_gr.replace("학년", "")
-                    st.session_state.active_semester = sel_se
-                    st.success(f"✅ [{final_sub}] 과목 아키텍처 및 데이터베이스 세팅 완료!")
-                else: st.error("과목 정보를 빠짐없이 선택해 주세요.")
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # 🚨 [요청 2 반영] 앞쪽에 여백 컬럼([5])을 길게 배치하여 버튼을 오른쪽 끝단으로 강제 밀착 매킹
+            col_space, col_btn = st.columns([5, 1])
+            with col_space:
+                st.write("") # 가로 빈 정렬 효과 유도
+            with col_btn:
+                # 명칭 교체: 기본 설정 저장
+                if st.button("기본 설정 저장", type="primary", use_container_width=True, key="btn_save_evaluation_config"):
+                    if final_sub and sel_gr != "학년 지정" and sel_se != "학기 선택":
+                        if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
+                            st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 권한이 없습니다.")
+                        else:
+                            if sel_g == "➕ 신규 과목 개설": save_new_subject_to_master(t_g, final_sub)
+                            cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
+                            config_df = pd.DataFrame([{
+                                "선택된반 목록": "1,2,3,4,5,6,7,8,9,10,11,12",
+                                "항목개수": item_count,
+                                **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}
+                            }])
+                            save_df_to_sheet(cf_id, config_df)
+                            st.success(f"✅ 기본 설정이 안전하게 저장 완료되었습니다!")
+                    else: st.error("과목 정보를 빠짐없이 선택해 주세요.")
 
     # 📤 모듈 4: 성적 전체 일괄 업로드(CSV)
     elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV)":
