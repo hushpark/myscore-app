@@ -285,7 +285,7 @@ if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         # 🚨 [요청 반영] 로그인 박스 상단 헤더 텍스트 완벽 개조
-        st.markdown("<h2 style='text-align:center;'>교사용 마스터 통합 워크스테이션</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
         
@@ -356,7 +356,7 @@ else:
             st.rerun()
 
     # 🚨 [요청 반영] 대시보드 메인 상단 헤더명 완벽 매칭 교체 완료
-    st.markdown(f"<h2>교사용 마스터 통합 워크스테이션</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<br>", unsafe_allow_html=True)
 
