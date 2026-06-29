@@ -155,7 +155,7 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🔄 UI 레이아웃 스타일링 및 보정 엔진
+# 🔄 UI 디자인 테마 및 스타일 보정부 (사이드바 최적화 완료)
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
@@ -233,35 +233,46 @@ else:
     st.markdown("""
         <style>
             .main, [data-testid="stAppViewContainer"] { background-color: #f1f5f9 !important; }
-            [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
-            [data-testid="stSidebar"] h4 { color: #f8fafc !important; font-weight: 800; font-size: 21px !important; letter-spacing: -0.5px !important; margin-top: 10px !important; margin-bottom: 5px !important; }
-            [data-testid="stSidebar"] * { color: #f8fafc !important; font-weight: 600; }
             
+            /* 사이드바 가독성 고도화 스타일링 패키지 */
+            [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
+            [data-testid="stSidebar"] h4 { color: #f8fafc !important; font-weight: 800; font-size: 22px !important; letter-spacing: -0.5px !important; margin-top: 10px !important; margin-bottom: 5px !important; }
+            [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
+            
+            /* 사이드바 내부 라디오 버튼 글자 색상 보정 */
+            div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 600 !important; }
+            
+            /* 🚪 시스템 로그아웃 전용 커스텀 스타일 마감 */
+            div.stButton > button[key*="logout"] {
+                background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important;
+                border-radius: 8px !important; padding: 10px 20px !important; border: none !important;
+                width: 100% !important; font-size: 14px !important; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
+                text-align: center !important; display: block !important; margin-top: 20px !important;
+            }
+            div.stButton > button[key*="logout"]:hover { background-color: #dc2626 !important; color: #ffffff !important; }
+
             div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
             div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
             
             .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
             h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 5px !important; }
             h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
-            
-            /* 일괄 시트 편집기 전용 저장 단추 하이라이트 스타일 */
-            .btn-save-all {
-                background-color: #e11d48 !important; color: white !important; font-weight: bold !important;
-                border-radius: 8px !important; padding: 12px 30px !important; border: none !important;
-                font-size: 16px !important; box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3) !important;
-            }
+            button { background-color: #4a69bd !important; color: white !important; font-weight: bold !important; border-radius: 6px !important; padding: 8px 20px !important; border: none !important; }
         </style>
     """, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.markdown("<h4>⚙️ 수행평가 관리 시스템</h4>", unsafe_allow_html=True)
+        # 요건 1, 2 반영: 대분류 이름을 '교사 메뉴'로 변경 및 전체 디자인 세팅
+        st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown("---")
         menu_selection = st.radio(
-            "📋 관리자 메뉴",
-            ["▶ 학생 조회 현황 모니터링", "▶ 평가 대상 과목 구성", "▶ 성적 데이터 연동 (CSV)", "▶ 시스템 보안 설정"]
+            "메뉴를 선택해 주세요",
+            ["▶ 학생 조회 현황 모니터링", "▶ 성적 데이터 일괄 수정", "▶ 평가 대상 과목 구성", "▶ 성적 데이터 연동 (CSV)", "▶ 시스템 보안 설정"],
+            label_visibility="collapsed"
         )
         st.markdown("---")
-        if st.button("🚪 시스템 로그아웃", use_container_width=True):
+        # 요건 3 반영: 글자 깨짐 해결 및 스타일 전용 키 바인딩 로그아웃 버튼 배치
+        if st.button("🚪 시스템 로그아웃", key="sidebar_logout_btn", use_container_width=True):
             st.session_state["admin_logged_in"] = False
             st.rerun()
 
@@ -269,8 +280,115 @@ else:
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 📁 모듈 1: 평가 대상 과목 구성
-    if menu_selection == "▶ 평가 대상 과목 구성":
+    # 📊 모듈 1: 학생 조회 현황 모니터링 (오직 안전하게 모니터링만 수행)
+    if menu_selection == "▶ 학생 조회 현황 모니터링":
+        with st.container(border=True):
+            st.markdown(f"<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:13px; color:#64748b;'>선택 과목의 학생별 실시간 수행평가 점수 및 조회 로그를 실시간 관측합니다. (읽기 전용)</p>", unsafe_allow_html=True)
+            
+            registered_dbs = get_active_databases()
+            if not registered_dbs:
+                st.warning("현재 서버에 개설된 과목이 존재하지 않습니다. 먼저 '▶ 평가 대상 과목 구성' 메뉴에서 최초 세팅을 진행해 주세요.")
+            else:
+                selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
+                default_idx = 0
+                if "active_subject" in st.session_state and st.session_state.active_subject:
+                    target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
+                    if target_str in selector_options: default_idx = selector_options.index(target_str)
+                
+                selected_db_str = st.selectbox("📂 조회 관측할 대상 교과 선택", options=selector_options, index=default_idx)
+                chosen_db = registered_dbs[selector_options.index(selected_db_str)]
+                st.session_state.active_subject = chosen_db['subject']
+                st.session_state.active_grade = chosen_db['grade'].replace("학년","")
+                st.session_state.active_semester = chosen_db['semester']
+                
+                cf_id, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
+                db_df = load_sheet_to_df(sf_id)
+                cfg_df = load_sheet_to_df(cf_id)
+                
+                if not db_df.empty:
+                    if not cfg_df.empty:
+                        cfg_dict = cfg_df.iloc[0].to_dict()
+                        cnt = int(cfg_dict.get('항목개수', 3))
+                        score_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
+                    else: score_headers = []
+                    
+                    display_cols = ["반", "번호", "이름"]
+                    if "학교 이메일" in db_df.columns: display_cols.append("학교 이메일")
+                    if "비밀번호" in db_df.columns: display_cols.append("비밀번호")
+                    display_cols.extend(score_headers)
+                    display_cols.extend(["성적조회 횟수", "최종 확인일시"])
+                    
+                    valid_cols = [c for c in display_cols if c in db_df.columns]
+                    # 안전을 위해 오직 읽기전용 데이터프레임으로 바인딩하여 표출
+                    st.dataframe(db_df[valid_cols].fillna("-"), use_container_width=True)
+                else:
+                    st.warning("해당 과목에 등록된 학생 성적부 데이터가 비어 있습니다. '▶ 성적 데이터 연동 (CSV)' 메뉴에서 엑셀 대장을 업로드해 주세요.")
+
+    # 🛠️ [신설] 모듈 2: 성적 데이터 일괄 수정 메뉴 (사이드바 완전 독립 구축)
+    elif menu_selection == "▶ 성적 데이터 일괄 수정":
+        with st.container(border=True):
+            st.markdown(f"<h3>📝 실시간 수행평가 대장 엑셀식 일괄 편집 패널</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:13px; color:#64748b;'>표(Grid) 내부의 점수나 이메일, 암호 칸을 마우스로 더블클릭하여 자유롭게 수정한 후, 하단의 일괄 저장 버튼을 눌러주세요.</p>", unsafe_allow_html=True)
+            
+            registered_dbs = get_active_databases()
+            if not registered_dbs:
+                st.warning("현재 서버에 개설된 과목이 존재하지 않습니다. 먼저 '▶ 평가 대상 과목 구성' 메뉴에서 최초 세팅을 진행해 주세요.")
+            else:
+                selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
+                default_idx = 0
+                if "active_subject" in st.session_state and st.session_state.active_subject:
+                    target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
+                    if target_str in selector_options: default_idx = selector_options.index(target_str)
+                
+                selected_db_str = st.selectbox("📂 수정할 대상 교과 선택", options=selector_options, index=default_idx)
+                chosen_db = registered_dbs[selector_options.index(selected_db_str)]
+                st.session_state.active_subject = chosen_db['subject']
+                st.session_state.active_grade = chosen_db['grade'].replace("학년","")
+                st.session_state.active_semester = chosen_db['semester']
+                
+                cf_id, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
+                db_df = load_sheet_to_df(sf_id)
+                cfg_df = load_sheet_to_df(cf_id)
+                
+                if not db_df.empty:
+                    if not cfg_df.empty:
+                        cfg_dict = cfg_df.iloc[0].to_dict()
+                        cnt = int(cfg_dict.get('항목개수', 3))
+                        score_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
+                    else: score_headers = []
+                    
+                    display_cols = ["반", "번호", "이름"]
+                    if "학교 이메일" in db_df.columns: display_cols.append("학교 이메일")
+                    if "비밀번호" in db_df.columns: display_cols.append("비밀번호")
+                    display_cols.extend(score_headers)
+                    display_cols.extend(["성적조회 횟수", "최종 확인일시"])
+                    
+                    valid_cols = [c for c in display_cols if c in db_df.columns]
+                    
+                    # 인적사항 및 시스템 로그는 실수 방지를 위해 disabled 처리 잠금, 점수와 비밀번호/이메일만 활성화
+                    edited_df = st.data_editor(
+                        db_df[valid_cols],
+                        use_container_width=True,
+                        num_rows="dynamic",
+                        disabled=["반", "번호", "이름", "성적조회 횟수", "최종 확인일시"],
+                        key="master_live_grid_editor"
+                    )
+                    
+                    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+                    
+                    if st.button("💾 위의 표 수정내역 구글 클라우드에 일괄 저장", key="btn_save_all_grid_changes"):
+                        for col in edited_df.columns:
+                            db_df[col] = edited_df[col]
+                            
+                        if save_df_to_sheet(sf_id, db_df):
+                            st.success("🎉 화면에서 수정한 전체 성적 대장 내역이 구글 클라우드 서버에 실시간으로 일괄 동기화 저장 완료되었습니다!")
+                            st.rerun()
+                else:
+                    st.warning("해당 과목에 등록된 학생 성적부 데이터가 비어 있습니다. '▶ 성적 데이터 연동 (CSV)' 메뉴에서 엑셀 대장을 업로드해 주세요.")
+
+    # 📁 모듈 3: 평가 대상 과목 구성
+    elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown("<h3>📁 1. 평가 과목 세팅 및 파티션 활성화</h3>", unsafe_allow_html=True)
             st.markdown("<p style='font-size:13px; color:#64748b;'>평가 대상 과목과 수행평가 항목 세부 구성을 연동하세요.</p>", unsafe_allow_html=True)
@@ -332,73 +450,7 @@ else:
                     st.success(f"✅ [{final_sub}] 과목 아키텍처 및 데이터베이스 세팅 완료!")
                 else: st.error("과목 정보를 빠짐없이 선택해 주세요.")
 
-    # 📊 [대혁신] 모듈 2: 학생 조회 현황 모니터링 ➔ '엑셀식 전체 실시간 일괄 시트 수정 엔진' 격상 파트
-    elif menu_selection == "▶ 학생 조회 현황 모니터링":
-        with st.container(border=True):
-            st.markdown(f"<h3>📊 실시간 수행평가 대장 엑셀식 일괄 편집 패널</h3>", unsafe_allow_html=True)
-            st.markdown("<p style='font-size:13px; color:#64748b;'>표(Grid) 내부의 점수나 이메일, 암호 칸을 마우스로 더블클릭하여 엑셀처럼 자유롭게 즉시 수정하세요.</p>", unsafe_allow_html=True)
-            
-            registered_dbs = get_active_databases()
-            if not registered_dbs:
-                st.warning("현재 서버에 개설된 과목이 존재하지 않습니다. 먼저 '▶ 평가 대상 과목 구성' 메뉴에서 최초 세팅을 진행해 주세요.")
-            else:
-                selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
-                default_idx = 0
-                if "active_subject" in st.session_state and st.session_state.active_subject:
-                    target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
-                    if target_str in selector_options: default_idx = selector_options.index(target_str)
-                
-                selected_db_str = st.selectbox("📂 수정 및 관리할 대상 교과 선택", options=selector_options, index=default_idx)
-                chosen_db = registered_dbs[selector_options.index(selected_db_str)]
-                st.session_state.active_subject = chosen_db['subject']
-                st.session_state.active_grade = chosen_db['grade'].replace("학년","")
-                st.session_state.active_semester = chosen_db['semester']
-                
-                cf_id, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
-                db_df = load_sheet_to_df(sf_id)
-                cfg_df = load_sheet_to_df(cf_id)
-                
-                if not db_df.empty:
-                    if not cfg_df.empty:
-                        cfg_dict = cfg_df.iloc[0].to_dict()
-                        cnt = int(cfg_dict.get('항목개수', 3))
-                        score_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
-                    else: score_headers = []
-                    
-                    # 마스터 표에 뿌려줄 최종 헤더 리스트 조립
-                    display_cols = ["반", "번호", "이름"]
-                    if "학교 이메일" in db_df.columns: display_cols.append("학교 이메일")
-                    if "비밀번호" in db_df.columns: display_cols.append("비밀번호")
-                    display_cols.extend(score_headers)
-                    display_cols.extend(["성적조회 횟수", "최종 확인일시"])
-                    
-                    valid_cols = [c for c in display_cols if c in db_df.columns]
-                    
-                    # 🚨 [핵심 변경] 단순 조회용 st.dataframe을 수정 전용 st.data_editor 엔진으로 완전 체인지
-                    # 인적사항 및 시스템 로그는 실수 방지를 위해 disabled 처리 잠금, 점수와 비밀번호/이메일만 활성화
-                    edited_df = st.data_editor(
-                        db_df[valid_cols],
-                        use_container_width=True,
-                        num_rows="dynamic",
-                        disabled=["반", "번호", "이름", "성적조회 횟수", "최종 확인일시"],
-                        key="master_live_grid_editor"
-                    )
-                    
-                    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-                    
-                    # 🚀 일괄 편집내역 클라우드 서버 전송 단추 구동
-                    if st.button("💾 위의 표 수정내역 구글 클라우드에 일괄 저장", key="btn_save_all_grid_changes"):
-                        # 백엔드 데이터프레임 원본에 편집된 버퍼 데이터를 덮어쓰기 정렬
-                        for col in edited_df.columns:
-                            db_df[col] = edited_df[col]
-                            
-                        if save_df_to_sheet(sf_id, db_df):
-                            st.success("🎉 화면에서 수정한 전체 성적 대장 내역이 구글 클라우드 서버에 실시간으로 일괄 동기화 저장 완료되었습니다!")
-                            st.rerun()
-                else:
-                    st.warning("해당 과목에 등록된 학생 성적부 데이터가 비어 있습니다. '▶ 성적 데이터 연동 (CSV)' 메뉴에서 엑셀 대장을 업로드해 주세요.")
-
-    # 📤 모듈 3: 성적 데이터 연동
+    # 📤 모듈 4: 성적 데이터 연동 (CSV)
     elif menu_selection == "▶ 성적 데이터 연동 (CSV)":
         with st.container(border=True):
             st.markdown("<h3>📥 CSV 파일 기반 대용량 클라우드 연동 동기화</h3>", unsafe_allow_html=True)
@@ -460,7 +512,7 @@ else:
                     if save_df_to_sheet(sf_id, df_up):
                         st.success("🎉 학교 이메일 매핑 및 성적 클라우드 실시간 동기화가 완벽히 마감되었습니다!")
 
-    # 모듈 4: 시스템 보안 설정
+    # 모듈 5: 시스템 보안 설정
     elif menu_selection == "▶ 시스템 보안 설정":
         with st.container(border=True):
             st.markdown("<h3>🔐 마스터 관리자 인증 계정 변경</h3>", unsafe_allow_html=True)
