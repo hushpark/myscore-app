@@ -10,7 +10,7 @@ from google.oauth2.service_account import Credentials
 import csv
 
 # 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 인프라 강제 고정
-st.set_page_config(page_title="교사용 마스터 통합 워크스테이션", layout="wide")
+st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
