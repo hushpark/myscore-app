@@ -71,7 +71,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
     
     if "has_counted" not in st.session_state:
         try:
-            current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조Free 횟수"]) else 0
+            current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조회 횟수"]) else 0
         except:
             current_count = 0
             
@@ -235,30 +235,29 @@ st.markdown("""
         div.stVBlock > div { gap: 0.4rem !important; }
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
-        
-        /* 🚨 [화이트 마스크 원천 해결] 모든 강제 범위 초기화 및 글자색을 무조건 '흰색(#ffffff)'으로 박는 고유 인프라 코딩 고정 */
-        div[data-testid="stSidebar"] div.stButton > button,
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
-        div[data-testid="stSidebar"] button {
+
+        /* 🚨 [오버롤 완벽 박멸] 스트림릿 순정 버튼 구조를 완전히 무시하는 리얼 하드코딩 HTML 링크 버튼용 CSS */
+        .classic-sidebar-btn {
             background-color: #2b3a4a !important;
-            color: #ffffff !important;                      /* 🚨 흰색 글자로 무조건 복구하여 글씨 보장 */
+            color: #ffffff !important;
             border: 2px solid #3f5164 !important;
             border-radius: 6px !important;
-            padding: 0.5rem 1rem !important;
+            padding: 10px 16px !important;
             font-weight: 700 !important;
             font-size: 14px !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
             width: 100% !important;
-            display: block !important;
+            display: inline-block !important;
             text-align: center !important;
+            text-decoration: none !important;
+            margin-bottom: 8px !important;
+            cursor: pointer !important;
             transition: all 0.2s ease !important;
         }
-        div[data-testid="stSidebar"] div.stButton > button:hover,
-        div[data-testid="stSidebar"] button:hover {
+        .classic-sidebar-btn:hover {
             background-color: #3f5164 !important;
             border-color: #52667a !important;
             color: #ffffff !important;
-            transform: translateY(-1px);
         }
 
         /* 셀렉트박스 공통 테두리 스타일 */
@@ -276,7 +275,7 @@ st.markdown("""
             background-color: #ffffff !important;
         }
 
-        /* 🚨 [로그인 화면 파란 버튼 복원] 본문 내부 버튼과 분리하여 첫 로그인 버튼만 가로가 듬직하게 꽉 찬 파란색으로 고정 */
+        /* 로그인 화면 폼 내부 전용 버튼 스타일 지정 (로그인 버튼 원래의 파란색 완전 박음) */
         div[data-testid="stForm"] button[data-testid="baseButton-secondary"] {
             background-color: #4a69bd !important;
             color: #ffffff !important;
@@ -293,6 +292,21 @@ st.markdown("""
         div.stButton > button[key="btn_trigger_student_dialog"] { background-color: #10b981 !important; color: white !important; font-weight: bold !important; border: none !important; }
     </style>
 """, unsafe_allow_html=True)
+
+# 쿼리 파라미터 기반의 액션 제어 핸들러 엔진 부 가동
+query_params = st.query_transform() if hasattr(st, "query_transform") else st.original_query_params if hasattr(st, "original_query_params") else {}
+if "action" in st.query_params:
+    action_val = st.query_params["action"]
+    if action_val == "open_account_dialog":
+        st.query_params.clear()
+        account_update_dialog()
+    elif action_val == "trigger_logout":
+        st.query_params.clear()
+        st.session_state["admin_logged_in"] = False
+        st.session_state["logged_teacher_id"] = ""
+        st.session_state["teacher_name"] = ""
+        st.session_state["allowed_subjects"] = []
+        st.rerun()
 
 if not st.session_state["admin_logged_in"]:
     st.markdown("""
@@ -370,18 +384,14 @@ else:
         )
         st.markdown("---")
         
-        if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
-            account_update_dialog()
-        if st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True):
-            st.session_state["admin_logged_in"] = False
-            st.session_state["logged_teacher_id"] = ""
-            st.session_state["teacher_name"] = ""
-            st.session_state["allowed_subjects"] = []
-            st.rerun()
-            
-        if st.button("🛠️ test", key="test_classic_btn", use_container_width=True):
-            st.toast("클래식 스타일 테두리 버튼 대통합 가동 완료!")
+        # 🚨 [오버롤 버그 원천 사살] 스트림릿 순정 컴포넌트를 차단하고 순수 HTML 구조의 고정 버튼 이식 가동
+        st.markdown('<a href="?action=open_account_dialog" target="_self" class="classic-sidebar-btn">🔐 내 정보 수정</a>', unsafe_allow_html=True)
+        st.markdown('<a href="?action=trigger_logout" target="_self" class="classic-sidebar-btn">🚪 시스템 로그아웃</a>', unsafe_allow_html=True)
+        
+        # 실험용 test 버튼도 동일 양식 적용 마감
+        st.markdown('<div class="classic-sidebar-btn" style="cursor:default;">🛠️ test</div>', unsafe_allow_html=True)
 
+    # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<div style='text-align:center; height: 5px;'></div>", unsafe_allow_html=True)
@@ -523,7 +533,7 @@ else:
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📁 모듈 3: 평가 대상 과목 구성
+    # 📁 모듈 3: 평가 대상 과목 구성 [🚨 여백 극소화 레이아웃 컴팩트 정렬 완공 파트]
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
