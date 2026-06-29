@@ -117,7 +117,7 @@ def save_df_to_sheet(sheet_name, df):
         return True
     except: return False
 
-@st.cache_data(ttl=3)
+@st.cache_data(ttl=2) # 모니터링 및 실시간 수정을 위해 캐시 타임을 2초로 최소화
 def load_sheet_to_df(sheet_name, default_cols=None):
     wks = get_google_sheet(sheet_name)
     if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
@@ -247,7 +247,6 @@ else:
     with st.sidebar:
         st.markdown("<h4>⚙️ 수행평가 관리 시스템</h4>", unsafe_allow_html=True)
         st.markdown("---")
-        # 🎯 [요청 1] 보다 직관적이고 현장에 적합한 메뉴명으로 개조 마감
         menu_selection = st.radio(
             "📋 관리자 메뉴",
             ["▶ 학생 조회 현황 모니터링", "▶ 평가 대상 과목 구성", "▶ 성적 데이터 연동 (CSV)", "▶ 시스템 보안 설정"]
@@ -294,7 +293,8 @@ else:
             st.markdown("##### 📝 2. 수행평가 세부 반영 항목 구성")
             
             cc1, cc2 = st.columns([1, 2])
-            with cc1: item_count = st.selectbox("🎯 평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2)
+            with cc1:
+                item_count = st.selectbox("🎯 평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2)
             
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             
@@ -324,53 +324,75 @@ else:
                     st.success(f"✅ [{final_sub}] 과목 아키텍처 및 데이터베이스 세팅 완료!")
                 else: st.error("과목 정보를 빠짐없이 선택해 주세요.")
 
-    # 📊 모듈 2: 학생 조회 현황 모니터링 Grid (이미 생성된 전 과목 목록 자동 추출 및 퀵 원클릭 셀렉터 기능 전면 이식)
+    # 📊 [대수술 완수] 모듈 2: 학생 조회 현황 모니터링 + 실시간 성적 수정 엔진 통합 대시보드
     elif menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
-            st.markdown(f"<h3>📊 실시간 학생 조회 현황 모니터링 패널</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3>📊 실시간 학생 조회 및 성적 통합 수정 패널</h3>", unsafe_allow_html=True)
             
-            # 🚨 [요청 2] 매번 수동 세팅할 필요 없이, 서버(구글 시트)에 기 구축된 모든 교과 파티션을 실시간 스캔 및 추출
             registered_dbs = get_active_databases()
-            
             if not registered_dbs:
-                st.warning("현재 데이터베이스 서버에 개설된 과목이 존재하지 않습니다. 먼저 '▶ 평가 대상 과목 구성' 메뉴에서 최초 1회 과목 세팅을 완료해 주세요.")
+                st.warning("현재 서버에 개설된 과목이 존재하지 않습니다. 먼저 '▶ 평가 대상 과목 구성' 메뉴에서 최초 세팅을 진행해 주세요.")
             else:
-                # 개설 과목 선택 퀵 셀렉터 풀 구축
                 selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
-                
-                # 현재 전역 세션에 활성화된 과목이 있다면 디폴트 값으로 지정
                 default_idx = 0
                 if "active_subject" in st.session_state and st.session_state.active_subject:
                     target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
-                    if target_str in selector_options:
-                        default_idx = selector_options.index(target_str)
+                    if target_str in selector_options: default_idx = selector_options.index(target_str)
                 
-                selected_db_str = st.selectbox("📂 관리할 개설 과목 원클릭 선택", options=selector_options, index=default_idx)
-                
-                # 선택된 과목 정보 동적 추출 및 매칭
+                selected_db_str = st.selectbox("📂 관리 및 수정할 대상 교과 선택", options=selector_options, index=default_idx)
                 chosen_db = registered_dbs[selector_options.index(selected_db_str)]
                 st.session_state.active_subject = chosen_db['subject']
                 st.session_state.active_grade = chosen_db['grade'].replace("학년","")
                 st.session_state.active_semester = chosen_db['semester']
                 
-                st.markdown("<hr style='border-top: 1px solid #e2e8f0; margin:15px 0;'>", unsafe_allow_html=True)
-                st.info(f"현재 선택된 추적 과목: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
-                
-                # 실제 데이터베이스 로드
-                _, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
+                cf_id, sf_id = get_sheet_names_id(st.session_state.active_subject, st.session_state.active_grade, st.session_state.active_semester)
                 db_df = load_sheet_to_df(sf_id)
+                cfg_df = load_sheet_to_df(cf_id)
                 
                 if not db_df.empty:
-                    display_cols = ["반", "번호", "이름"]
-                    if "비밀번호" in db_df.columns:
-                        db_df["비밀번호 설정상태"] = db_df["비밀번호"].apply(lambda x: "설정완료" if str(x).strip() else "미설정")
-                        display_cols.append("비밀번호 설정상태")
+                    # 현재 과목의 세부 수행평가 항목 헤더 동적 확보
+                    if not cfg_df.empty:
+                        cfg_dict = cfg_df.iloc[0].to_dict()
+                        cnt = int(cfg_dict.get('항목개수', 3))
+                        score_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
+                    else: score_headers = []
                     
-                    if "성적조회 횟수" not in db_df.columns: db_df["성적조회 횟수"] = 0
-                    if "최종 확인일시" not in db_df.columns: db_df["최종 확인일시"] = "-"
+                    display_cols = ["반", "번호", "이름", "학교 이메일"] + score_headers + ["성적조회 횟수", "최종 확인일시"]
+                    valid_cols = [c for c in display_cols if c in db_df.columns]
                     
-                    display_cols.extend(["성적조회 횟수", "최종 확인일시"])
-                    st.dataframe(db_df[display_cols].fillna("-"), use_container_width=True)
+                    # 1. 상단: 모니터링 시트 출력
+                    st.dataframe(db_df[valid_cols].fillna("-"), use_container_width=True)
+                    
+                    # 🚨 2. 하단: [선생님 요청] 개별 학생 성적 즉시 수정 전용 섹션 구현
+                    st.markdown("<hr style='border-top: 2px solid #4a69bd; margin:25px 0;'>", unsafe_allow_html=True)
+                    st.markdown("### ✏️ 선택 학생 성적 실시간 즉시 수정 및 클라우드 반영")
+                    
+                    # 수정을 원하는 타겟 학생 셀렉터 구축
+                    student_list = [f"[{r['반']}반 {r['번호']}: {r['이름']}] - {r['학교 이메일']}" for _, r in db_df.iterrows()]
+                    selected_st_str = st.selectbox("🎯 수정할 학생을 고르세요", options=student_list)
+                    target_idx = student_list.index(selected_st_str)
+                    
+                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                    st.write(f"👉 **{db_df.loc[target_idx, '이름']}** 학생의 점수 보정 데이터 필드:")
+                    
+                    # 동적 컬럼 생성으로 현재 학생 점수 불러오기 및 실시간 편집 폼 매핑
+                    edit_cols = st.columns(len(score_headers) if score_headers else 1)
+                    new_scores = {}
+                    for i, h in enumerate(score_headers):
+                        with edit_cols[i]:
+                            current_score = db_df.loc[target_idx, h] if h in db_df.columns else 0
+                            # 점수를 안심하고 입력하도록 수치형 입력기 바인딩
+                            edited_val = st.number_input(f" {h} 점수", value=float(current_score), key=f"edit_score_{target_idx}_{h}")
+                            new_scores[h] = edited_val
+                    
+                    # 🚀 즉시 저장 버튼 구동
+                    if st.button("💾 보정 점수 구글 클라우드에 즉시 반영", key="btn_save_realtime_score"):
+                        for h, val in new_scores.items():
+                            db_df.loc[target_idx, h] = val
+                        
+                        if save_df_to_sheet(sf_id, db_df):
+                            st.success(f"🎉 {db_df.loc[target_idx, '이름']} 학생의 성적이 실시간으로 교정되어 데이터베이스에 영구 반영되었습니다!")
+                            st.rerun()
                 else:
                     st.warning("해당 과목에 등록된 학생 성적부 데이터가 비어 있습니다. '▶ 성적 데이터 연동 (CSV)' 메뉴에서 엑셀 대장을 업로드해 주세요.")
 
@@ -378,8 +400,6 @@ else:
     elif menu_selection == "▶ 성적 데이터 연동 (CSV)":
         with st.container(border=True):
             st.markdown("<h3>📥 CSV 파일 기반 대용량 클라우드 연동 동기화</h3>", unsafe_allow_html=True)
-            
-            # 성적 연동 메뉴에서도 개설된 전체 과목을 바로 스위칭할 수 있도록 통합 연동창 배치
             registered_dbs = get_active_databases()
             if not registered_dbs:
                 st.warning("⚠️ 개설된 과목이 없습니다. '▶ 평가 대상 과목 구성'에서 과목을 먼저 등록하세요.")
@@ -409,21 +429,21 @@ else:
                 st.info(f"현재 선택된 연동 타겟 과목: **{st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})**")
                 
                 rows = [
-                    ["반", "번호", "이름", "비밀번호", "성적조회 횟수", "최종 확인일시"] + dynamic_headers,
-                    [1, 1, "홍길동", "1024", 0, "-", 20, 18, 25][:6+len(dynamic_headers)],
-                    [1, 2, "이영희", "3925", 0, "-", 19, 20, 22][:6+len(dynamic_headers)],
-                    [2, 1, "강백호", "8254", 0, "-", 15, 15, 20][:6+len(dynamic_headers)]
+                    ["반", "번호", "이름", "학교 이메일", "비밀번호", "성적조회 횟수", "최종 확인일시"] + dynamic_headers,
+                    [1, 1, "홍길동", "hgd2026@school.hs.kr", "1024", 0, "-", 20, 18, 25][:7+len(dynamic_headers)],
+                    [1, 2, "이영희", "lyh2026@school.hs.kr", "3925", 0, "-", 19, 20, 22][:7+len(dynamic_headers)],
+                    [2, 1, "강백호", "kbh2026@school.hs.kr", "8254", 0, "-", 15, 15, 20][:7+len(dynamic_headers)]
                 ]
                 
                 csv_string = ""
                 for r in rows: csv_string += ",".join(map(str, r)) + "\n"
                 csv_bytes = csv_string.encode('cp949')
                 
-                st.markdown("##### 💡 세팅하신 과목 전용 맞춤 양식을 다운로드하여 성적을 연동하세요.")
+                st.markdown("##### 💡 학교 이메일 항목이 추가된 양식을 다운로드하여 성적을 연동하세요.")
                 st.download_button(
-                    label=f"📥 [{st.session_state.active_subject}] 전용 성적 대장 예시 파일(.CSV) 다운로드",
+                    label=f"📥 [{st.session_state.active_subject}] 이메일 통합형 성적 양식(.CSV) 다운로드",
                     data=csv_bytes,
-                    file_name=f"수행평가_실제양식_{st.session_state.active_subject}.csv",
+                    file_name=f"수행평가_이메일양식_{st.session_state.active_subject}.csv",
                     mime="text/csv",
                     key="download_sample_csv"
                 )
@@ -432,10 +452,11 @@ else:
                 up_f = st.file_uploader("성적 대장 CSV 파일 업로드", type="csv")
                 if up_f:
                     df_up = pd.read_csv(up_f, encoding='cp949')
+                    if "학교 이메일" not in df_up.columns: df_up["학교 이메일"] = ""
                     if "성적조회 횟수" not in df_up.columns: df_up["성적조회 횟수"] = 0
                     if "최종 확인일시" not in df_up.columns: df_up["최종 확인일시"] = "-"
                     if save_df_to_sheet(sf_id, df_up):
-                        st.success("🎉 구글 스프레드시트 클라우드로 실시간 데이터 동기화가 완벽히 완료되었습니다!")
+                        st.success("🎉 학교 이메일 매핑 및 성적 클라우드 실시간 동기화가 완벽히 마감되었습니다!")
 
     # 모듈 4: 시스템 보안 설정
     elif menu_selection == "▶ 시스템 보안 설정":
