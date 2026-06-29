@@ -293,7 +293,7 @@ if not st.session_state["admin_logged_in"]:
             div[data-testid="stHeader"] { display: none !important; }
             footer { display: none !important; }
             div[data-testid="stForm"] {
-                background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
+                background-color: #000000 !important; border: 1px solid #cbd5e1 !important;
                 padding: 40px 30px 30px 30px !important; border-radius: 24px !important;
                 box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; max-width: 440px !important; margin: 60px auto 0 auto !important; position: relative !important;
             }
