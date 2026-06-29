@@ -9,8 +9,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
-# 🚨 [원천 고정 마스터키] 최상단 배치 규칙 엄수 - 하얀 바탕 및 와이드 인프라 강제 고정
-st.set_page_config(page_title="수행평가 성적 관리 도우미", layout="wide")
+# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 하얀 본문 바탕 인프라 복구 및 와이드 고정
+st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
@@ -215,13 +215,11 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 전역 테마 통합 제어 CSS 엔진 (하얀 바탕 복구 및 호버 롤 무력화 완벽 패키지)
+# 🔄 [안전 보정 마스터키] 말썽 부리던 전역 테마 파괴 CSS 숙청 및 완벽 롤백
 # =========================================================================
 st.markdown("""
     <style>
-        .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { background-color: #f1f5f9 !important; }
-        div[data-testid="stHeader"] { display: none !important; }
-        
+        /* 🚨 [오버롤 해소] 마우스 오버 버그를 일으키던 하단 버튼 강제 투명 스타일을 완전히 삭제하고, 순정 제어 상태로 격리 복구 */
         [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
         [data-testid="stSidebar"] h4, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
         div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 600 !important; }
@@ -232,27 +230,8 @@ st.markdown("""
         h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 5px !important; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
         
-        /* 🚨 [요청 4 반영] 하단 제어 버튼 호버 롤 완벽 숙청: 마우스를 올리거나 포커스되어도 오기 작동 없이 최초 색상 절대 고정 */
-        div.stButton > button[key="sidebar_account_btn"] {
-            background-color: #4f46e5 !important; color: #ffffff !important; border: none !important; font-weight: 700 !important;
-        }
-        div.stButton > button[key="sidebar_account_btn"]:hover, 
-        div.stButton > button[key="sidebar_account_btn"]:active, 
-        div.stButton > button[key="sidebar_account_btn"]:focus {
-            background-color: #4f46e5 !important; color: #ffffff !important; border: none !important; box-shadow: none !important;
-        }
-        
-        div.stButton > button[key="sidebar_logout_btn"] {
-            background-color: #ef4444 !important; color: #ffffff !important; border: none !important; font-weight: 800 !important;
-        }
-        div.stButton > button[key="sidebar_logout_btn"]:hover, 
-        div.stButton > button[key="sidebar_logout_btn"]:active, 
-        div.stButton > button[key="sidebar_logout_btn"]:focus {
-            background-color: #ef4444 !important; color: #ffffff !important; border: none !important; box-shadow: none !important;
-        }
-
-        /* 🚨 [요청 3 반영] 텍스트 입력창 테두리 상시 활성화: 클릭하지 않아도 항상 눈에 잘 보이도록 테두리 강제 부여 */
-        div[data-testid="stTextInput"] div[data-baseweb="input"] {
+        /* 🚨 [요청 3 반영] 텍스트 입력상자 테두리가 흐릿하게 숨지 않고 항시 예쁘고 뚜렷하게 보이도록 테두리 상시 표출 */
+        div[data-testid="stTextInput"] div[data-baseweb="input"], div[data-testid="stNumberInput"] div[data-baseweb="input"] {
             border: 2px solid #cbd5e1 !important;
             border-radius: 6px !important;
             background-color: #ffffff !important;
@@ -265,13 +244,18 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if not st.session_state["admin_logged_in"]:
+    # 🚨 학생/교사 외부 로그인 모드일 때만 흰색 사각형 상자와 어두운 뒷배경 레이아웃 가두기 작동
     st.markdown("""
         <style>
+            .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
+            div[data-testid="stHeader"] { display: none !important; }
+            footer { display: none !important; }
             div[data-testid="stForm"] {
                 background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
-                padding: 40px 30px !important; border-radius: 24px !important;
-                box-shadow: 0 15px 40px rgba(0,0,0,0.05) !important; max-width: 440px !important; margin: 60px auto !important;
+                padding: 40px 30px 30px 30px !important; border-radius: 24px !important;
+                box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; max-width: 440px !important; margin: 60px auto 0 auto !important; position: relative !important;
             }
+            div[data-testid="stForm"] > div[data-testid="stVerticalBlock"] { display: flex !important; flex-direction: column !important; align-items: center !important; width: 100% !important; }
         </style>
     """, unsafe_allow_html=True)
     
@@ -344,6 +328,9 @@ else:
             st.session_state["teacher_name"] = ""
             st.session_state["allowed_subjects"] = []
             st.rerun()
+
+    # 교사 모니터링 대시보드 진입 시 깨끗한 연회색 본문 배경 강제 유지
+    st.markdown("<style>.main, [data-testid=\"stAppViewContainer\"] { background-color: #f1f5f9 !important; }</style>", unsafe_allow_html=True)
 
     st.markdown(f"<h2>수행평가 성적 관리 도우미</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
@@ -486,10 +473,10 @@ else:
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📁 모듈 3: 평가 대상 과목 구성 (요청 1, 2, 3 정밀 고도화 완공 부)
+    # 📁 모듈 3: 평가 대상 과목 구성
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
-            # 🚨 [요청 1 반영] 예쁜 기어 이모지를 동반한 제목 축약 마감
+            # 🚨 [요청 1 반영] 예쁜 기어 이모지를 동반한 제목 축약 마감 완료
             st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
             st.markdown("<p style='font-size:13px; color:#64748b;'>평가 대상 과목과 수행평가 항목 세부 구성을 연동하세요.</p>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
@@ -517,7 +504,7 @@ else:
                 sel_se = st.selectbox("학기 선택", options=SEMESTER_OPTIONS, label_visibility="collapsed")
                 
             st.markdown("<hr style='border-top: 1px dashed #cbd5e1; margin:20px 0;'>", unsafe_allow_html=True)
-            # 🚨 [요청 1 반영] 예쁜 과녁 이모지를 동반하여 제목 가시성 확보 및 h3 크기 완전 일치 마감
+            # 🚨 [요청 1 반영] 예쁜 과녁 이모지를 동반하여 제목 가시성 확보 및 h3 크기 완전 일치 마감 완료
             st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
             
             ic_col, _ = st.columns([1, 2])
@@ -529,18 +516,17 @@ else:
             cols_items = st.columns(item_count)
             for i in range(item_count):
                 with cols_items[i]:
-                    # 🚨 [요청 3 반영] 라벨 제거 후, 진짜 수정 가능한 초기값(value) 매핑 전면 가동
+                    # 🚨 [요청 3 반영] 텍스트 박스에 "수행평가 항목 입력" 초기값 적용 및 상시 진한 테두리 가동 완수
                     t_in = st.text_input(f"항목 {i+1} 제목", value="수행평가 항목 입력", key=f"item_title_in_{i}", label_visibility="collapsed")
                     item_titles.append(t_in.strip())
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 🚨 [요청 2 반영] 앞쪽에 넓은 공백 배치 후 버튼을 완벽하게 우측 끝단으로 강제 밀착 정렬
+            # 🚨 [요청 2 반영] 앞쪽에 공백 배치 후 기본 설정 저장 버튼을 완벽하게 우측 끝단으로 강제 밀착 정렬
             col_space, col_btn = st.columns([5, 1])
             with col_space:
                 st.write("")
             with col_btn:
-                # 명칭 수정: 기본 설정 저장
                 if st.button("기본 설정 저장", type="primary", use_container_width=True, key="btn_save_evaluation_config"):
                     if final_sub and sel_gr != "학년 지정" and sel_se != "학기 선택":
                         if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
