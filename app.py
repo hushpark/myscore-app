@@ -9,6 +9,9 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
+# 🚨 [원천 교정 마스터키] 최상단 배치 규칙 엄수 - 화면 하얀 바탕 및 와이드 그리드 인프라 강제 고정
+st.set_page_config(page_title="수행평가 성적 관리 도우미", layout="wide")
+
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
@@ -201,23 +204,27 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 CSS 스타일링 엔진 및 버튼 가독성 패키지 (강제 스펙 갱신 완료)
+# 🔄 전역 테마 통합 제어 엔진 (하얀 바탕 인프라 복구 완료)
 # =========================================================================
 st.markdown("""
     <style>
-        .main, [data-testid="stAppViewContainer"] { background-color: #f1f5f9 !important; }
+        /* 🚨 하얀 바탕 테마 및 가독성 강제 고정 */
+        .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { background-color: #f1f5f9 !important; }
+        div[data-testid="stHeader"] { display: none !important; }
+        
+        /* 사이드바 전용 색상 큐브 고정 */
         [data-testid="stSidebar"] { background-color: #1e293b !important; }
         [data-testid="stSidebar"] h4, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 600; }
         div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 600 !important; }
         
-        /* 🚨 사이드바 하단 버튼 호버 제어 완벽 마감: 모든 포커스/액티브/호버 상태에서 글자색 흰색 강제 유지 */
+        /* 🚨 사이드바 하단 버튼 호버 제어 완전 고정: 글자색 흰색 고정 스펙 패치 */
         div.stButton > button[key="sidebar_account_btn"] {
             background-color: #4f46e5 !important; color: #ffffff !important; border: none !important; font-weight: 700 !important;
         }
         div.stButton > button[key="sidebar_account_btn"]:hover, 
         div.stButton > button[key="sidebar_account_btn"]:active, 
         div.stButton > button[key="sidebar_account_btn"]:focus {
-            background-color: #4338ca !important; color: #ffffff !important; border: none !important; box-shadow: none !important;
+            background-color: #4338ca !important; color: #ffffff !important; border: none !important;
         }
         
         div.stButton > button[key="sidebar_logout_btn"] {
@@ -226,24 +233,33 @@ st.markdown("""
         div.stButton > button[key="sidebar_logout_btn"]:hover, 
         div.stButton > button[key="sidebar_logout_btn"]:active, 
         div.stButton > button[key="sidebar_logout_btn"]:focus {
-            background-color: #dc2626 !important; color: #ffffff !important; border: none !important; box-shadow: none !important;
+            background-color: #dc2626 !important; color: #ffffff !important; border: none !important;
         }
 
-        /* 항목 제목 라벨 진하게 강조 */
+        /* 항목 제목 라벨 파란색 강조 */
         div[data-testid="stTextInput"] label p {
             font-weight: 900 !important; color: #1e3a8a !important; font-size: 15px !important; margin-bottom: 5px !important;
         }
         
-        /* 버튼 컬러맵 정의 */
+        /* 데이터 편집 하단 전용 버튼 컬러링 */
         div.stButton > button[key="btn_save_all_grid_changes"] { background-color: #3b82f6 !important; color: white !important; }
         div.stButton > button[key="btn_trigger_student_dialog"] { background-color: #10b981 !important; color: white !important; }
     </style>
 """, unsafe_allow_html=True)
 
 if not st.session_state["admin_logged_in"]:
-    st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
+    # 로그인 폼 박스 스타일링
+    st.markdown("""
+        <style>
+            div[data-testid="stForm"] {
+                background-color: #ffffff !important; padding: 40px 30px !important; border-radius: 24px !important;
+                max-width: 440px !important; margin: 60px auto !important; box-shadow: 0 15px 40px rgba(0,0,0,0.05) !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
     with st.form("master_unified_form"):
-        st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align:center; color:#1e293b;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
         if login_mode == "교사":
@@ -349,7 +365,9 @@ else:
                     f_idx = db_df[db_df["반"].astype(int) == int(sel_cls.replace("반",""))].index if sel_cls != "전체" else db_df.index
                     e_df = st.data_editor(db_df.loc[f_idx, valid_cols], use_container_width=True, num_rows="dynamic", disabled=["반", "번호", "이름", "성적조회 횟수", "최종 확인일시"], hide_index=True)
                     st.markdown("<br>", unsafe_allow_html=True)
-                    bc_empty, bc1, bc2 = st.columns([4, 0.9, 0.9])
+                    
+                    # 🚨 버튼 정밀 우측 정렬 유지
+                    bc_empty, bc1, bc2 = st.columns([4.2, 0.9, 0.9])
                     with bc1:
                         if st.button("➕ 학생 개별 추가", key="btn_trigger_student_dialog", use_container_width=True): student_individual_add_dialog(db_df, sf_id, score_h)
                     with bc2:
@@ -360,7 +378,6 @@ else:
 
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
-            # 🚨 [요청 1 반영] 타이틀 교체 완수
             st.markdown("<h3>📁 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
             r1c1, r1c2 = st.columns(2)
             with r1c1: sel_g = st.selectbox("교과군", ["교과군 선택", "인문·사회군", "수리·과학군", "예체능군", "➕ 신규 과목 개설"], label_visibility="collapsed")
@@ -374,11 +391,10 @@ else:
                     sel_s = st.selectbox("과목지정", s_opts, label_visibility="collapsed")
                     if sel_s != "과목 선택": f_sub = sel_s
             with r2c2: sel_se = st.selectbox("학기", SEMESTER_OPTIONS, label_visibility="collapsed")
-            
-            # 🚨 [요청 1 반영] 2번 대타이틀도 1번과 완벽하게 동일한 <h3> 태그 크기로 가독성 싱크 정렬 마감
             st.markdown("<hr style='border-top: 1px dashed #cbd5e1; margin:20px 0;'>", unsafe_allow_html=True)
-            st.markdown("<h3>📁 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
             
+            # h3로 완전 가독성 통일 완료
+            st.markdown("<h3>📁 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
             ic_col, _ = st.columns([1, 2])
             with ic_col: item_cnt = st.selectbox("항목 개수", [1, 2, 3, 4, 5], index=2)
             i_titles = []
@@ -389,7 +405,7 @@ else:
                     i_titles.append(t_in.strip())
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 🚨 [요청 2 반영] 기본 설정 저장 버튼 명칭 교정 및 우측 정렬 완벽 이식
+            # 우측 정렬 완비
             _, save_col = st.columns([5, 1])
             with save_col:
                 if st.button("기본 설정 저장", type="primary", use_container_width=True, key="btn_save_evaluation_config"):
