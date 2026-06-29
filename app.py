@@ -262,8 +262,8 @@ st.markdown("""
             background-color: #3f5164 !important;
             border-color: #52667a !important;
             color: #ffffff !important;
-            transform: translateY(-1px);*/
-        }
+            transform: translateY(-1px);
+        } */
 
         /* 셀렉트박스 공통 테두리 스타일 */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
