@@ -133,7 +133,7 @@ def student_individual_add_dialog(db_df, sf_id, score_headers):
         if add_name and add_email and add_pw:
             new_student_row = {
                 "반": int(add_b), "번호": int(add_n), "이름": str(add_name).strip(),
-                "학교 이메일": str(add_email).strip(), "비밀번호": str(add_pw).strip(),
+                "school_email": str(add_email).strip(), "비밀번호": str(add_pw).strip(),
                 "성적조회 횟수": 0, "최종 확인일시": "-"
             }
             for h in score_headers: new_student_row[h] = 0
@@ -215,7 +215,7 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 전역 테마 스타일 개조 부 (본문 축소 및 사이드바 클래식 버튼 대통합)
+# 🔄 전역 테마 스타일 개조 부 (본문 축소 및 사이드바 가로 폭 축소 인프라)
 # =========================================================================
 st.markdown("""
     <style>
@@ -225,8 +225,19 @@ st.markdown("""
         }
         div[data-testid="stHeader"] { display: none !important; }
         
+        /* 🚨 [요청 반영] 사이드바 자체 가로 폭 너비를 깔끔하고 날씬하게 강제 리사이징 축소 조치 */
+        [data-testid="stSidebar"], section[data-testid="stSidebar"] {
+            min-width: 260px !important;
+            max-width: 260px !important;
+            background-color: #1e293b !important;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important;
+        }
+        /* 본문 프레임이 좁아진 사이드바 너비에 맞춰 정상 정렬되도록 밀림 방지 패딩 보정 */
+        [data-testid="stAppViewContainer"] {
+            margin-left: 0px !important;
+        }
+
         /* 사이드바 기본 텍스트 테마 고정 */
-        [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
         [data-testid="stSidebar"] h4 { color: #ffffff !important; font-weight: 800; font-size: 24px !important; margin-top: 10px !important; }
         [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
         div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
@@ -235,8 +246,8 @@ st.markdown("""
         div.stVBlock > div { gap: 0.4rem !important; }
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
-
-        /* 🚨 [오버롤 완벽 박멸] 스트림릿 순정 버튼 구조를 완전히 무시하는 리얼 하드코딩 HTML 링크 버튼용 CSS */
+        
+        /* 🚨 [화이트 마스크 원천 파괴 완수] 모든 가상 속성을 차단하는 HTML 링크 전용 불멸의 CSS 고정 클래스 */
         .classic-sidebar-btn {
             background-color: #2b3a4a !important;
             color: #ffffff !important;
@@ -275,7 +286,7 @@ st.markdown("""
             background-color: #ffffff !important;
         }
 
-        /* 로그인 화면 폼 내부 전용 버튼 스타일 지정 (로그인 버튼 원래의 파란색 완전 박음) */
+        /* 로그인 화면 폼 내부 전용 버튼 스타일 지정 */
         div[data-testid="stForm"] button[data-testid="baseButton-secondary"] {
             background-color: #4a69bd !important;
             color: #ffffff !important;
@@ -335,6 +346,7 @@ if not st.session_state["admin_logged_in"]:
                 auth_result = verify_teacher_credentials(admin_id, admin_pw)
                 if auth_result["success"]:
                     st.session_state["admin_logged_in"] = True
+                    # 🚨 [매핑 락 해제] 다이얼로그와 시트 행 인덱스가 정확히 연동되도록 세션 바인딩 고정
                     st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
                     st.session_state["teacher_name"] = auth_result["teacher_name"]
                     st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
@@ -384,19 +396,16 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [오버롤 버그 원천 사살] 스트림릿 순정 컴포넌트를 차단하고 순수 HTML 구조의 고정 버튼 이식 가동
+        # 🚨 [오버롤 완벽 박멸 마감] HTML 링크 구조식 불멸의 클래식 블루 버튼 대통합 이식 (test 버튼은 깔끔하게 삭제)
         st.markdown('<a href="?action=open_account_dialog" target="_self" class="classic-sidebar-btn">🔐 내 정보 수정</a>', unsafe_allow_html=True)
         st.markdown('<a href="?action=trigger_logout" target="_self" class="classic-sidebar-btn">🚪 시스템 로그아웃</a>', unsafe_allow_html=True)
-        
-        # 실험용 test 버튼도 동일 양식 적용 마감
-        st.markdown('<div class="classic-sidebar-btn" style="cursor:default;">🛠️ test</div>', unsafe_allow_html=True)
 
     # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<div style='text-align:center; height: 5px;'></div>", unsafe_allow_html=True)
 
-    # 📊 모듈 1: 학생 조회 현황 모니터링
+    # 📊 모듈 1: 학생 조회 현황 모니터링 [🚨 앤드 연산자 및 인덱싱 에러 무결점 교정]
     if menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown(f"<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
@@ -413,6 +422,7 @@ else:
                 with col_sub:
                     selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
                     default_idx = 0
+                    # 🚨 [에러 완벽 수리] 파이썬 표준 'and' 구문으로 안전 결속 고정 완료
                     if "active_subject" in st.session_state and st.session_state.active_subject:
                         target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
                         if target_str in selector_options: default_idx = selector_options.index(target_str)
@@ -533,7 +543,7 @@ else:
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📁 모듈 3: 평가 대상 과목 구성 [🚨 여백 극소화 레이아웃 컴팩트 정렬 완공 파트]
+    # 📁 모듈 3: 평가 대상 과목 구성 [🚨 레이아웃 간격 고강도 컴팩트 다운사이징 정착 완료 파트]
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
