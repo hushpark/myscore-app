@@ -117,7 +117,7 @@ def save_df_to_sheet(sheet_name, df):
         return True
     except: return False
 
-@st.cache_data(ttl=2) # 모니터링 및 실시간 수정을 위해 캐시 타임을 2초로 최소화
+@st.cache_data(ttl=2)
 def load_sheet_to_df(sheet_name, default_cols=None):
     wks = get_google_sheet(sheet_name)
     if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
@@ -155,7 +155,7 @@ SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range
 CURRENT_ADMIN_ID, CURRENT_ADMIN_PW = load_admin_credentials()
 
 # =========================================================================
-# 🔄 스타일링 엔진 및 드롭박스 라인 교정 패치
+# 🔄 UI 레이아웃 스타일링 및 보정 엔진
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="centered")
@@ -209,20 +209,23 @@ if not st.session_state["admin_logged_in"]:
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
                     if config:
                         st.markdown("<hr>", unsafe_allow_html=True)
-                        classes = [f"{x.strip()}반" for x in str(config.get('선택된반 목록', '1')).split(",") if x.strip()]
-                        b_in = st.selectbox("반", classes, key="sb_class", label_visibility="collapsed")
-                        n_in = st.number_input("번호", 1, 50, 1, key="ni_num", label_visibility="collapsed")
-                        name_in = st.text_input("이름", placeholder="이름", key="ti_name", label_visibility="collapsed")
+                        st_email_in = st.text_input("학교 이메일", placeholder="학교 이메일을 입력하세요", label_visibility="collapsed", key="ti_st_email")
                         pw_in = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", key="ti_st_pw", label_visibility="collapsed")
+                        
                         if st.form_submit_button("점수 조회", type="primary"):
                             df_st = load_sheet_to_df(sf_id)
                             if not df_st.empty:
-                                res = df_st[(df_st['반'].astype(str)==str(b_in.replace("반",""))) & (df_st['번호'].astype(str)==str(n_in)) & (df_st['이름'].astype(str)==name_in) & (df_st['비밀번호'].astype(str)==str(pw_in))]
+                                if "학교 이메일" in df_st.columns:
+                                    res = df_st[(df_st['학교 이메일'].astype(str).str.strip() == str(st_email_in).strip()) & (df_st['비밀번호'].astype(str) == str(pw_in))]
+                                else:
+                                    res = df_st[(df_st['이름'].astype(str).str.strip() == str(st_email_in).strip()) & (df_st['비밀번호'].astype(str) == str(pw_in))]
+                                    
                                 if not res.empty:
                                     idx = res.index[0]
+                                    st_name = res.iloc[0].get('이름', '학생')
                                     scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
-                                    show_result_dialog(name_in, scores, sf_id, idx, df_st)
-                                else: st.error("❌ 일치하는 학생 정보가 없습니다.")
+                                    show_result_dialog(st_name, scores, sf_id, idx, df_st)
+                                else: st.error("❌ 정보가 일치하지 않습니다. 입력값을 다시 확인해 주세요.")
         st.markdown("<div class='footer-notice'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 else:
@@ -240,7 +243,13 @@ else:
             .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
             h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 5px !important; }
             h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; }
-            button { background-color: #4a69bd !important; color: white !important; font-weight: bold !important; border-radius: 6px !important; padding: 8px 20px !important; border: none !important; }
+            
+            /* 일괄 시트 편집기 전용 저장 단추 하이라이트 스타일 */
+            .btn-save-all {
+                background-color: #e11d48 !important; color: white !important; font-weight: bold !important;
+                border-radius: 8px !important; padding: 12px 30px !important; border: none !important;
+                font-size: 16px !important; box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3) !important;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -293,8 +302,7 @@ else:
             st.markdown("##### 📝 2. 수행평가 세부 반영 항목 구성")
             
             cc1, cc2 = st.columns([1, 2])
-            with cc1:
-                item_count = st.selectbox("🎯 평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2)
+            with cc1: item_count = st.selectbox("🎯 평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2)
             
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             
@@ -324,10 +332,11 @@ else:
                     st.success(f"✅ [{final_sub}] 과목 아키텍처 및 데이터베이스 세팅 완료!")
                 else: st.error("과목 정보를 빠짐없이 선택해 주세요.")
 
-    # 📊 [대수술 완수] 모듈 2: 학생 조회 현황 모니터링 + 실시간 성적 수정 엔진 통합 대시보드
+    # 📊 [대혁신] 모듈 2: 학생 조회 현황 모니터링 ➔ '엑셀식 전체 실시간 일괄 시트 수정 엔진' 격상 파트
     elif menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
-            st.markdown(f"<h3>📊 실시간 학생 조회 및 성적 통합 수정 패널</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3>📊 실시간 수행평가 대장 엑셀식 일괄 편집 패널</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:13px; color:#64748b;'>표(Grid) 내부의 점수나 이메일, 암호 칸을 마우스로 더블클릭하여 엑셀처럼 자유롭게 즉시 수정하세요.</p>", unsafe_allow_html=True)
             
             registered_dbs = get_active_databases()
             if not registered_dbs:
@@ -339,7 +348,7 @@ else:
                     target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
                     if target_str in selector_options: default_idx = selector_options.index(target_str)
                 
-                selected_db_str = st.selectbox("📂 관리 및 수정할 대상 교과 선택", options=selector_options, index=default_idx)
+                selected_db_str = st.selectbox("📂 수정 및 관리할 대상 교과 선택", options=selector_options, index=default_idx)
                 chosen_db = registered_dbs[selector_options.index(selected_db_str)]
                 st.session_state.active_subject = chosen_db['subject']
                 st.session_state.active_grade = chosen_db['grade'].replace("학년","")
@@ -350,48 +359,41 @@ else:
                 cfg_df = load_sheet_to_df(cf_id)
                 
                 if not db_df.empty:
-                    # 현재 과목의 세부 수행평가 항목 헤더 동적 확보
                     if not cfg_df.empty:
                         cfg_dict = cfg_df.iloc[0].to_dict()
                         cnt = int(cfg_dict.get('항목개수', 3))
                         score_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
                     else: score_headers = []
                     
-                    display_cols = ["반", "번호", "이름", "학교 이메일"] + score_headers + ["성적조회 횟수", "최종 확인일시"]
+                    # 마스터 표에 뿌려줄 최종 헤더 리스트 조립
+                    display_cols = ["반", "번호", "이름"]
+                    if "학교 이메일" in db_df.columns: display_cols.append("학교 이메일")
+                    if "비밀번호" in db_df.columns: display_cols.append("비밀번호")
+                    display_cols.extend(score_headers)
+                    display_cols.extend(["성적조회 횟수", "최종 확인일시"])
+                    
                     valid_cols = [c for c in display_cols if c in db_df.columns]
                     
-                    # 1. 상단: 모니터링 시트 출력
-                    st.dataframe(db_df[valid_cols].fillna("-"), use_container_width=True)
+                    # 🚨 [핵심 변경] 단순 조회용 st.dataframe을 수정 전용 st.data_editor 엔진으로 완전 체인지
+                    # 인적사항 및 시스템 로그는 실수 방지를 위해 disabled 처리 잠금, 점수와 비밀번호/이메일만 활성화
+                    edited_df = st.data_editor(
+                        db_df[valid_cols],
+                        use_container_width=True,
+                        num_rows="dynamic",
+                        disabled=["반", "번호", "이름", "성적조회 횟수", "최종 확인일시"],
+                        key="master_live_grid_editor"
+                    )
                     
-                    # 🚨 2. 하단: [선생님 요청] 개별 학생 성적 즉시 수정 전용 섹션 구현
-                    st.markdown("<hr style='border-top: 2px solid #4a69bd; margin:25px 0;'>", unsafe_allow_html=True)
-                    st.markdown("### ✏️ 선택 학생 성적 실시간 즉시 수정 및 클라우드 반영")
+                    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
                     
-                    # 수정을 원하는 타겟 학생 셀렉터 구축
-                    student_list = [f"[{r['반']}반 {r['번호']}: {r['이름']}] - {r['학교 이메일']}" for _, r in db_df.iterrows()]
-                    selected_st_str = st.selectbox("🎯 수정할 학생을 고르세요", options=student_list)
-                    target_idx = student_list.index(selected_st_str)
-                    
-                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-                    st.write(f"👉 **{db_df.loc[target_idx, '이름']}** 학생의 점수 보정 데이터 필드:")
-                    
-                    # 동적 컬럼 생성으로 현재 학생 점수 불러오기 및 실시간 편집 폼 매핑
-                    edit_cols = st.columns(len(score_headers) if score_headers else 1)
-                    new_scores = {}
-                    for i, h in enumerate(score_headers):
-                        with edit_cols[i]:
-                            current_score = db_df.loc[target_idx, h] if h in db_df.columns else 0
-                            # 점수를 안심하고 입력하도록 수치형 입력기 바인딩
-                            edited_val = st.number_input(f" {h} 점수", value=float(current_score), key=f"edit_score_{target_idx}_{h}")
-                            new_scores[h] = edited_val
-                    
-                    # 🚀 즉시 저장 버튼 구동
-                    if st.button("💾 보정 점수 구글 클라우드에 즉시 반영", key="btn_save_realtime_score"):
-                        for h, val in new_scores.items():
-                            db_df.loc[target_idx, h] = val
-                        
+                    # 🚀 일괄 편집내역 클라우드 서버 전송 단추 구동
+                    if st.button("💾 위의 표 수정내역 구글 클라우드에 일괄 저장", key="btn_save_all_grid_changes"):
+                        # 백엔드 데이터프레임 원본에 편집된 버퍼 데이터를 덮어쓰기 정렬
+                        for col in edited_df.columns:
+                            db_df[col] = edited_df[col]
+                            
                         if save_df_to_sheet(sf_id, db_df):
-                            st.success(f"🎉 {db_df.loc[target_idx, '이름']} 학생의 성적이 실시간으로 교정되어 데이터베이스에 영구 반영되었습니다!")
+                            st.success("🎉 화면에서 수정한 전체 성적 대장 내역이 구글 클라우드 서버에 실시간으로 일괄 동기화 저장 완료되었습니다!")
                             st.rerun()
                 else:
                     st.warning("해당 과목에 등록된 학생 성적부 데이터가 비어 있습니다. '▶ 성적 데이터 연동 (CSV)' 메뉴에서 엑셀 대장을 업로드해 주세요.")
