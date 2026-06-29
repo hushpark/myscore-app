@@ -9,7 +9,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
-# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 인프라 강제 고정
+# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
@@ -215,24 +215,25 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 전역 테마 마스터 CSS (우측 프레임 배경 제어 및 버튼 완전 순정화)
+# 🔄 전역 테마 스타일 개조 부 (사이드바 최상위 우선순위 버튼 무력화 적용)
 # =========================================================================
 st.markdown("""
     <style>
-        /* [프레임 복원] 우측 본문 전체 배경색을 연회색으로 확실히 톤다운 */
+        /* 오른쪽 본문 전체 배경색을 톤다운된 연회색으로 고정 */
         .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { 
             background-color: #f1f5f9 !important; 
         }
         div[data-testid="stHeader"] { display: none !important; }
         
-        /* [그림 2 반영] 사이드바 대형 시원시원한 폰트 및 흰색 텍스트 복원 */
+        /* [그림 2 반영] 사이드바 텍스트 크기와 시원시원한 두께 고정 */
         [data-testid="stSidebar"] { background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
         [data-testid="stSidebar"] h4 { color: #ffffff !important; font-weight: 800; font-size: 24px !important; margin-top: 10px !important; }
         [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
         div[data-testid="stSidebar"] div[role="radiogroup"] label p { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
 
-        /* 🚨 [오버롤 원천 파괴] 사이드바 내부 버튼을 그림 1처럼 군더더기 없는 투명한 사각형의 순정 문자형 단추로 강제 초기화 */
-        div[data-testid="stSidebar"] div.stButton > button {
+        /* 🚨 [사이드바 버튼 긴급 수리] 최상위 클래스 구조를 명시하여 오버롤 찌꺼기 테마를 완벽 숙청하고 그림 1 스타일 복원 */
+        div[data-testid="stSidebar"] div.stButton > button,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
             background-color: transparent !important;
             color: #f1f5f9 !important;
             border: 1px solid #475569 !important;
@@ -241,7 +242,9 @@ st.markdown("""
             font-size: 14px !important;
             box-shadow: none !important;
         }
-        div[data-testid="stSidebar"] div.stButton > button:hover {
+        /* 호버 시 둥글게 흰색으로 번지는 버그 차단 및 미니멀한 순정 반응 유도 */
+        div[data-testid="stSidebar"] div.stButton > button:hover,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
             background-color: #334155 !important;
             border-color: #64748b !important;
             color: #ffffff !important;
@@ -252,6 +255,7 @@ st.markdown("""
         div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
         .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
         
+        item_title_in_
         h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 28px !important; margin-bottom: 5px !important; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 22px !important; margin-top: 0px !important; margin-bottom: 10px !important; }
         
@@ -284,7 +288,7 @@ if not st.session_state["admin_logged_in"]:
     """, unsafe_allow_html=True)
     
     with st.form("master_unified_form"):
-        # 🚨 [요청 반영] 로그인 박스 상단 헤더 텍스트 완벽 개조
+        # 🚨 [요청 반영] 로그인 박스 상단 헤더 명칭 롤백
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<hr>", unsafe_allow_html=True)
@@ -345,7 +349,7 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [새 이름 체인 장착] 꼬이던 고유 키를 버리고 새 이름('pure_btn')을 박아 예전 오버롤 디자인 완전 숙청 완수
+        # 🚨 새 고유 체인을 활용한 문자 단추 고정 마감
         if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
             account_update_dialog()
         if st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True):
@@ -355,7 +359,7 @@ else:
             st.session_state["allowed_subjects"] = []
             st.rerun()
 
-    # 🚨 [요청 반영] 대시보드 메인 상단 헤더명 완벽 매칭 교체 완료
+    # 🚨 [요청 반영] 메인 상단 헤더명 완벽하게 다시 롤백 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<br>", unsafe_allow_html=True)
@@ -497,7 +501,7 @@ else:
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📁 모듈 3: 평가 대상 과목 구성 [🚨 그림 1의 가독성 좋은 흰색 독립 박스 셋업 완성]
+    # 📁 모듈 3: 평가 대상 과목 구성 [🚨 그림 1 스타일 가동]
     elif menu_selection == "▶ 평가 대상 과목 구성":
         # 1번 컴포넌트용 완벽 독립형 흰색 사각형 상자 빌드
         with st.container(border=True):
@@ -544,7 +548,7 @@ else:
             cols_items = st.columns(item_count)
             for i in range(item_count):
                 with cols_items[i]:
-                    # 🚨 [원천 수리 개조 마감] value 대신 placeholder 가이드라인 힌트를 심어, 마우스 올릴 때 글자 실종 버그 완전 소멸
+                    # value 속성 버그 소멸 후 placeholder로 안전 가이드 정착
                     t_in = st.text_input(f"항목 {i+1} 제목", placeholder="수행평가 항목 입력", key=f"item_title_in_{i}", label_visibility="collapsed")
                     item_titles.append(t_in.strip())
             
@@ -619,7 +623,7 @@ else:
                     label=f"📥 [{st.session_state.active_subject}] 일괄 업로드용 성적 양식(.CSV) 다운로드",
                     data=csv_bytes,
                     file_name=f"수행평가_양식_{st.session_state.active_subject}.csv",
-                    mime="text/csv",
+                    text/csv",
                     key="download_sample_csv"
                 )
                 st.markdown("<br>", unsafe_allow_html=True)
