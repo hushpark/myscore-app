@@ -379,7 +379,7 @@ else:
                 with col_sub:
                     selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
                     default_idx = 0
-                    if "active_subject" in st.session_state && st.session_state.active_subject:
+                    if "active_subject" in st.session_state & st.session_state.active_subject:
                         target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
                         if target_str in selector_options: default_idx = selector_options.index(target_str)
                     
