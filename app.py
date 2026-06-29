@@ -9,7 +9,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
-# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
+# 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
@@ -85,13 +85,19 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
+# 🚨 [완벽 수리 마감] 다이얼로그 가동 시 글로벌 세션 상태 변수를 강제 획득하여 안정적으로 매핑 바인딩
 @st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
-    st.markdown(f"##### 👤 **{st.session_state['teacher_name']}** 선생님의 보안 정보 수정")
+    teacher_id_target = st.session_state.get("logged_teacher_id", "")
+    teacher_name_target = st.session_state.get("teacher_name", "교사")
+    
+    st.markdown(f"##### 👤 **{teacher_name_target}** 선생님의 보안 정보 수정")
     df_teachers = load_sheet_to_df("teacher_accounts", ["교사_ID", "비밀번호", "교사_성명", "담당_과목"])
     
-    if not df_teachers.empty and st.session_state["logged_teacher_id"] != "admin":
-        target_idx = df_teachers[df_teachers['교사_ID'].astype(str).str.strip() == str(st.session_state["logged_teacher_id"]).strip()].index
+    if not df_teachers.empty and teacher_id_target != "admin" and teacher_id_target != "":
+        df_teachers['교사_ID'] = df_teachers['교사_ID'].astype(str).str.strip()
+        target_idx = df_teachers[df_teachers['교사_ID'] == str(teacher_id_target).strip()].index
+        
         if not target_idx.empty:
             idx = target_idx[0]
             curr_pw = str(df_teachers.loc[idx, "비밀번호"]).strip()
@@ -106,11 +112,11 @@ def account_update_dialog():
                     df_teachers.loc[idx, "비밀번호"] = new_pw.strip()
                     df_teachers.loc[idx, "담당_과목"] = new_sub.strip()
                     if save_df_to_sheet("teacher_accounts", df_teachers):
-                        st.success("🎉 교사 정보가 실시간으로 안전하게 변경 저장되었습니다! 시스템을 재시작합니다.")
+                        st.success("🎉 교사 정보가 실시간으로 변경 저장되었습니다!")
                         st.session_state["allowed_subjects"] = [s.strip() for s in new_sub.split(",") if s.strip()]
                         st.rerun()
                 else: st.error("빈 칸을 남겨둘 수 없습니다.")
-        else: st.error("계정 매핑 인덱스를 찾을 수 없습니다.")
+        else: st.error("계정 매핑 인덱스를 찾을 수 없습니다. 로그아웃 후 다시 시도해 주세요.")
     else:
         st.warning("최고관리자(admin) 계정은 마스터 권한 고정이므로 시트 수정이 필요 없습니다.")
 
@@ -225,14 +231,13 @@ st.markdown("""
         }
         div[data-testid="stHeader"] { display: none !important; }
         
-        /* 🚨 [요청 반영] 사이드바 자체 가로 폭 너비를 깔끔하고 날씬하게 강제 리사이징 축소 조치 */
+        /* 사이드바 자체 가로 폭 너비를 깔끔하고 날씬하게 강제 리사이징 축소 조치 */
         [data-testid="stSidebar"], section[data-testid="stSidebar"] {
             min-width: 260px !important;
             max-width: 260px !important;
             background-color: #1e293b !important;
             box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important;
         }
-        /* 본문 프레임이 좁아진 사이드바 너비에 맞춰 정상 정렬되도록 밀림 방지 패딩 보정 */
         [data-testid="stAppViewContainer"] {
             margin-left: 0px !important;
         }
@@ -247,8 +252,14 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
         
-        /* 🚨 [화이트 마스크 원천 파괴 완수] 모든 가상 속성을 차단하는 HTML 링크 전용 불멸의 CSS 고정 클래스 */
-        .classic-sidebar-btn {
+        /* 🚨 [정밀 롤백] 캐시 충돌을 원천 차단하기 위해 순정 형태의 테두리 디자인 클래스 주입 */
+        .custom-nav-block {
+            padding: 2px 0 !important;
+            width: 100% !important;
+        }
+        
+        /* 사이드바 버튼 전용 유일무이 스타일 선언 */
+        div[data-testid="stSidebar"] div.stButton > button {
             background-color: #2b3a4a !important;
             color: #ffffff !important;
             border: 2px solid #3f5164 !important;
@@ -258,17 +269,14 @@ st.markdown("""
             font-size: 14px !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
             width: 100% !important;
-            display: inline-block !important;
             text-align: center !important;
-            text-decoration: none !important;
-            margin-bottom: 8px !important;
-            cursor: pointer !important;
             transition: all 0.2s ease !important;
         }
-        .classic-sidebar-btn:hover {
+        div[data-testid="stSidebar"] div.stButton > button:hover {
             background-color: #3f5164 !important;
             border-color: #52667a !important;
             color: #ffffff !important;
+            transform: translateY(-1px);
         }
 
         /* 셀렉트박스 공통 테두리 스타일 */
@@ -304,21 +312,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 쿼리 파라미터 기반의 액션 제어 핸들러 엔진 부 가동
-query_params = st.query_transform() if hasattr(st, "query_transform") else st.original_query_params if hasattr(st, "original_query_params") else {}
-if "action" in st.query_params:
-    action_val = st.query_params["action"]
-    if action_val == "open_account_dialog":
-        st.query_params.clear()
-        account_update_dialog()
-    elif action_val == "trigger_logout":
-        st.query_params.clear()
-        st.session_state["admin_logged_in"] = False
-        st.session_state["logged_teacher_id"] = ""
-        st.session_state["teacher_name"] = ""
-        st.session_state["allowed_subjects"] = []
-        st.rerun()
-
 if not st.session_state["admin_logged_in"]:
     st.markdown("""
         <style>
@@ -336,7 +329,7 @@ if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-        login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
+        login_mode = st.radio("접속 모기", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<h4 style='height: 10px; border:none;'></h4>", unsafe_allow_html=True)
         
         if login_mode == "교사":
@@ -346,7 +339,6 @@ if not st.session_state["admin_logged_in"]:
                 auth_result = verify_teacher_credentials(admin_id, admin_pw)
                 if auth_result["success"]:
                     st.session_state["admin_logged_in"] = True
-                    # 🚨 [매핑 락 해제] 다이얼로그와 시트 행 인덱스가 정확히 연동되도록 세션 바인딩 고정
                     st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
                     st.session_state["teacher_name"] = auth_result["teacher_name"]
                     st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
@@ -396,16 +388,27 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [오버롤 완벽 박멸 마감] HTML 링크 구조식 불멸의 클래식 블루 버튼 대통합 이식 (test 버튼은 깔끔하게 삭제)
-        st.markdown('<a href="?action=open_account_dialog" target="_self" class="classic-sidebar-btn">🔐 내 정보 수정</a>', unsafe_allow_html=True)
-        st.markdown('<a href="?action=trigger_logout" target="_self" class="classic-sidebar-btn">🚪 시스템 로그아웃</a>', unsafe_allow_html=True)
+        # 🚨 [세션 증발 대청소] URL 파라미터를 파괴하고 순정 단추 내부에 트리거 컨텍스트를 바인딩하여 무결점 처리
+        st.markdown('<div class="custom-nav-block">', unsafe_allow_html=True)
+        if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
+            account_update_dialog()
+            
+        st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
+        
+        if st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True):
+            st.session_state["admin_logged_in"] = False
+            st.session_state["logged_teacher_id"] = ""
+            st.session_state["teacher_name"] = ""
+            st.session_state["allowed_subjects"] = []
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<div style='text-align:center; height: 5px;'></div>", unsafe_allow_html=True)
 
-    # 📊 모듈 1: 학생 조회 현황 모니터링 [🚨 앤드 연산자 및 인덱싱 에러 무결점 교정]
+    # 📊 모듈 1: 학생 조회 현황 모니터링
     if menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown(f"<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
@@ -422,7 +425,6 @@ else:
                 with col_sub:
                     selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
                     default_idx = 0
-                    # 🚨 [에러 완벽 수리] 파이썬 표준 'and' 구문으로 안전 결속 고정 완료
                     if "active_subject" in st.session_state and st.session_state.active_subject:
                         target_str = f"📚 {st.session_state.active_subject} ({st.session_state.active_grade}학년 / {st.session_state.active_semester})"
                         if target_str in selector_options: default_idx = selector_options.index(target_str)
@@ -543,7 +545,7 @@ else:
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📁 모듈 3: 평가 대상 과목 구성 [🚨 레이아웃 간격 고강도 컴팩트 다운사이징 정착 완료 파트]
+    # 📁 모듈 3: 평가 대상 과목 구성
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
