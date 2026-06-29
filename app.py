@@ -9,7 +9,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
-# 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
+# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
@@ -85,7 +85,6 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
-# 🚨 [완벽 수리 마감] 다이얼로그 가동 시 글로벌 세션 상태 변수를 강제 획득하여 안정적으로 매핑 바인딩
 @st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
     teacher_id_target = st.session_state.get("logged_teacher_id", "")
@@ -221,7 +220,7 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 전역 테마 스타일 개조 부 (본문 축소 및 사이드바 가로 폭 축소 인프라)
+# 🔄 전역 테마 스타일 개조 부 (본문 축소 및 사이드바 클래식 버튼 완벽 고정)
 # =========================================================================
 st.markdown("""
     <style>
@@ -231,7 +230,7 @@ st.markdown("""
         }
         div[data-testid="stHeader"] { display: none !important; }
         
-        /* 사이드바 자체 가로 폭 너비를 깔끔하고 날씬하게 강제 리사이징 축소 조치 */
+        /* 🚨 사이드바 자체 가로 폭 너비를 깔끔하고 날씬하게 강제 리사이징 축소 조치 */
         [data-testid="stSidebar"], section[data-testid="stSidebar"] {
             min-width: 260px !important;
             max-width: 260px !important;
@@ -252,14 +251,10 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
         
-        /* 🚨 [정밀 롤백] 캐시 충돌을 원천 차단하기 위해 순정 형태의 테두리 디자인 클래스 주입 */
-        .custom-nav-block {
-            padding: 2px 0 !important;
-            width: 100% !important;
-        }
-        
-        /* 사이드바 버튼 전용 유일무이 스타일 선언 */
-        div[data-testid="stSidebar"] div.stButton > button {
+        /* 🚨 [오버롤 종결 버그 진압 마감] 사이드바 하단 st.button 위젯의 모든 가상 스타일 속성을 파괴하고
+           처음 만드셨던 단정하고 굵직한 테두리의 클래식 어두운 블루 형태로 1:1 강제 타겟 오버라이딩 */
+        div[data-testid="stSidebar"] div.stButton > button,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
             background-color: #2b3a4a !important;
             color: #ffffff !important;
             border: 2px solid #3f5164 !important;
@@ -269,10 +264,16 @@ st.markdown("""
             font-size: 14px !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
             width: 100% !important;
+            display: block !important;
             text-align: center !important;
             transition: all 0.2s ease !important;
         }
-        div[data-testid="stSidebar"] div.stButton > button:hover {
+        
+        /* 마우스 오버(호버)나 포커스 시 흐려지거나 하얀 상자로 번지는 버그를 원천 강제 차단 */
+        div[data-testid="stSidebar"] div.stButton > button:hover,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
+        div[data-testid="stSidebar"] div.stButton > button:focus,
+        div[data-testid="stSidebar"] div.stButton > button:active {
             background-color: #3f5164 !important;
             border-color: #52667a !important;
             color: #ffffff !important;
@@ -329,7 +330,7 @@ if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-        login_mode = st.radio("접속 모기", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
+        login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
         st.markdown("<h4 style='height: 10px; border:none;'></h4>", unsafe_allow_html=True)
         
         if login_mode == "교사":
@@ -388,8 +389,7 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [세션 증발 대청소] URL 파라미터를 파괴하고 순정 단추 내부에 트리거 컨텍스트를 바인딩하여 무결점 처리
-        st.markdown('<div class="custom-nav-block">', unsafe_allow_html=True)
+        # 🚨 순정 st.button 구조 내부에 고유 인라인 식별명을 고정 결속하여 스타일 유지
         if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
             account_update_dialog()
             
@@ -401,7 +401,6 @@ else:
             st.session_state["teacher_name"] = ""
             st.session_state["allowed_subjects"] = []
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
@@ -442,7 +441,7 @@ else:
                 with col_class:
                     class_options = ["전체 학급 보기"]
                     if not db_df.empty and "반" in db_df.columns:
-                        class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                        class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df_df['반'].unique())]
                     selected_class = st.selectbox("🎯 필터링할 학급(반) 선택", options=class_options, key="sb_filter_class_monitor")
                 
                 if not db_df.empty:
@@ -545,7 +544,7 @@ else:
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
-    # 📁 모듈 3: 평가 대상 과목 구성
+    # 📁 모듈 3: 평가 대상 과목 구성 [🚨 여백 극소화 레이아웃 컴팩트 정렬 완공 파트]
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
