@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS] 서로 절대 간섭할 수 없게 구역(Zone)으로 못 박음!
+# 🔄 [우주 최강 구역별 물리적 격리 CSS] 
 # =========================================================================
 st.markdown("""
     <style>
@@ -72,7 +72,10 @@ st.markdown("""
             width: 100% !important;
         }
 
-        /* 로그인 폼 전용 버튼 */
+        /* -------------------------------------------------------------------------------- */
+        /* 🚨 4. 로그인 폼 전용 버튼 복구 -> 본문 내부 중앙의 버튼은 차분한 네이비색 유지! */
+        /* -------------------------------------------------------------------------------- */
+        div[data-testid="stForm"] button[kind="secondary"],
         div[data-testid="stForm"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
@@ -82,6 +85,8 @@ st.markdown("""
             padding: 0.6rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
+            box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
+            display: block !important;
         }
 
         /* 기본 인풋 테두리 살리기 */
@@ -183,7 +188,6 @@ def student_individual_add_dialog(db_df, sf_id, score_headers):
     add_pw = st.text_input("개인 비밀번호", placeholder="학생 전용 조회 암호")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    # 팝업 내부는 Primary 타입 사용 -> CSS에 의해 무조건 빨간색으로 표출됨!
     if st.button("🚀 학생 추가 등록", type="primary", use_container_width=True):
         if add_name and add_email and add_pw:
             new_student_row = {
@@ -264,10 +268,6 @@ if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"
 if "logged_teacher_id" not in st.session_state: st.session_state["logged_teacher_id"] = ""
 if "teacher_name" not in st.session_state: st.session_state["teacher_name"] = ""
 if "allowed_subjects" not in st.session_state: st.session_state["allowed_subjects"] = []
-
-SUBJECT_MAP = load_master_subjects()
-GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
-SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 def sidebar_logout_callback():
     st.session_state["admin_logged_in"] = False
@@ -355,7 +355,6 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [가장 완벽한 구조 적용] Streamlit의 자체 type(kind) 속성으로 구역별 컬러링을 완벽 매핑
         if st.button("🔐 내 정보 수정", type="primary", use_container_width=True):
             st.session_state["open_profile_popup"] = True
             st.rerun()
