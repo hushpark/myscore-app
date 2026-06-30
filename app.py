@@ -85,7 +85,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
-# 🚨 [알림창 간섭 해제 패치] 디자인 오염을 일으키던 내부 st.success 창을 제거하고 부드럽게 세션 닫기로 전환
+# [알림창 간섭 해제 패치] 디자인 오염을 일으키던 내부 st.success 창을 제거하고 부드럽게 세션 닫기로 전환
 @st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
     teacher_id_target = st.session_state.get("logged_teacher_id", "")
@@ -113,7 +113,7 @@ def account_update_dialog():
                     df_teachers.loc[idx, "담당_과목"] = new_sub.strip()
                     if save_df_to_sheet("teacher_accounts", df_teachers):
                         st.session_state["allowed_subjects"] = [s.strip() for s in new_sub.split(",") if s.strip()]
-                        st.session_state["show_update_success_msg"] = True  # 안전한 격리형 메시지 플래그 작동
+                        st.session_state["show_update_success_msg"] = True 
                         st.rerun()
                 else: st.error("빈 칸을 남겨둘 수 없습니다.")
         else: st.error("계정 매핑 인덱스를 찾을 수 없습니다. 로그아웃 후 다시 시도해 주세요.")
@@ -251,36 +251,6 @@ st.markdown("""
         div.stVBlock > div { gap: 0.4rem !important; }
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
-        
-        /* 🚨 [화이트 마스크 원천 파괴 - 철벽 파이널 타겟 지지] 
-           그 어떤 알림 위젯이 도중에 강제로 튀어나와 스타일을 오염시키려 해도,
-           사이드바 전용 고유 키값의 우선순위를 브라우저가 최우선으로 복원해 내도록 설계 */
-        div[data-testid="stSidebar"] button[key="account_pure_btn"],
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"] {
-            background-color: #2b3a4a !important;       /* 🛠️ 원하셨던 차분한 다크 블루 색상 강제 지정 */
-            color: #ffffff !important;                  /* 🛠️ 글자색 흰색으로 무조건 고정 */
-            border: 2px solid #3f5164 !important;       /* 🛠️ 클래식한 사각형 선 테두리 가동 */
-            border-radius: 6px !important;
-            padding: 10px 16px !important;
-            font-weight: 700 !important;
-            font-size: 14px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            width: 100% !important;
-            display: block !important;
-            text-align: center !important;
-        }
-        
-        /* 마우스 오버나 클릭이 일어나도 절대 흐려지지 않고 다크 블루 원형 보존 */
-        div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:hover,
-        div[data-testid="stSidebar"] button[key="account_pure_btn"]:focus,
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:focus,
-        div[data-testid="stSidebar"] button[key="account_pure_btn"]:active,
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:active {
-            background-color: #3f5164 !important;
-            border-color: #52667a !important;
-            color: #ffffff !important;
-        }
 
         /* 셀렉트박스 공통 테두리 스타일 */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
@@ -395,6 +365,37 @@ if not st.session_state["admin_logged_in"]:
 
 else:
     with st.sidebar:
+        # 🚨 [완벽 결속 가동] 사이드바 버튼 전용 CSS를 문맥 스코프 내부 최상단에 강제 주입하여 철벽 마감
+        st.markdown("""
+            <style>
+                div[data-testid="stSidebar"] button[key="account_pure_btn"],
+                div[data-testid="stSidebar"] button[key="logout_pure_btn"] {
+                    background-color: #2b3a4a !important;       /* 🛠️ 원하셨던 클래식 딤 블루 색상 */
+                    color: #ffffff !important;                  /* 🛠️ 글자색 흰색으로 무조건 고정 */
+                    border: 2px solid #3f5164 !important;       /* 🛠️ 클래식한 사각형 선 테두리 가동 */
+                    border-radius: 6px !important;
+                    padding: 10px 16px !important;
+                    font-weight: 700 !important;
+                    font-size: 14px !important;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+                    width: 100% !important;
+                    display: block !important;
+                    text-align: center !important;
+                }
+                
+                div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
+                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:hover,
+                div[data-testid="stSidebar"] button[key="account_pure_btn"]:focus,
+                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:focus,
+                div[data-testid="stSidebar"] button[key="account_pure_btn"]:active,
+                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:active {
+                    background-color: #3f5164 !important;
+                    border-color: #52667a !important;
+                    color: #ffffff !important;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:12px; color:#94a3b8; margin-bottom:15px;'>👤 {st.session_state['teacher_name']} 선생님 접속 중</div>", unsafe_allow_html=True)
         st.markdown("---")
@@ -418,7 +419,7 @@ else:
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<div style='text-align:center; height: 5px;'></div>", unsafe_allow_html=True)
 
-    # 🚨 [간섭 차단 격리 부] 다이얼로그 내부가 아닌, 안전하게 격리된 본문 프레임에 성공 메시지를 뿜어 오염 방지
+    # 다이얼로그 내부가 아닌, 안전하게 격리된 본문 프레임에 성공 메시지를 뿜어 오염 방지
     if "show_update_success_msg" in st.session_state and st.session_state["show_update_success_msg"]:
         del st.session_state["show_update_success_msg"]
         st.success("🎉 교사 정보 및 과목 권한이 데이터베이스에 실시간으로 일괄 동기화 완료되었습니다!")
