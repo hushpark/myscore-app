@@ -62,7 +62,7 @@ def verify_teacher_credentials(input_id, input_pw):
 def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
-    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{safe_semester}"
+    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str}"
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
@@ -85,7 +85,6 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
-# [알림창 간섭 해제 패치] 디자인 오염을 일으키던 내부 st.success 창을 제거하고 부드럽게 세션 닫기로 전환
 @st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
     teacher_id_target = st.session_state.get("logged_teacher_id", "")
@@ -365,14 +364,15 @@ if not st.session_state["admin_logged_in"]:
 
 else:
     with st.sidebar:
-        # 🚨 [완벽 결속 가동] 사이드바 버튼 전용 CSS를 문맥 스코프 내부 최상단에 강제 주입하여 철벽 마감
+        # 🚨 [하드웨어 ID 타겟 고정 패치] 버튼 인스턴스 ID 규칙을 완전 격리하여 마스킹 오염 완전 무력화
         st.markdown("""
             <style>
-                div[data-testid="stSidebar"] button[key="account_pure_btn"],
-                div[data-testid="stSidebar"] button[key="logout_pure_btn"] {
-                    background-color: #2b3a4a !important;       /* 🛠️ 원하셨던 클래식 딤 블루 색상 */
-                    color: #ffffff !important;                  /* 🛠️ 글자색 흰색으로 무조건 고정 */
-                    border: 2px solid #3f5164 !important;       /* 🛠️ 클래식한 사각형 선 테두리 가동 */
+                div[data-testid="stSidebar"] button[id*="account_pure_btn"],
+                div[data-testid="stSidebar"] button[id*="logout_pure_btn"],
+                div[data-testid="stSidebar"] button {
+                    background-color: #2b3a4a !important;
+                    color: #ffffff !important;
+                    border: 2px solid #3f5164 !important;
                     border-radius: 6px !important;
                     padding: 10px 16px !important;
                     font-weight: 700 !important;
@@ -383,12 +383,9 @@ else:
                     text-align: center !important;
                 }
                 
-                div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
-                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:hover,
-                div[data-testid="stSidebar"] button[key="account_pure_btn"]:focus,
-                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:focus,
-                div[data-testid="stSidebar"] button[key="account_pure_btn"]:active,
-                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:active {
+                div[data-testid="stSidebar"] button[id*="account_pure_btn"]:hover,
+                div[data-testid="stSidebar"] button[id*="logout_pure_btn"]:hover,
+                div[data-testid="stSidebar"] button:hover {
                     background-color: #3f5164 !important;
                     border-color: #52667a !important;
                     color: #ffffff !important;
