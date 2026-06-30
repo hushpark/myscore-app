@@ -417,6 +417,7 @@ else:
                 
                 with col_class:
                     class_options = ["전체 학급 보기"]
+                    # 🚨 [오타 완벽 치료 완료] 'Image_0411c4and' 텍스트 찌꺼기를 지우고 순정 'and' 조건문으로 대복구!
                     if not db_df.empty and "반" in db_df.columns:
                         try:
                             class_options = ["전체 학급 보기"] + [f"{int(x)}반" for x in sorted(db_df['반'].unique())]
@@ -473,7 +474,7 @@ else:
                 
                 with col_class_ed:
                     class_options_ed = ["전체"]
-                    if not db_df.empty Image_0411c4and "반" in db_df.columns:
+                    if not db_df.empty and "반" in db_df.columns:
                         class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class_ed = st.selectbox("👥 수정할 대상 학반 필터링", options=class_options_ed, key="sb_filter_class_editor")
                 
