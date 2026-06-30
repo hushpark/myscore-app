@@ -8,10 +8,9 @@ import re
 import gspread
 from google.oauth2.service_account import Credentials
 import csv
-# 🚨 외부 격리 파일로부터 다이얼로그 모듈 로드
 import profile_pop
 
-# 🚨 [레이아웃 규칙 엄수] 최상단 배치 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
+# 🚨 [최상단 규칙 엄수] 순정 와이드 레이아웃 및 타이틀 고정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
@@ -87,7 +86,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
-# 🚨 분리독립시킨 다이얼로그 브릿지 연결부
+# 🚨 완벽히 격리 기동되는 독립 다이얼로그 바인딩
 @st.dialog("🔐 내 정보 수정")
 def launch_isolated_profile_dialog():
     profile_pop.render_isolated_dialog(load_sheet_to_df, save_df_to_sheet)
@@ -193,7 +192,7 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 전역 테마 스타일 개조 부 (사이드바 폭 축소 및 완전 정적 테마 빌드)
+# 🔄 전역 테마 스타일 개조 부 (사이드바 폭 축소 및 전면 플랫 디자인 락온)
 # =========================================================================
 st.markdown("""
     <style>
@@ -218,38 +217,35 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
 
-        /* 🚨 [오버롤 완전 삭제 정적 단추 마스터 CSS] */
-        .html-fixed-box { width: 100% !important; margin: 0 !important; padding: 0 !important; }
-        .html-fixed-btn-blue {
-            background-color: #3b82f6 !important; /* 🔐 클래식 파란색 상시 고정 */
+        /* 🚨 오버롤 문장이 전면 차단된 완벽한 평면 고정 스타일 양식 */
+        div[data-testid="stSidebar"] button[key="account_pure_btn"],
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"],
+        div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:hover,
+        div[data-testid="stSidebar"] button[key="account_pure_btn"]:focus,
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:focus,
+        div[data-testid="stSidebar"] button[key="account_pure_btn"]:active,
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:active {
             color: #ffffff !important;
-            border: 2px solid #2563eb !important;
             border-radius: 6px !important;
-            padding: 11px 16px !important;
+            padding: 10px 16px !important;
             font-weight: 700 !important;
             font-size: 14px !important;
+            box-shadow: none !important;                
+            transform: none !important;                 
             width: 100% !important;
             display: block !important;
             text-align: center !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            font-family: inherit !important;
-            cursor: pointer !important;
         }
-        .html-fixed-btn-gray {
+        
+        /* 🎨 개별 고유 배경색을 고정하여 오버롤 격리 처리 */
+        div[data-testid="stSidebar"] button[key="account_pure_btn"] {
+            background-color: #3b82f6 !important; /* 🔐 클래식 파란색 상시 고정 */
+            border: 2px solid #2563eb !important;
+        }
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"] {
             background-color: #475569 !important; /* 🚪 차분한 다크 그레이 상시 고정 */
-            color: #ffffff !important;
             border: 2px solid #334155 !important;
-            border-radius: 6px !important;
-            padding: 11px 16px !important;
-            font-weight: 700 !important;
-            font-size: 14px !important;
-            width: 100% !important;
-            display: block !important;
-            text-align: center !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            font-family: inherit !important;
-            cursor: pointer !important;
-            margin-top: 6px !important;
         }
 
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
@@ -282,17 +278,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🚨 분리형 비동기 라우터 연동 엔진 가동 부
-if st.query_params.get("raw_act") == "account":
-    st.query_params.clear()
-    launch_isolated_profile_dialog()
-elif st.query_params.get("raw_act") == "logout":
-    st.query_params.clear()
+# 세션 팅김 방지용 역방향 온클릭 리스너 분기 매핑
+def sidebar_logout_callback():
     st.session_state["admin_logged_in"] = False
     st.session_state["logged_teacher_id"] = ""
     st.session_state["teacher_name"] = ""
     st.session_state["allowed_subjects"] = []
-    st.rerun()
+
+if "open_profile_popup" not in st.session_state:
+    st.session_state["open_profile_popup"] = False
+
+if st.session_state["open_profile_popup"]:
+    st.session_state["open_profile_popup"] = False
+    launch_isolated_profile_dialog()
 
 if not st.session_state["admin_logged_in"]:
     st.markdown("""
@@ -370,19 +368,12 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [완벽 결속 분리형 HTML 버튼] 대장정의 버그를 종결짓는 원초적 정적 폼 구조
-        st.markdown('''
-            <div class="html-fixed-box">
-                <form method="get" target="_self">
-                    <input type="hidden" name="raw_act" value="account">
-                    <button type="submit" class="html-fixed-btn-blue">🔐 내 정보 수정</button>
-                </form>
-                <form method="get" target="_self">
-                    <input type="hidden" name="raw_act" value="logout">
-                    <button type="submit" class="html-fixed-btn-gray">🚪 시스템 로그아웃</button>
-                </form>
-            </div>
-        ''', unsafe_allow_html=True)
+        if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
+            st.session_state["open_profile_popup"] = True
+            st.rerun()
+            
+        st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
+        st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True, on_click=sidebar_logout_callback)
 
     # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
@@ -482,7 +473,7 @@ else:
                 
                 with col_class_ed:
                     class_options_ed = ["전체"]
-                    if not db_df.empty and "반" in db_df.columns:
+                    if not db_df.empty Image_0411c4and "반" in db_df.columns:
                         class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class_ed = st.selectbox("👥 수정할 대상 학반 필터링", options=class_options_ed, key="sb_filter_class_editor")
                 
