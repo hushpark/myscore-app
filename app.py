@@ -62,7 +62,7 @@ def verify_teacher_credentials(input_id, input_pw):
 def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     safe_semester = semester_str.replace(" ", "_").replace("/", "_")
-    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str}"
+    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{safe_semester}"
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
@@ -85,6 +85,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
+# [알림창 간섭 해제 패치] 디자인 오염을 일으키던 내부 st.success 창을 제거하고 부드럽게 세션 닫기로 전환
 @st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
     teacher_id_target = st.session_state.get("logged_teacher_id", "")
@@ -364,31 +365,30 @@ if not st.session_state["admin_logged_in"]:
 
 else:
     with st.sidebar:
-        # 🚨 [하드웨어 ID 타겟 고정 패치] 버튼 인스턴스 ID 규칙을 완전 격리하여 마스킹 오염 완전 무력화
+        # 🚨 [오버롤 원천 배제 마법 가동] 
+        # 마우스 오버호버(:hover) 상태, 클릭 상태, 포커스 상태를 모두 완벽히 '동일 색상'으로 강제 결속!
         st.markdown("""
             <style>
-                div[data-testid="stSidebar"] button[id*="account_pure_btn"],
-                div[data-testid="stSidebar"] button[id*="logout_pure_btn"],
-                div[data-testid="stSidebar"] button {
-                    background-color: #2b3a4a !important;
-                    color: #ffffff !important;
-                    border: 2px solid #3f5164 !important;
+                div[data-testid="stSidebar"] button[key="account_pure_btn"],
+                div[data-testid="stSidebar"] button[key="logout_pure_btn"],
+                div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
+                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:hover,
+                div[data-testid="stSidebar"] button[key="account_pure_btn"]:focus,
+                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:focus,
+                div[data-testid="stSidebar"] button[key="account_pure_btn"]:active,
+                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:active {
+                    background-color: #2b3a4a !important;       /* 🛠️ 평상시, 마우스 올릴 때, 누를 때 모조리 무조건 딤블루 고정 */
+                    color: #ffffff !important;                  /* 🛠️ 평상시, 마우스 올릴 때, 누를 때 모조리 무조건 흰색 글자 고정 */
+                    border: 2px solid #3f5164 !important;       /* 🛠️ 테두리선 상시 고정 */
                     border-radius: 6px !important;
                     padding: 10px 16px !important;
                     font-weight: 700 !important;
                     font-size: 14px !important;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+                    box-shadow: none !important;                /* 잔여 그림자 효과 제거 */
+                    transform: none !important;                 /* 들썩거리는 움직임 효과 박멸 */
                     width: 100% !important;
                     display: block !important;
                     text-align: center !important;
-                }
-                
-                div[data-testid="stSidebar"] button[id*="account_pure_btn"]:hover,
-                div[data-testid="stSidebar"] button[id*="logout_pure_btn"]:hover,
-                div[data-testid="stSidebar"] button:hover {
-                    background-color: #3f5164 !important;
-                    border-color: #52667a !important;
-                    color: #ffffff !important;
                 }
             </style>
         """, unsafe_allow_html=True)
@@ -403,7 +403,6 @@ else:
         )
         st.markdown("---")
         
-        # 순정 UI를 유지하면서 튕김을 막는 콜백 리스너 연동형 버튼 기동
         if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
             st.session_state["open_profile_popup"] = True
             st.rerun()
