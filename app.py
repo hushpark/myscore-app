@@ -9,7 +9,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
-# 🚨 [최상단 규칙 엄수] 순정 와이드 레이아웃 및 타이틀 고정
+# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
@@ -85,6 +85,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
+# 🚨 [팝업 내부 간섭 단추 전면 개조] 디자인 오염을 유발하던 순정 버튼을 격리형 단추 스타일로 전면 리빌딩
 @st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
     teacher_id_target = st.session_state.get("logged_teacher_id", "")
@@ -106,7 +107,9 @@ def account_update_dialog():
             new_sub = st.text_input("담당 과목 변경 (여러 과목은 콤마 분리)", value=curr_sub)
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("💾 변경사항 클라우드 시트에 즉시 반영", use_container_width=True, type="primary"):
+            
+            # 🚨 전역 간섭을 원천 방어하는 독립 격리형 수려한 빨간색 단추 주입 완료
+            if st.button("💾 변경사항 클라우드 시트에 즉시 반영", key="isolated_popup_submit_btn", use_container_width=True):
                 if new_pw and new_sub:
                     df_teachers.loc[idx, "비밀번호"] = new_pw.strip()
                     df_teachers.loc[idx, "담당_과목"] = new_sub.strip()
@@ -220,7 +223,7 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 전역 테마 스타일 개조 부
+# 🔄 전역 테마 스타일 개조 부 (본문 축소 및 사이드바 가로 폭 축소 인프라)
 # =========================================================================
 st.markdown("""
     <style>
@@ -247,7 +250,8 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
 
-        /* 🚨 오버롤 문장이 전면 차단된 완벽한 평면 고정 스타일 양식 */
+        /* 🚨 [오버롤 완전 격리 조치] 
+           마우스 반응 효과 체인을 코드 전역에서 영구 소멸시키고 완벽한 평면 정적 단색으로 박제 */
         div[data-testid="stSidebar"] button[key="account_pure_btn"],
         div[data-testid="stSidebar"] button[key="logout_pure_btn"],
         div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
@@ -268,14 +272,27 @@ st.markdown("""
             text-align: center !important;
         }
         
-        /* 🎨 개별 고유 배경색을 고정하여 오버롤 격리 처리 */
         div[data-testid="stSidebar"] button[key="account_pure_btn"] {
-            background-color: #3b82f6 !important; /* 🔐 단정하고 선명한 클래식 파란색 고정 */
+            background-color: #3b82f6 !important; /* 🔐 단정하고 선명한 클래식 파란색 상시 고정 */
             border: 2px solid #2563eb !important;
         }
         div[data-testid="stSidebar"] button[key="logout_pure_btn"] {
-            background-color: #475569 !important; /* 🚪 중후하고 이질감 없는 다크 그레이 고정 */
+            background-color: #475569 !important; /* 🚪 차분한 다크 그레이 상시 고정 */
             border: 2px solid #334155 !important;
+        }
+
+        /* 🚨 [팝업 간섭 격리 치료 부] 내 정보 수정 팝업 내부의 단추 스타일을 독자적으로 정의하여 
+           사이드바 영역으로 흰색 오염 찌꺼기가 번지는 경로를 물리적으로 차단 */
+        div[data-testid="stDialog"] button[key="isolated_profile_submit_btn"],
+        button[key="isolated_popup_submit_btn"] {
+            background-color: #ef4444 !important; /* 🛑 화사하고 선명한 오리지널 순정 빨간색 확정 박음 */
+            color: #ffffff !important;
+            font-weight: 800 !important;
+            border: none !important;
+            border-radius: 6px !important;
+            padding: 12px 0 !important;
+            font-size: 15px !important;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
         }
 
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
@@ -398,7 +415,7 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [완벽 수정 완료] 순정 컴포넌트의 클릭 액션을 세션 라우팅 브릿지에 다이렉트로 바인딩
+        # 순정 컴포넌트의 클릭 액션을 라우팅 브릿지에 완벽 결속하여 디자인 영구 소멸 현상 진압
         if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
             st.session_state["open_profile_popup"] = True
             st.rerun()
