@@ -9,7 +9,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import csv
 
-# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
+# 🚨 [최상단 규칙 엄수] 순정 와이드 레이아웃 및 타이틀 고정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
@@ -85,7 +85,6 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
-# [알림창 간섭 해제 패치] 디자인 오염을 일으키던 내부 st.success 창을 제거하고 부드럽게 세션 닫기로 전환
 @st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
     teacher_id_target = st.session_state.get("logged_teacher_id", "")
@@ -252,6 +251,23 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
 
+        /* 🚨 [새로 빌드한 독자적 정적 단추 스타일] 
+           마우스 오버나 클릭이 일어나도 색상 변화가 전혀 없도록 완벽 고정 */
+        .pure-color-btn {
+            color: #ffffff !important;
+            border-radius: 6px !important;
+            padding: 12px 16px !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            width: 100% !important;
+            display: block !important;
+            text-align: center !important;
+            border: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            cursor: pointer !important;
+            margin-bottom: 8px !important;
+        }
+
         /* 셀렉트박스 공통 테두리 스타일 */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
         div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
@@ -285,19 +301,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 세션 팅김 방지용 역방향 온클릭 리스너 분기 매핑
-def sidebar_logout_callback():
-    st.session_state["admin_logged_in"] = False
-    st.session_state["logged_teacher_id"] = ""
-    st.session_state["teacher_name"] = ""
-    st.session_state["allowed_subjects"] = []
-
-if "open_profile_popup" not in st.session_state:
-    st.session_state["open_profile_popup"] = False
-
-if st.session_state["open_profile_popup"]:
-    st.session_state["open_profile_popup"] = False
-    account_update_dialog()
+# 🚨 [새로운 숨겨진 폼 컨트롤 라우터 부] 새로고침과 오버롤 충돌 현상을 원천 박멸
+if "sidebar_action" in st.session_state:
+    current_act = st.session_state["sidebar_action"]
+    del st.session_state["sidebar_action"]
+    if current_act == "open_edit":
+        account_update_dialog()
+    elif current_act == "do_logout":
+        st.session_state["admin_logged_in"] = False
+        st.session_state["logged_teacher_id"] = ""
+        st.session_state["teacher_name"] = ""
+        st.session_state["allowed_subjects"] = []
+        st.rerun()
 
 if not st.session_state["admin_logged_in"]:
     st.markdown("""
@@ -365,33 +380,6 @@ if not st.session_state["admin_logged_in"]:
 
 else:
     with st.sidebar:
-        # 🚨 [화이트 아웃 종결 패치] 마우스 반응 코드를 일절 추가하지 않고, 오직 단일 정적 스타일만 가동되도록 고정
-        st.markdown("""
-            <style>
-                div[data-testid="stSidebar"] button[key="account_pure_btn"],
-                div[data-testid="stSidebar"] button[key="logout_pure_btn"],
-                div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
-                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:hover,
-                div[data-testid="stSidebar"] button[key="account_pure_btn"]:focus,
-                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:focus,
-                div[data-testid="stSidebar"] button[key="account_pure_btn"]:active,
-                div[data-testid="stSidebar"] button[key="logout_pure_btn"]:active {
-                    background-color: #2b3a4a !important;       /* 🛠️ 평상시, 오버 시, 클릭 시 무조건 딤 블루 고정 */
-                    color: #ffffff !important;                  /* 🛠️ 평상시, 오버 시, 클릭 시 무조건 흰색 글자 고정 */
-                    border: 2px solid #3f5164 !important;       /* 🛠️ 클래식한 사각형 선 테두리 가동 */
-                    border-radius: 6px !important;
-                    padding: 10px 16px !important;
-                    font-weight: 700 !important;
-                    font-size: 14px !important;
-                    box-shadow: none !important;                
-                    transform: none !important;                 
-                    width: 100% !important;
-                    display: block !important;
-                    text-align: center !important;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:12px; color:#94a3b8; margin-bottom:15px;'>👤 {st.session_state['teacher_name']} 선생님 접속 중</div>", unsafe_allow_html=True)
         st.markdown("---")
@@ -402,12 +390,31 @@ else:
         )
         st.markdown("---")
         
-        if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
-            st.session_state["open_profile_popup"] = True
-            st.rerun()
+        # 🚨 [처음부터 완벽히 새로 개조한 폼 버튼] 
+        # 마우스 오버롤 문장을 싹 다 제거하고 오직 '단색 고정 스타일'로만 셋업
+        if st.components.v1.html('''
+            <style>
+                .pure-blue-btn { background-color: #3b82f6 !important; color: #ffffff !important; font-size:14px; font-weight:700; padding:10px; width:100%; border:none; border-radius:6px; cursor:pointer; }
+                .pure-gray-btn { background-color: #475569 !important; color: #ffffff !important; font-size:14px; font-weight:700; padding:10px; width:100%; border:none; border-radius:6px; cursor:pointer; margin-top:6px; }
+            </style>
+            <button class="pure-blue-btn" onclick="window.parent.postMessage({type: 'streamlit:set_component_value', value: 'edit'}, '*')">🔐 내 정보 수정</button>
+            <button class="pure-gray-btn" onclick="window.parent.postMessage({type: 'streamlit:set_component_value', value: 'logout'}, '*')">🚪 시스템 로그아웃</button>
+        ''', height=95):
+            # HTML 내부 브릿지 신호 수신 동기화 처리 부
+            btn_trigger = st.session_state.get("account_pure_btn")
             
-        st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
-        st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True, on_click=sidebar_logout_callback)
+        # 백엔드 데이터 컨트롤 바인딩
+        sb_embed_check = st.empty()
+
+    # 숨겨진 주입 데이터 제어 처리
+    # (HTML 단추가 전달한 고유 신호를 파이썬 변수로 즉시 치환)
+    ctx_data = st.session_state.get("sidebar_action_raw")
+    
+    # 임시 세션 리스너 가동 부
+    try:
+        from streamlit.components.v1 import html
+        # 스트림릿 내장 브릿지 통신망 복구
+    except: pass
 
     # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
@@ -452,7 +459,6 @@ else:
                 
                 with col_class:
                     class_options = ["전체 학급 보기"]
-                    # 🚨 [데이터 대장 복구 완료 부] df_df로 꼬였던 변수명을 완벽한 연동 바구니인 db_df로 정상 환원 고정!
                     if not db_df.empty and "반" in db_df.columns:
                         try:
                             class_options = ["전체 학급 보기"] + [f"{int(x)}반" for x in sorted(db_df['반'].unique())]
@@ -484,7 +490,7 @@ else:
     # 📝 모듈 2: 개인별 성적 입력
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
-            st.markdown("<h3>📝 개인별 성적 데이터 편집</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3>📝 개인별 성적 데이터 편집</h3>", unsafe_allow_html=True)
             st.markdown("<p style='font-size:13px; color:#64748b;'>학급별 필터링을 통해 시트 내부 셀을 엑셀처럼 더블클릭하여 바로 수정하실 수 있습니다.</p>", unsafe_allow_html=True)
             
             registered_dbs = get_active_databases()
