@@ -8,15 +8,17 @@ import re
 import gspread
 from google.oauth2.service_account import Credentials
 import csv
+# 🚨 외부 격리 파일로부터 다이얼로그 모듈 로드
+import profile_pop
 
-# 🚨 [레이아웃 원상복구] 최상단 배치 규칙 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
+# 🚨 [레이아웃 규칙 엄수] 최상단 배치 엄수 - 순정 와이드 레이아웃 및 타이틀 고정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # 파일 경로 정의
 CONFIG_FILE_MAIN = "master_subjects.csv"
 META_FILE = "admin_meta.csv"
 
-# --- 데이터 로드/저장 시스템 (기존 구글 시트 백엔드 무결점 보존) ---
+# --- 데이터 로드/저장 시스템 ---
 def load_master_subjects():
     default_structure = {
         "인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"],
@@ -85,42 +87,10 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
-# 🚨 [팝업 내부 간섭 단추 전면 개조] 디자인 오염을 유발하던 순정 버튼을 격리형 단추 스타일로 전면 리빌딩
+# 🚨 분리독립시킨 다이얼로그 브릿지 연결부
 @st.dialog("🔐 내 정보 수정")
-def account_update_dialog():
-    teacher_id_target = st.session_state.get("logged_teacher_id", "")
-    teacher_name_target = st.session_state.get("teacher_name", "교사")
-    
-    st.markdown(f"##### 👤 **{teacher_name_target}** 선생님의 보안 정보 수정")
-    df_teachers = load_sheet_to_df("teacher_accounts", ["교사_ID", "비밀번호", "교사_성명", "담당_과목"])
-    
-    if not df_teachers.empty and teacher_id_target != "admin" and teacher_id_target != "":
-        df_teachers['교사_ID'] = df_teachers['교사_ID'].astype(str).str.strip()
-        target_idx = df_teachers[df_teachers['교사_ID'] == str(teacher_id_target).strip()].index
-        
-        if not target_idx.empty:
-            idx = target_idx[0]
-            curr_pw = str(df_teachers.loc[idx, "비밀번호"]).strip()
-            curr_sub = str(df_teachers.loc[idx, "담당_과목"]).strip()
-            
-            new_pw = st.text_input("새 비밀번호 변경", value=curr_pw, type="password")
-            new_sub = st.text_input("담당 과목 변경 (여러 과목은 콤마 분리)", value=curr_sub)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            # 🚨 전역 간섭을 원천 방어하는 독립 격리형 수려한 빨간색 단추 주입 완료
-            if st.button("💾 변경사항 클라우드 시트에 즉시 반영", key="isolated_popup_submit_btn", use_container_width=True):
-                if new_pw and new_sub:
-                    df_teachers.loc[idx, "비밀번호"] = new_pw.strip()
-                    df_teachers.loc[idx, "담당_과목"] = new_sub.strip()
-                    if save_df_to_sheet("teacher_accounts", df_teachers):
-                        st.session_state["allowed_subjects"] = [s.strip() for s in new_sub.split(",") if s.strip()]
-                        st.session_state["show_update_success_msg"] = True 
-                        st.rerun()
-                else: st.error("빈 칸을 남겨둘 수 없습니다.")
-        else: st.error("계정 매핑 인덱스를 찾을 수 없습니다. 로그아웃 후 다시 시도해 주세요.")
-    else:
-        st.warning("최고관리자(admin) 계정은 마스터 권한 고정이므로 시트 수정이 필요 없습니다.")
+def launch_isolated_profile_dialog():
+    profile_pop.render_isolated_dialog(load_sheet_to_df, save_df_to_sheet)
 
 @st.dialog("➕ 학생 개별 추가")
 def student_individual_add_dialog(db_df, sf_id, score_headers):
@@ -223,14 +193,14 @@ GRADE_OPTIONS = ["학년 지정", "1학년", "2학년", "3학년"]
 SEMESTER_OPTIONS = ["학기 선택"] + [f"{y}학년도 {t}학기" for y in range(2025, 2030) for t in [1, 2]]
 
 # =========================================================================
-# 🔄 전역 테마 스타일 개조 부 (본문 축소 및 사이드바 가로 폭 축소 인프라)
+# 🔄 전역 테마 스타일 개조 부 (사이드바 폭 축소 및 완전 정적 테마 빌드)
 # =========================================================================
 st.markdown("""
     <style>
         .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { 
             background-color: #f1f5f9 !important; 
         }
-        div[data-testid="stHeader"] { display: none !important; }
+        div[data-testid="stHeader"] { none !important; display: none !important; }
         
         [data-testid="stSidebar"], section[data-testid="stSidebar"] {
             min-width: 260px !important;
@@ -238,9 +208,7 @@ st.markdown("""
             background-color: #1e293b !important;
             box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important;
         }
-        [data-testid="stAppViewContainer"] {
-            margin-left: 0px !important;
-        }
+        [data-testid="stAppViewContainer"] { margin-left: 0px !important; }
 
         [data-testid="stSidebar"] h4 { color: #ffffff !important; font-weight: 800; font-size: 24px !important; margin-top: 10px !important; }
         [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
@@ -250,49 +218,38 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
 
-        /* 🚨 [오버롤 완전 격리 조치] 
-           마우스 반응 효과 체인을 코드 전역에서 영구 소멸시키고 완벽한 평면 정적 단색으로 박제 */
-        div[data-testid="stSidebar"] button[key="account_pure_btn"],
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"],
-        div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:hover,
-        div[data-testid="stSidebar"] button[key="account_pure_btn"]:focus,
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:focus,
-        div[data-testid="stSidebar"] button[key="account_pure_btn"]:active,
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:active {
+        /* 🚨 [오버롤 완전 삭제 정적 단추 마스터 CSS] */
+        .html-fixed-box { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        .html-fixed-btn-blue {
+            background-color: #3b82f6 !important; /* 🔐 클래식 파란색 상시 고정 */
             color: #ffffff !important;
+            border: 2px solid #2563eb !important;
             border-radius: 6px !important;
-            padding: 10px 16px !important;
+            padding: 11px 16px !important;
             font-weight: 700 !important;
             font-size: 14px !important;
-            box-shadow: none !important;                
-            transform: none !important;                 
             width: 100% !important;
             display: block !important;
             text-align: center !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            font-family: inherit !important;
+            cursor: pointer !important;
         }
-        
-        div[data-testid="stSidebar"] button[key="account_pure_btn"] {
-            background-color: #3b82f6 !important; /* 🔐 단정하고 선명한 클래식 파란색 상시 고정 */
-            border: 2px solid #2563eb !important;
-        }
-        div[data-testid="stSidebar"] button[key="logout_pure_btn"] {
+        .html-fixed-btn-gray {
             background-color: #475569 !important; /* 🚪 차분한 다크 그레이 상시 고정 */
-            border: 2px solid #334155 !important;
-        }
-
-        /* 🚨 [팝업 간섭 격리 치료 부] 내 정보 수정 팝업 내부의 단추 스타일을 독자적으로 정의하여 
-           사이드바 영역으로 흰색 오염 찌꺼기가 번지는 경로를 물리적으로 차단 */
-        div[data-testid="stDialog"] button[key="isolated_profile_submit_btn"],
-        button[key="isolated_popup_submit_btn"] {
-            background-color: #ef4444 !important; /* 🛑 화사하고 선명한 오리지널 순정 빨간색 확정 박음 */
             color: #ffffff !important;
-            font-weight: 800 !important;
-            border: none !important;
+            border: 2px solid #334155 !important;
             border-radius: 6px !important;
-            padding: 12px 0 !important;
-            font-size: 15px !important;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
+            padding: 11px 16px !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            width: 100% !important;
+            display: block !important;
+            text-align: center !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            font-family: inherit !important;
+            cursor: pointer !important;
+            margin-top: 6px !important;
         }
 
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
@@ -325,19 +282,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 세션 팅김 방지용 역방향 온클릭 리스너 분기 매핑
-def sidebar_logout_callback():
+# 🚨 분리형 비동기 라우터 연동 엔진 가동 부
+if st.query_params.get("raw_act") == "account":
+    st.query_params.clear()
+    launch_isolated_profile_dialog()
+elif st.query_params.get("raw_act") == "logout":
+    st.query_params.clear()
     st.session_state["admin_logged_in"] = False
     st.session_state["logged_teacher_id"] = ""
     st.session_state["teacher_name"] = ""
     st.session_state["allowed_subjects"] = []
-
-if "open_profile_popup" not in st.session_state:
-    st.session_state["open_profile_popup"] = False
-
-if st.session_state["open_profile_popup"]:
-    st.session_state["open_profile_popup"] = False
-    account_update_dialog()
+    st.rerun()
 
 if not st.session_state["admin_logged_in"]:
     st.markdown("""
@@ -415,13 +370,19 @@ else:
         )
         st.markdown("---")
         
-        # 순정 컴포넌트의 클릭 액션을 라우팅 브릿지에 완벽 결속하여 디자인 영구 소멸 현상 진압
-        if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
-            st.session_state["open_profile_popup"] = True
-            st.rerun()
-            
-        st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
-        st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True, on_click=sidebar_logout_callback)
+        # 🚨 [완벽 결속 분리형 HTML 버튼] 대장정의 버그를 종결짓는 원초적 정적 폼 구조
+        st.markdown('''
+            <div class="html-fixed-box">
+                <form method="get" target="_self">
+                    <input type="hidden" name="raw_act" value="account">
+                    <button type="submit" class="html-fixed-btn-blue">🔐 내 정보 수정</button>
+                </form>
+                <form method="get" target="_self">
+                    <input type="hidden" name="raw_act" value="logout">
+                    <button type="submit" class="html-fixed-btn-gray">🚪 시스템 로그아웃</button>
+                </form>
+            </div>
+        ''', unsafe_allow_html=True)
 
     # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
