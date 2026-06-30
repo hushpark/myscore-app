@@ -85,6 +85,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
+# 🚨 [알림창 간섭 해제 패치] 디자인 오염을 일으키던 내부 st.success 창을 제거하고 부드럽게 세션 닫기로 전환
 @st.dialog("🔐 내 정보 수정")
 def account_update_dialog():
     teacher_id_target = st.session_state.get("logged_teacher_id", "")
@@ -111,8 +112,8 @@ def account_update_dialog():
                     df_teachers.loc[idx, "비밀번호"] = new_pw.strip()
                     df_teachers.loc[idx, "담당_과목"] = new_sub.strip()
                     if save_df_to_sheet("teacher_accounts", df_teachers):
-                        st.success("🎉 교사 정보가 실시간으로 변경 저장되었습니다!")
                         st.session_state["allowed_subjects"] = [s.strip() for s in new_sub.split(",") if s.strip()]
+                        st.session_state["show_update_success_msg"] = True  # 안전한 격리형 메시지 플래그 작동
                         st.rerun()
                 else: st.error("빈 칸을 남겨둘 수 없습니다.")
         else: st.error("계정 매핑 인덱스를 찾을 수 없습니다. 로그아웃 후 다시 시도해 주세요.")
@@ -251,13 +252,14 @@ st.markdown("""
         .stElementContainer { margin-bottom: 0.3rem !important; }
         div[data-testid="stBlock"] { padding: 0.6rem 1rem !important; }
         
-        /* 🚨 [오버롤 버그 완전 진압] 사이드바 하단 st.button 위젯의 모든 스타일 우선권을 오버라이딩하여
-           처음 만드셨던 단정하고 굵직한 테두리의 클래식 어두운 블루 형태로 1:1 강제 고정 */
-        div[data-testid="stSidebar"] div.stButton > button,
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
-            background-color: #2b3a4a !important;
-            color: #ffffff !important;
-            border: 2px solid #3f5164 !important;
+        /* 🚨 [화이트 마스크 원천 파괴 - 철벽 파이널 타겟 지지] 
+           그 어떤 알림 위젯이 도중에 강제로 튀어나와 스타일을 오염시키려 해도,
+           사이드바 전용 고유 키값의 우선순위를 브라우저가 최우선으로 복원해 내도록 설계 */
+        div[data-testid="stSidebar"] button[key="account_pure_btn"],
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"] {
+            background-color: #2b3a4a !important;       /* 🛠️ 원하셨던 차분한 다크 블루 색상 강제 지정 */
+            color: #ffffff !important;                  /* 🛠️ 글자색 흰색으로 무조건 고정 */
+            border: 2px solid #3f5164 !important;       /* 🛠️ 클래식한 사각형 선 테두리 가동 */
             border-radius: 6px !important;
             padding: 10px 16px !important;
             font-weight: 700 !important;
@@ -266,18 +268,18 @@ st.markdown("""
             width: 100% !important;
             display: block !important;
             text-align: center !important;
-            transition: all 0.2s ease !important;
         }
         
-        /* 마우스 오버(호버)나 클릭, 포커스 상태 시 하얀 상자로 치환되던 고질적 버그 원천 차단 */
-        div[data-testid="stSidebar"] div.stButton > button:hover,
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
-        div[data-testid="stSidebar"] div.stButton > button:focus,
-        div[data-testid="stSidebar"] div.stButton > button:active {
+        /* 마우스 오버나 클릭이 일어나도 절대 흐려지지 않고 다크 블루 원형 보존 */
+        div[data-testid="stSidebar"] button[key="account_pure_btn"]:hover,
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:hover,
+        div[data-testid="stSidebar"] button[key="account_pure_btn"]:focus,
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:focus,
+        div[data-testid="stSidebar"] button[key="account_pure_btn"]:active,
+        div[data-testid="stSidebar"] button[key="logout_pure_btn"]:active {
             background-color: #3f5164 !important;
             border-color: #52667a !important;
             color: #ffffff !important;
-            transform: translateY(-1px);
         }
 
         /* 셀렉트박스 공통 테두리 스타일 */
@@ -313,7 +315,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🚨 [세션 팅김 원천 방지용 콜백 함수 인프라 정의부]
+# 세션 팅김 방지용 역방향 온클릭 리스너 분기 매핑
 def sidebar_logout_callback():
     st.session_state["admin_logged_in"] = False
     st.session_state["logged_teacher_id"] = ""
@@ -378,8 +380,8 @@ if not st.session_state["admin_logged_in"]:
                         if st.form_submit_button("점수 조회"):
                             df_st = load_sheet_to_df(sf_id)
                             if not df_st.empty:
-                                if "학교 이메일" in df_st.columns:
-                                    res = df_st[(df_st['학교 이메일'].astype(str).str.strip() == str(st_email_in).strip()) & (df_st['비밀번호'].astype(str) == str(st_pw))]
+                                if "school_email" in df_st.columns:
+                                    res = df_st[(df_st['school_email'].astype(str).str.strip() == str(st_email_in).strip()) & (df_st['비밀번호'].astype(str) == str(st_pw))]
                                 else:
                                     res = df_st[(df_st['이름'].astype(str).str.strip() == str(st_email_in).strip()) & (df_st['비밀번호'].astype(str) == str(st_pw))]
                                     
@@ -403,20 +405,23 @@ else:
         )
         st.markdown("---")
         
-        # 🚨 [무결점 복구 가동] 독립형 콜백과 세션 락 체인을 활용하여 서로의 위젯 상태가 겹쳐 튕기는 문제를 원천 차단
+        # 순정 UI를 유지하면서 튕김을 막는 콜백 리스너 연동형 버튼 기동
         if st.button("🔐 내 정보 수정", key="account_pure_btn", use_container_width=True):
             st.session_state["open_profile_popup"] = True
             st.rerun()
             
         st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
-        
-        # 🚨 로그아웃을 독립형 온클릭 콜백(on_click)으로 처리하여 다른 버튼이 눌렸을 때 로그아웃이 오작동하지 않도록 완벽 봉인
         st.button("🚪 시스템 로그아웃", key="logout_pure_btn", use_container_width=True, on_click=sidebar_logout_callback)
 
     # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<div style='text-align:center; height: 5px;'></div>", unsafe_allow_html=True)
+
+    # 🚨 [간섭 차단 격리 부] 다이얼로그 내부가 아닌, 안전하게 격리된 본문 프레임에 성공 메시지를 뿜어 오염 방지
+    if "show_update_success_msg" in st.session_state and st.session_state["show_update_success_msg"]:
+        del st.session_state["show_update_success_msg"]
+        st.success("🎉 교사 정보 및 과목 권한이 데이터베이스에 실시간으로 일괄 동기화 완료되었습니다!")
 
     # 📊 모듈 1: 학생 조회 현황 모니터링
     if menu_selection == "▶ 학생 조회 현황 모니터링":
@@ -452,7 +457,10 @@ else:
                 with col_class:
                     class_options = ["전체 학급 보기"]
                     if not db_df.empty and "반" in db_df.columns:
-                        class_options = ["전체 학급 보기"] + [f"{int(x)}반" for x in sorted(db_df['반'].unique())]
+                        try:
+                            class_options = ["전체 학급 보기"] + [f"{int(x)}반" for x in sorted(db_df['반'].unique())]
+                        except:
+                            class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class = st.selectbox("🎯 필터링할 학급(반) 선택", options=class_options, key="sb_filter_class_monitor")
                 
                 if not db_df.empty:
