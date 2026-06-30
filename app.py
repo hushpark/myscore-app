@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS] 
+# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 원상복구 및 사이드바 고정
 # =========================================================================
 st.markdown("""
     <style>
@@ -73,15 +73,26 @@ st.markdown("""
         }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 4. 로그인 폼 전용 버튼 복구 -> 본문 내부 중앙의 버튼은 차분한 네이비색 유지! */
+        /* 🚨 4. 로그인 폼 전용 레이아웃 완벽 복구 (한 줄 타이틀, 꽉 찬 버튼) */
         /* -------------------------------------------------------------------------------- */
-        div[data-testid="stForm"] button[kind="secondary"],
+        div[data-testid="stForm"] {
+            background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
+            padding: 40px 30px 30px 30px !important; border-radius: 24px !important;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; 
+            max-width: 500px !important; /* 폼 너비를 넓혀서 제목이 두 줄로 깨지는 것 방지 */
+            margin: 60px auto 0 auto !important; position: relative !important;
+        }
+        div[data-testid="stForm"] h2 {
+            white-space: nowrap !important; /* 제목 한 줄 고정 */
+            text-align: center !important;
+            margin-bottom: 20px !important;
+        }
         div[data-testid="stForm"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 100% !important;
+            width: 100% !important; /* 로그인 버튼 폭 100% 꽉 채우기 */
             padding: 0.6rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
@@ -93,6 +104,10 @@ st.markdown("""
         div[data-testid="stTextInput"] div[data-baseweb="input"], div[data-testid="stNumberInput"] div[data-baseweb="input"] { border: 2px solid #cbd5e1 !important; border-radius: 6px !important; background-color: #ffffff !important; }
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
         div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
+        .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
+        
+        h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 3px !important; margin-top: 0px !important; }
+        h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -282,18 +297,10 @@ if st.session_state["open_profile_popup"]:
     st.session_state["open_profile_popup"] = False
     launch_isolated_profile_dialog()
 
+# =========================================================================
+# 🔓 로그인 폼 화면
+# =========================================================================
 if not st.session_state["admin_logged_in"]:
-    st.markdown("""
-        <style>
-            .main, [data-testid="stAppViewContainer"] { background-color: #3e4f5a !important; }
-            div[data-testid="stForm"] {
-                background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
-                padding: 40px 30px 30px 30px !important; border-radius: 24px !important;
-                box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; max-width: 440px !important; margin: 60px auto 0 auto !important; position: relative !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-    
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
@@ -343,6 +350,9 @@ if not st.session_state["admin_logged_in"]:
                                 else: st.error("❌ 정보가 일치하지 않습니다. 입력값을 다시 확인해 주세요.")
         st.markdown("<div style='text-align:center; font-size:11px; color:#94a3b8; margin-top:30px;'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
+# =========================================================================
+# 🔒 로그인 후 교사 대시보드 화면
+# =========================================================================
 else:
     with st.sidebar:
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
@@ -362,7 +372,6 @@ else:
         st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
         st.button("🚪 시스템 로그아웃", type="secondary", use_container_width=True, on_click=sidebar_logout_callback)
 
-    # 교사 대시보드 타이틀 고정
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<div style='text-align:center; height: 5px;'></div>", unsafe_allow_html=True)
