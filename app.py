@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 내부 완벽 중앙 정렬
+# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 내부 완벽 중앙 정렬!
 # =========================================================================
 st.markdown("""
     <style>
@@ -67,7 +67,7 @@ st.markdown("""
         }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 4. 로그인 폼 전용 레이아웃: 하얀 박스 안에서 완벽하게 정중앙 배치 */
+        /* 🚨 4. 로그인 폼 전용 레이아웃: 스트림릿의 왼쪽 정렬 본능을 파괴하고 완벽 중앙 정렬! */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
@@ -83,30 +83,36 @@ st.markdown("""
             margin-bottom: 25px !important;
         }
         
-        /* 🚨 [핵심!] 라디오 버튼을 감싸는 투명 상자를 내용물 크기로 조이고 정중앙으로 밀어버림 */
-        div[data-testid="stForm"] div[data-testid="stRadio"] {
-            width: max-content !important;
-            margin: 0 auto 15px auto !important;
-            display: block !important;
+        /* 🚨 [라디오 버튼 중앙 정렬] 투명 상자를 100%로 벌리고 요소를 가운데로 강제 집합 */
+        div[data-testid="stForm"] [data-testid="stRadio"] {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin-bottom: 10px !important;
+        }
+        div[data-testid="stForm"] [data-testid="stRadio"] > div[role="radiogroup"] {
+            justify-content: center !important;
         }
 
-        /* 🚨 [핵심!] 로그인 버튼 투명 상자를 180px로 조이고 정중앙으로 밀어버림 */
+        /* 🚨 [로그인 버튼 중앙 정렬] 투명 상자를 100%로 벌리고 요소를 가운데로 강제 집합 */
         div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] {
-            width: 180px !important;
-            margin: 10px auto 0 auto !important;
-            display: block !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin-top: 15px !important;
         }
         div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 100% !important; 
+            width: 180px !important; /* 버튼 자체의 콤팩트한 크기 유지 */
             padding: 0.7rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
             box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
-            display: block !important;
         }
 
         /* 기본 인풋 테두리 살리기 */
