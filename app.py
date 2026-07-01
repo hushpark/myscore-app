@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS]
+# 🔄 [우주 최강 구역별 물리적 격리 CSS] 비밀번호 보기 버튼 오염 완벽 복구
 # =========================================================================
 st.markdown("""
     <style>
@@ -88,9 +88,8 @@ st.markdown("""
             justify-content: center !important;
         }
 
-        /* 로그인 버튼 디자인 고정 */
-        div[data-testid="stForm"] button[kind="secondary"],
-        div[data-testid="stForm"] button {
+        /* 🚨 [핵심 수정] 폼 안의 모든 버튼이 아니라, 오직 '제출(Submit) 버튼'만 정밀 타격하여 파란색 지정 */
+        div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
@@ -99,6 +98,7 @@ st.markdown("""
             border-radius: 8px !important;
             font-size: 16px !important;
             box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
+            width: 100% !important; /* 컬럼 안에 꽉 차도록 */
         }
 
         /* 기본 인풋 테두리 살리기 */
@@ -296,14 +296,14 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 로그인 폼 화면 (물리적 뼈대 분할 적용 완료!)
+# 🔓 로그인 폼 화면 (물리적 뼈대 분할 유지)
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 🚨 [핵심 1] 라디오 버튼을 빈 공간(1) - 라디오(2) - 빈 공간(1) 비율로 물리적 고정
+        # 라디오 버튼 물리적 고정
         col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
         with col_r2:
             login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
@@ -316,10 +316,9 @@ if not st.session_state["admin_logged_in"]:
             
             st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
             
-            # 🚨 [핵심 2] 로그인 버튼을 빈 공간(1) - 버튼(1.5) - 빈 공간(1) 비율로 물리적 고정
+            # 로그인 버튼 물리적 고정
             col_b1, col_btn, col_b3 = st.columns([1, 1.5, 1])
             with col_btn:
-                # use_container_width=True 로 설정하면 가운데 상자 크기만큼 버튼이 예쁘게 꽉 참!
                 login_submit = st.form_submit_button("로그인", use_container_width=True)
                 
             if login_submit:
@@ -349,7 +348,7 @@ if not st.session_state["admin_logged_in"]:
                         
                         st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
                         
-                        # 🚨 [학생 로그인 버튼도 동일하게 중앙 뼈대에 고정]
+                        # 학생 로그인 버튼 동일 중앙 고정
                         col_b1, col_btn, col_b3 = st.columns([1, 1.5, 1])
                         with col_btn:
                             student_submit = st.form_submit_button("점수 조회", use_container_width=True)
