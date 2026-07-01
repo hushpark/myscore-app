@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 원상복구 및 사이드바 고정
+# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 찌그러짐 원천 복구
 # =========================================================================
 st.markdown("""
     <style>
@@ -25,9 +25,7 @@ st.markdown("""
         [data-testid="stSidebar"] h4 { color: #ffffff !important; font-weight: 800; font-size: 24px !important; margin-top: 10px !important; }
         [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
 
-        /* -------------------------------------------------------------------------------- */
         /* 1. 사이드바 내부의 [Primary] 버튼 (내 정보 수정) -> 무조건 다크 블루! */
-        /* -------------------------------------------------------------------------------- */
         [data-testid="stSidebar"] button[kind="primary"],
         [data-testid="stSidebar"] button[kind="primary"]:hover,
         [data-testid="stSidebar"] button[kind="primary"]:focus,
@@ -41,9 +39,7 @@ st.markdown("""
             box-shadow: none !important; transform: none !important; width: 100% !important; display: block !important;
         }
 
-        /* -------------------------------------------------------------------------------- */
         /* 2. 사이드바 내부의 [Secondary] 버튼 (로그아웃) -> 무조건 다크 그레이! */
-        /* -------------------------------------------------------------------------------- */
         [data-testid="stSidebar"] button[kind="secondary"],
         [data-testid="stSidebar"] button[kind="secondary"]:hover,
         [data-testid="stSidebar"] button[kind="secondary"]:focus,
@@ -57,9 +53,7 @@ st.markdown("""
             box-shadow: none !important; transform: none !important; width: 100% !important; display: block !important;
         }
 
-        /* -------------------------------------------------------------------------------- */
         /* 3. 팝업창(Dialog) 내부의 [Primary] 버튼 (저장 버튼들) -> 무조건 강렬한 빨간색! */
-        /* -------------------------------------------------------------------------------- */
         [data-testid="stDialog"] button[kind="primary"] {
             background-color: #ef4444 !important;
             color: #ffffff !important;
@@ -73,27 +67,33 @@ st.markdown("""
         }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 4. 로그인 폼 전용 레이아웃 완벽 복구 (한 줄 타이틀, 꽉 찬 버튼) */
+        /* 🚨 4. 로그인 폼 전용 레이아웃 완벽 복구 (버튼 찌그러짐 원천 차단) */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
             padding: 40px 30px 30px 30px !important; border-radius: 24px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; 
-            max-width: 500px !important; /* 폼 너비를 넓혀서 제목이 두 줄로 깨지는 것 방지 */
+            max-width: 480px !important; /* 폼 너비를 넉넉하게 확보 */
             margin: 60px auto 0 auto !important; position: relative !important;
         }
         div[data-testid="stForm"] h2 {
-            white-space: nowrap !important; /* 제목 한 줄 고정 */
+            font-size: 26px !important; /* 글씨 작아짐 방지, 크고 시원하게! */
+            white-space: nowrap !important; /* 두 줄로 깨지는 것 방지 */
             text-align: center !important;
             margin-bottom: 20px !important;
         }
-        div[data-testid="stForm"] button {
+        
+        /* 🚨 폼 제출 버튼(로그인 버튼)을 감싸는 보이지 않는 보호막 상자까지 100%로 쫙 펴주기! */
+        div[data-testid="stFormSubmitButton"] {
+            width: 100% !important;
+        }
+        div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 100% !important; /* 로그인 버튼 폭 100% 꽉 채우기 */
-            padding: 0.6rem 0 !important;
+            width: 100% !important; 
+            padding: 0.8rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
             box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
