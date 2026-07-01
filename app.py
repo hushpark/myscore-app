@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 내부 완벽 중앙 정렬!
+# 🔄 [우주 최강 구역별 물리적 격리 CSS]
 # =========================================================================
 st.markdown("""
     <style>
@@ -67,7 +67,7 @@ st.markdown("""
         }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 4. 로그인 폼 전용 레이아웃: 스트림릿의 왼쪽 정렬 본능을 파괴하고 완벽 중앙 정렬! */
+        /* 🚨 4. 로그인 폼 전용 레이아웃 */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
@@ -83,32 +83,18 @@ st.markdown("""
             margin-bottom: 25px !important;
         }
         
-        /* 🚨 [라디오 버튼 중앙 정렬] 투명 상자를 100%로 벌리고 요소를 가운데로 강제 집합 */
-        div[data-testid="stForm"] [data-testid="stRadio"] {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            width: 100% !important;
-            margin-bottom: 10px !important;
-        }
-        div[data-testid="stForm"] [data-testid="stRadio"] > div[role="radiogroup"] {
+        /* 컬럼 내부에서 라디오 버튼이 엇나가지 않도록 완벽 중앙 정렬 */
+        div[data-testid="stForm"] div[role="radiogroup"] {
             justify-content: center !important;
         }
 
-        /* 🚨 [로그인 버튼 중앙 정렬] 투명 상자를 100%로 벌리고 요소를 가운데로 강제 집합 */
-        div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            width: 100% !important;
-            margin-top: 15px !important;
-        }
-        div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] button {
+        /* 로그인 버튼 디자인 고정 */
+        div[data-testid="stForm"] button[kind="secondary"],
+        div[data-testid="stForm"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 180px !important; /* 버튼 자체의 콤팩트한 크기 유지 */
             padding: 0.7rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
@@ -120,9 +106,6 @@ st.markdown("""
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
         div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
         .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
-        
-        h2 { color: #0f172a !important; font-weight: 800 !important; font-size: 26px !important; margin-bottom: 3px !important; margin-top: 0px !important; }
-        h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -313,18 +296,33 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 로그인 폼 화면
+# 🔓 로그인 폼 화면 (물리적 뼈대 분할 적용 완료!)
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-        login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
+        
+        # 🚨 [핵심 1] 라디오 버튼을 빈 공간(1) - 라디오(2) - 빈 공간(1) 비율로 물리적 고정
+        col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
+        with col_r2:
+            login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
+            
+        st.markdown("<br>", unsafe_allow_html=True)
         
         if login_mode == "교사":
             admin_id = st.text_input("교사_ID", placeholder="교사 ID를 입력하세요", label_visibility="collapsed")
             admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
-            if st.form_submit_button("로그인"):
+            
+            st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+            
+            # 🚨 [핵심 2] 로그인 버튼을 빈 공간(1) - 버튼(1.5) - 빈 공간(1) 비율로 물리적 고정
+            col_b1, col_btn, col_b3 = st.columns([1, 1.5, 1])
+            with col_btn:
+                # use_container_width=True 로 설정하면 가운데 상자 크기만큼 버튼이 예쁘게 꽉 참!
+                login_submit = st.form_submit_button("로그인", use_container_width=True)
+                
+            if login_submit:
                 auth_result = verify_teacher_credentials(admin_id, admin_pw)
                 if auth_result["success"]:
                     st.session_state["admin_logged_in"] = True
@@ -345,10 +343,18 @@ if not st.session_state["admin_logged_in"]:
                     cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
                     if config:
+                        st.markdown("<h4 style='height: 5px; border:none;'></h4>", unsafe_allow_html=True)
                         st_email_in = st.text_input("학교 이메일", placeholder="학교 이메일을 입력하세요", label_visibility="collapsed")
                         st_pw = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", label_visibility="collapsed")
                         
-                        if st.form_submit_button("점수 조회"):
+                        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+                        
+                        # 🚨 [학생 로그인 버튼도 동일하게 중앙 뼈대에 고정]
+                        col_b1, col_btn, col_b3 = st.columns([1, 1.5, 1])
+                        with col_btn:
+                            student_submit = st.form_submit_button("점수 조회", use_container_width=True)
+                        
+                        if student_submit:
                             df_st = load_sheet_to_df(sf_id)
                             if not df_st.empty:
                                 if "school_email" in df_st.columns:
