@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 완벽 슬림화 및 중앙 정렬
+# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 내부 완벽 중앙 정렬
 # =========================================================================
 st.markdown("""
     <style>
@@ -67,33 +67,35 @@ st.markdown("""
         }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 4. 로그인 폼 전용 레이아웃: 슬림한 박스, 라디오/버튼 중앙 정렬 완벽 복구 */
+        /* 🚨 4. 로그인 폼 전용 레이아웃: 하얀 박스 안에서 완벽하게 정중앙 배치 */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
             padding: 40px 30px 35px 30px !important; border-radius: 24px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; 
-            max-width: 420px !important; /* 폼 너비를 약간 슬림하게 축소 */
+            max-width: 420px !important; 
             margin: 60px auto 0 auto !important; position: relative !important;
         }
         div[data-testid="stForm"] h2 {
             font-size: 25px !important; 
-            white-space: nowrap !important; /* 두 줄 깨짐 방지 */
+            white-space: nowrap !important; 
             text-align: center !important;
             margin-bottom: 25px !important;
         }
         
-        /* 라디오 버튼(교사/학생) 폼 중앙 정렬 */
-        div[data-testid="stForm"] div[role="radiogroup"] {
-            justify-content: center !important;
-            margin-bottom: 10px !important;
-        }
-
-        /* 로그인 버튼을 감싸는 상자를 100%로 펴고, 버튼을 가운데로 정렬 */
-        div[data-testid="stFormSubmitButton"] {
+        /* 🚨 라디오 버튼(교사/학생)을 감싸는 투명 상자를 하얀 박스 가로 폭 100%로 펴고 내부 가운데 정렬 */
+        div[data-testid="stForm"] div[data-testid="stRadio"] > div[role="radiogroup"] {
+            width: 100% !important;
             display: flex !important;
             justify-content: center !important;
+            margin: 0 auto 15px auto !important;
+        }
+
+        /* 🚨 로그인 버튼을 감싸는 투명 상자를 하얀 박스 가로 폭 100%로 펴고 내부 가운데 정렬 */
+        div[data-testid="stFormSubmitButton"] {
             width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
             margin-top: 10px !important;
         }
         div[data-testid="stFormSubmitButton"] button {
@@ -101,11 +103,13 @@ st.markdown("""
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 180px !important; /* 버튼 폭을 적당하고 예쁘게 고정 */
+            width: 180px !important; /* 버튼 자체의 예쁜 크기 유지 */
+            margin: 0 auto !important; /* 좌우 여백을 똑같이 주어 정중앙에 고정 */
             padding: 0.7rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
             box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
+            display: block !important;
         }
 
         /* 기본 인풋 테두리 살리기 */
@@ -523,7 +527,7 @@ else:
                                 for col in edited_df.columns:
                                     db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
                             if save_df_to_sheet(sf_id, db_df):
-                                st.success("🎉 수행평가 성적 수정 사항이 성공적으로 저장되었습니다!")
+                                st.success("🎉 수행평가 성적 수정 사항이 성공적으로 클라우드 서버와 일괄 저장 동기화되었습니다!")
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
