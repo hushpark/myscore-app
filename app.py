@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 찌그러짐 원천 복구
+# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 완벽 슬림화 및 중앙 정렬
 # =========================================================================
 st.markdown("""
     <style>
@@ -67,37 +67,45 @@ st.markdown("""
         }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 4. 로그인 폼 전용 레이아웃 완벽 복구 (버튼 찌그러짐 원천 차단) */
+        /* 🚨 4. 로그인 폼 전용 레이아웃: 슬림한 박스, 라디오/버튼 중앙 정렬 완벽 복구 */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
-            padding: 40px 30px 30px 30px !important; border-radius: 24px !important;
+            padding: 40px 30px 35px 30px !important; border-radius: 24px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; 
-            max-width: 480px !important; /* 폼 너비를 넉넉하게 확보 */
+            max-width: 420px !important; /* 폼 너비를 약간 슬림하게 축소 */
             margin: 60px auto 0 auto !important; position: relative !important;
         }
         div[data-testid="stForm"] h2 {
-            font-size: 26px !important; /* 글씨 작아짐 방지, 크고 시원하게! */
-            white-space: nowrap !important; /* 두 줄로 깨지는 것 방지 */
+            font-size: 25px !important; 
+            white-space: nowrap !important; /* 두 줄 깨짐 방지 */
             text-align: center !important;
-            margin-bottom: 20px !important;
+            margin-bottom: 25px !important;
         }
         
-        /* 🚨 폼 제출 버튼(로그인 버튼)을 감싸는 보이지 않는 보호막 상자까지 100%로 쫙 펴주기! */
+        /* 라디오 버튼(교사/학생) 폼 중앙 정렬 */
+        div[data-testid="stForm"] div[role="radiogroup"] {
+            justify-content: center !important;
+            margin-bottom: 10px !important;
+        }
+
+        /* 로그인 버튼을 감싸는 상자를 100%로 펴고, 버튼을 가운데로 정렬 */
         div[data-testid="stFormSubmitButton"] {
+            display: flex !important;
+            justify-content: center !important;
             width: 100% !important;
+            margin-top: 10px !important;
         }
         div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 100% !important; 
-            padding: 0.8rem 0 !important;
+            width: 180px !important; /* 버튼 폭을 적당하고 예쁘게 고정 */
+            padding: 0.7rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
             box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
-            display: block !important;
         }
 
         /* 기본 인풋 테두리 살리기 */
@@ -301,10 +309,10 @@ if st.session_state["open_profile_popup"]:
 # 🔓 로그인 폼 화면
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
+    
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
-        st.markdown("<h4 style='height: 10px; border:none;'></h4>", unsafe_allow_html=True)
         
         if login_mode == "교사":
             admin_id = st.text_input("교사_ID", placeholder="교사 ID를 입력하세요", label_visibility="collapsed")
@@ -330,7 +338,6 @@ if not st.session_state["admin_logged_in"]:
                     cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
                     if config:
-                        st.markdown("<h4 style='height: 5px; border:none;'></h4>", unsafe_allow_html=True)
                         st_email_in = st.text_input("학교 이메일", placeholder="학교 이메일을 입력하세요", label_visibility="collapsed")
                         st_pw = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", label_visibility="collapsed")
                         
@@ -348,7 +355,7 @@ if not st.session_state["admin_logged_in"]:
                                     scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
                                     show_result_dialog(st_name, scores, sf_id, idx, df_st)
                                 else: st.error("❌ 정보가 일치하지 않습니다. 입력값을 다시 확인해 주세요.")
-        st.markdown("<div style='text-align:center; font-size:11px; color:#94a3b8; margin-top:30px;'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; font-size:11px; color:#94a3b8; margin-top:20px;'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
 
 # =========================================================================
 # 🔒 로그인 후 교사 대시보드 화면
@@ -378,7 +385,7 @@ else:
 
     if "show_update_success_msg" in st.session_state and st.session_state["show_update_success_msg"]:
         del st.session_state["show_update_success_msg"]
-        st.success("🎉 교사 정보 및 과목 권한이 데이터베이스에 실시간으로 일괄 동기화 완료되었습니다!")
+        st.success("🎉 교사 정보 및 과목 권한이 데이터베이스에 실시간 일괄 동기화 완료되었습니다!")
 
     # 📊 모듈 1: 학생 조회 현황 모니터링
     if menu_selection == "▶ 학생 조회 현황 모니터링":
@@ -516,7 +523,7 @@ else:
                                 for col in edited_df.columns:
                                     db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
                             if save_df_to_sheet(sf_id, db_df):
-                                st.success("🎉 수행평가 성적 수정 사항이 성공적으로 클라우드 서버와 일괄 저장 동기화되었습니다!")
+                                st.success("🎉 수행평가 성적 수정 사항이 성공적으로 저장되었습니다!")
                                 st.rerun()
                 else: st.warning("현재 업로드된 성적 대장이 비어 있습니다. 아래 성적 전체 일괄 업로드 메뉴를 이용하세요.")
 
