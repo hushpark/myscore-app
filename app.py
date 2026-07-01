@@ -83,28 +83,25 @@ st.markdown("""
             margin-bottom: 25px !important;
         }
         
-        /* 🚨 라디오 버튼(교사/학생)을 감싸는 투명 상자를 하얀 박스 가로 폭 100%로 펴고 내부 가운데 정렬 */
-        div[data-testid="stForm"] div[data-testid="stRadio"] > div[role="radiogroup"] {
-            width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
+        /* 🚨 [핵심!] 라디오 버튼을 감싸는 투명 상자를 내용물 크기로 조이고 정중앙으로 밀어버림 */
+        div[data-testid="stForm"] div[data-testid="stRadio"] {
+            width: max-content !important;
             margin: 0 auto 15px auto !important;
+            display: block !important;
         }
 
-        /* 🚨 로그인 버튼을 감싸는 투명 상자를 하얀 박스 가로 폭 100%로 펴고 내부 가운데 정렬 */
-        div[data-testid="stFormSubmitButton"] {
-            width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-            margin-top: 10px !important;
+        /* 🚨 [핵심!] 로그인 버튼 투명 상자를 180px로 조이고 정중앙으로 밀어버림 */
+        div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] {
+            width: 180px !important;
+            margin: 10px auto 0 auto !important;
+            display: block !important;
         }
-        div[data-testid="stFormSubmitButton"] button {
+        div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 180px !important; /* 버튼 자체의 예쁜 크기 유지 */
-            margin: 0 auto !important; /* 좌우 여백을 똑같이 주어 정중앙에 고정 */
+            width: 100% !important; 
             padding: 0.7rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
