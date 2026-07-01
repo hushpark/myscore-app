@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 구역별 물리적 격리 CSS] 비밀번호 보기 버튼 오염 완벽 복구
+# 🔄 [우주 최강 구역별 물리적 격리 CSS] 로그인 폼 모든 버그 완벽 수정판!
 # =========================================================================
 st.markdown("""
     <style>
@@ -25,87 +25,103 @@ st.markdown("""
         [data-testid="stSidebar"] h4 { color: #ffffff !important; font-weight: 800; font-size: 24px !important; margin-top: 10px !important; }
         [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
 
-        /* 1. 사이드바 내부의 [Primary] 버튼 (내 정보 수정) -> 무조건 다크 블루! */
-        [data-testid="stSidebar"] button[kind="primary"],
-        [data-testid="stSidebar"] button[kind="primary"]:hover,
-        [data-testid="stSidebar"] button[kind="primary"]:focus,
-        [data-testid="stSidebar"] button[kind="primary"]:active {
-            background-color: #3b82f6 !important; 
-            border: 2px solid #2563eb !important;
-            color: #ffffff !important;
-            border-radius: 6px !important;
-            font-weight: 700 !important;
-            padding: 10px 16px !important;
-            box-shadow: none !important; transform: none !important; width: 100% !important; display: block !important;
-        }
-
-        /* 2. 사이드바 내부의 [Secondary] 버튼 (로그아웃) -> 무조건 다크 그레이! */
-        [data-testid="stSidebar"] button[kind="secondary"],
-        [data-testid="stSidebar"] button[kind="secondary"]:hover,
-        [data-testid="stSidebar"] button[kind="secondary"]:focus,
-        [data-testid="stSidebar"] button[kind="secondary"]:active {
-            background-color: #475569 !important; 
-            border: 2px solid #334155 !important;
-            color: #ffffff !important;
-            border-radius: 6px !important;
-            font-weight: 700 !important;
-            padding: 10px 16px !important;
-            box-shadow: none !important; transform: none !important; width: 100% !important; display: block !important;
-        }
-
-        /* 3. 팝업창(Dialog) 내부의 [Primary] 버튼 (저장 버튼들) -> 무조건 강렬한 빨간색! */
-        [data-testid="stDialog"] button[kind="primary"] {
-            background-color: #ef4444 !important;
-            color: #ffffff !important;
-            font-weight: 800 !important;
-            border: none !important;
-            border-radius: 6px !important;
-            padding: 12px 0 !important;
-            font-size: 15px !important;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
-            width: 100% !important;
-        }
+        /* 1. 사이드바 버튼 고정 */
+        [data-testid="stSidebar"] button[kind="primary"] { background-color: #3b82f6 !important; border: 2px solid #2563eb !important; color: #ffffff !important; border-radius: 6px !important; font-weight: 700 !important; padding: 10px 16px !important; width: 100% !important; display: block !important; }
+        [data-testid="stSidebar"] button[kind="secondary"] { background-color: #475569 !important; border: 2px solid #334155 !important; color: #ffffff !important; border-radius: 6px !important; font-weight: 700 !important; padding: 10px 16px !important; width: 100% !important; display: block !important; }
+        [data-testid="stDialog"] button[kind="primary"] { background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 4. 로그인 폼 전용 레이아웃 */
+        /* 🚨 4. 로그인 폼 전용 레이아웃 (정중앙 정렬, 라디오 수평, 비밀번호 잔상 제거) */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
-            background-color: #ffffff !important; border: 1px solid #cbd5e1 !important;
-            padding: 40px 30px 35px 30px !important; border-radius: 24px !important;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important; 
-            max-width: 420px !important; 
-            margin: 60px auto 0 auto !important; position: relative !important;
+            background-color: #ffffff !important; 
+            border: 1px solid #cbd5e1 !important;
+            padding: 40px 40px 40px 40px !important; 
+            border-radius: 24px !important;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08) !important; 
+            max-width: 440px !important; 
+            margin: 60px auto 0 auto !important; 
+            position: relative !important;
         }
         div[data-testid="stForm"] h2 {
-            font-size: 25px !important; 
+            font-size: 26px !important; 
             white-space: nowrap !important; 
-            text-align: center !important;
+            text-align: center !important; /* 제목 정중앙 정렬 */
             margin-bottom: 25px !important;
+            font-weight: 800 !important;
         }
         
-        /* 컬럼 내부에서 라디오 버튼이 엇나가지 않도록 완벽 중앙 정렬 */
+        /* 🚨 라디오 버튼 완벽 정중앙 배치 및 글자 수평 영점 조절 */
+        div[data-testid="stForm"] div[data-testid="stRadio"] {
+            display: flex !important;
+            justify-content: center !important; /* 라디오 상자를 정중앙으로 */
+            width: 100% !important;
+            margin-bottom: 15px !important;
+        }
         div[data-testid="stForm"] div[role="radiogroup"] {
+            display: flex !important;
             justify-content: center !important;
+            align-items: center !important;
+            gap: 50px !important; /* 교사와 학생 사이 간격 시원하게 벌림 */
+        }
+        div[data-testid="stForm"] div[role="radiogroup"] label {
+            display: flex !important;
+            align-items: center !important; /* 원형 버튼과 글자의 수평 정렬 */
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        div[data-testid="stForm"] div[role="radiogroup"] label p {
+            margin: 2px 0 0 8px !important; /* 글자 위치 미세 조정 */
+            font-size: 16px !important;
         }
 
-        /* 🚨 [핵심 수정] 폼 안의 모든 버튼이 아니라, 오직 '제출(Submit) 버튼'만 정밀 타격하여 파란색 지정 */
+        /* 🚨 입력창 및 비밀번호 눈알 버튼 뒤 흰색 잔상 완벽 제거 */
+        div[data-testid="stTextInput"] div[data-baseweb="input"] { 
+            background-color: #f8fafc !important; /* 전체를 옅은 회색으로 통일 */
+            border: 2px solid #e2e8f0 !important; 
+            border-radius: 6px !important; 
+            overflow: hidden !important;
+        }
+        div[data-testid="stTextInput"] div[data-baseweb="base-input"], 
+        div[data-testid="stTextInput"] input {
+            background-color: transparent !important; /* 내부 배경 투명화 */
+        }
+        div[data-testid="stTextInput"] button {
+            background-color: transparent !important; /* 눈알 버튼 배경 투명화 */
+            color: #64748b !important; /* 순정 회색 눈알 색상 */
+            box-shadow: none !important;
+            border: none !important;
+            padding-right: 10px !important;
+        }
+        div[data-testid="stTextInput"] button:hover {
+            color: #0f172a !important; /* 마우스 올렸을 때 색상 */
+            background-color: transparent !important;
+        }
+
+        /* 🚨 로그인 제출 버튼 정중앙 180px 고정 */
+        div[data-testid="stFormSubmitButton"] {
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin-top: 20px !important;
+        }
         div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            padding: 0.7rem 0 !important;
+            width: 180px !important; /* 크기 예쁘게 고정 */
+            padding: 0.8rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
             box-shadow: 0 4px 10px rgba(74, 105, 189, 0.2) !important;
-            width: 100% !important; /* 컬럼 안에 꽉 차도록 */
         }
 
-        /* 기본 인풋 테두리 살리기 */
-        div[data-testid="stTextInput"] div[data-baseweb="input"], div[data-testid="stNumberInput"] div[data-baseweb="input"] { border: 2px solid #cbd5e1 !important; border-radius: 6px !important; background-color: #ffffff !important; }
-        div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #4a69bd !important; border-radius: 8px !important; background-color: #ffffff !important; }
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] { border: 2px solid #cbd5e1 !important; border-radius: 6px !important; background-color: #f8fafc !important; }
         div[data-testid="stSelectbox"] div[data-baseweb="select"] * { color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important; }
         .stDataFrame, table { width: 100% !important; border-radius: 8px; overflow: hidden; }
+        
+        h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -296,32 +312,23 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 로그인 폼 화면 (물리적 뼈대 분할 유지)
+# 🔓 로그인 폼 화면 (CSS 중앙 정렬 및 동적 텍스트 완벽 적용)
 # =========================================================================
 if not st.session_state["admin_logged_in"]:
     
     with st.form("master_unified_form"):
-        st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+        st.markdown("<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 라디오 버튼 물리적 고정
-        col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
-        with col_r2:
-            login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
-            
-        st.markdown("<br>", unsafe_allow_html=True)
+        # 🚨 [학생, 교사] 순서로 변경 완료
+        login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+        
+        st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         if login_mode == "교사":
             admin_id = st.text_input("교사_ID", placeholder="교사 ID를 입력하세요", label_visibility="collapsed")
             admin_pw = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
-            st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-            
-            # 로그인 버튼 물리적 고정
-            col_b1, col_btn, col_b3 = st.columns([1, 1.5, 1])
-            with col_btn:
-                login_submit = st.form_submit_button("로그인", use_container_width=True)
-                
-            if login_submit:
+            if st.form_submit_button("로그인"):
                 auth_result = verify_teacher_credentials(admin_id, admin_pw)
                 if auth_result["success"]:
                     st.session_state["admin_logged_in"] = True
@@ -342,18 +349,13 @@ if not st.session_state["admin_logged_in"]:
                     cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
                     config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
                     if config:
-                        st.markdown("<h4 style='height: 5px; border:none;'></h4>", unsafe_allow_html=True)
-                        st_email_in = st.text_input("학교 이메일", placeholder="학교 이메일을 입력하세요", label_visibility="collapsed")
-                        st_pw = st.text_input("비밀번호", type="password", placeholder="개인 암호 입력", label_visibility="collapsed")
+                        st.markdown("<h4 style='height: 2px; border:none;'></h4>", unsafe_allow_html=True)
                         
-                        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+                        # 🚨 [동적 텍스트 변경 완료] 학생일 경우 "학생 ID를 입력하세요" 출력
+                        st_email_in = st.text_input("학교 이메일", placeholder="학생 ID를 입력하세요", label_visibility="collapsed")
+                        st_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
                         
-                        # 학생 로그인 버튼 동일 중앙 고정
-                        col_b1, col_btn, col_b3 = st.columns([1, 1.5, 1])
-                        with col_btn:
-                            student_submit = st.form_submit_button("점수 조회", use_container_width=True)
-                        
-                        if student_submit:
+                        if st.form_submit_button("점수 조회"):
                             df_st = load_sheet_to_df(sf_id)
                             if not df_st.empty:
                                 if "school_email" in df_st.columns:
