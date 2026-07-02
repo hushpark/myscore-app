@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 방어 레벨 5 CSS] 모든 컨테이너 요소를 통째로 묶어 정중앙 강제 고정
+# 🔄 [우주 최강 레이아웃 고정 CSS] 불필요한 흰색 마진 및 잔상 원천 소멸
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,7 +30,7 @@ st.markdown("""
         [data-testid="stDialog"] button[kind="primary"] { background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 2. 하얀색 로그인 박스 완전 정렬 및 정중앙 밀집 박제 */
+        /* 🚨 2. 하얀색 로그인 박스 외형 박제 (내부는 순정 컬럼으로 제어) */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; 
@@ -40,9 +40,6 @@ st.markdown("""
             box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; 
             max-width: 440px !important; 
             margin: 70px auto 0 auto !important; 
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important; 
         }
         
         /* 제목 완전 중앙 정렬 */
@@ -50,63 +47,29 @@ st.markdown("""
             font-size: 26px !important; 
             white-space: nowrap !important; 
             text-align: center !important; 
-            margin: 0 auto 30px auto !important;
+            margin: 0 auto 20px auto !important;
             font-weight: 800 !important;
             color: #0f172a !important;
-            display: block !important;
-            width: 100% !important;
-        }
-        
-        /* 라디오 버튼 구역 강제 중앙 밀집화 */
-        div[data-testid="stForm"] div[data-testid="stRadio"] {
-            width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-            margin-bottom: 20px !important;
-        }
-        div[data-testid="stForm"] div[role="radiogroup"] {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            gap: 50px !important; 
-        }
-        div[data-testid="stForm"] div[role="radiogroup"] label p {
-            margin: 0 0 0 8px !important;
-            font-size: 16px !important;
-            font-weight: 700 !important;
-            color: #334155 !important;
         }
 
-        /* 입력창 디자인 100% 너비 확보 */
-        div[data-testid="stTextInput"] {
-            width: 100% !important;
-        }
+        /* 🚨 3. 입력 필드 및 비밀번호 보기 버튼 뒷배경 흰색 잔상 완전 소멸 */
         div[data-testid="stTextInput"] div[data-baseweb="input"] { 
             background-color: #f8fafc !important; 
             border: 2px solid #e2e8f0 !important; 
             border-radius: 8px !important; 
             overflow: hidden !important;
-            width: 100% !important;
         }
         div[data-testid="stTextInput"] div[data-baseweb="base-input"], 
         div[data-testid="stTextInput"] input { background-color: transparent !important; }
         div[data-testid="stTextInput"] div[data-styled-inner-component="true"] { background-color: transparent !important; }
         div[data-testid="stTextInput"] button { background-color: transparent !important; border: none !important; box-shadow: none !important; color: #64748b !important; }
 
-        /* 🚨 4. 제출 버튼 부모 컨테이너 및 버튼을 하얀 상자 기준 강제 '가운데' 정렬 */
-        div[data-testid="stFormSubmitButton"] {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            width: 100% !important;
-            margin: 15px auto 5px auto !important;
-        }
+        /* 🚨 4. 제출 버튼 순정 오버라이딩 */
         div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 180px !important; 
             padding: 0.75rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
@@ -242,13 +205,24 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+        # 🚨 [물리 정렬 1단계] 순정 컬럼 기능으로 라디오 버튼 좌우 여백 확보하여 무조건 정중앙 강제 안착
+        r_col1, r_col2, r_col3 = st.columns([0.5, 3.0, 0.5])
+        with r_col2:
+            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+            
         placeholder_text = "학생 ID(이메일)를 입력하세요" if login_mode == "학생" else "교사 ID를 입력하세요"
+        
+        st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
             
         user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed")
         user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
         
-        if st.form_submit_button("시스템 로그인"):
+        # 🚨 [물리 정렬 2단계] 순정 컬럼 좌우 여백을 주어 로그인 버튼 가로폭 180px 크기로 정중앙 완전 고정
+        b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
+        with b_col2:
+            submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
+        
+        if submit_active:
             if login_mode == "교사":
                 auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
                 if auth_result["success"]:
