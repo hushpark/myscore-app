@@ -1,4 +1,4 @@
-import streamlit st
+import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [수동 여백 조정 마스터 CSS] 숫자로 직접 밀어버리는 레이아웃
+# 🔄 [수동 여백 조정 및 수평 정렬 마스터 CSS]
 # =========================================================================
 st.markdown("""
     <style>
@@ -52,21 +52,30 @@ st.markdown("""
             color: #0f172a !important;
         }
 
-        /* 🚨 [핵심] 라디오 버튼을 숫자를 써서 수동으로 우측 이동 (원하는 만큼 숫자 조절 가능) */
+        /* 🚨 [선생님 아이디어 반영] 패딩 숫자를 써서 라디오 버튼 그룹 자체를 우측으로 수동 이동 */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 55px !important; /* 👈 이 숫자를 늘리면 우측으로 더 이동하고, 줄이면 좌측으로 갑니다 */
-            margin-bottom: 20px !important;
+            padding-left: 95px !important; /* 👈 이 숫자를 늘리면 오른쪽, 줄이면 왼쪽으로 이동합니다! */
+            margin-bottom: 25px !important;
+            width: 100% !important;
         }
+        
+        /* 원형 버튼과 글자가 삐뚤어지지 않도록 완벽하게 수평 정렬 일직선 고정 */
         div[data-testid="stForm"] div[role="radiogroup"] {
             display: flex !important;
-            gap: 60px !important; /* 학생과 교사 버튼 사이의 간격 */
+            gap: 50px !important; /* 학생과 교사 간격 */
             align-items: center !important;
         }
+        div[data-testid="stForm"] div[role="radiogroup"] label {
+            display: flex !important;
+            align-items: center !important; /* 수평 정렬 */
+            margin: 0 !important;
+        }
         div[data-testid="stForm"] div[role="radiogroup"] label p {
-            margin: 0 0 0 8px !important;
+            margin: 0 0 0 8px !important; /* 원형 버튼과 글자 사이 간격 */
             font-size: 16px !important;
             font-weight: 700 !important;
             color: #334155 !important;
+            line-height: 1 !important; /* 텍스트 찌그러짐 방지 */
         }
 
         /* 🚨 3. 입력 필드 및 비밀번호 보기 버튼 뒷배경 흰색 잔상 완전 소멸 */
@@ -216,13 +225,13 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 수평 영점 박제)
+# 🔓 [1단계] 클린 통합 로그인 시스템 (순서 개편 및 패딩 우측 이동 완료)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 🚨 [순서 교정 완료] 무조건 학생이 1번, 교사가 2번으로 나오도록 스왑 완료!
+        # 🚨 [완벽 정렬] 학생 우선순위 1번 배치 및 순정 컬럼 분할 제거 완료
         login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
         placeholder_text = "학생 ID(이메일)를 입력하세요" if login_mode == "학생" else "교사 ID를 입력하세요"
@@ -232,7 +241,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed")
         user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
         
-        # 🚨 순정 컬럼 분할로 로그인 버튼을 가로 180px 크기로 정중앙 배치
+        # 🚨 순정 컬럼 분할로 로그인 버튼 가로 너비 180px 박스 정중앙 배치 박제
         b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
         with b_col2:
             submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
