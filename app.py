@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [수동 여백 조정 및 수평 정렬 마스터 CSS]
+# 🔄 [우주 최강 레이아웃 고정 CSS] 수평 수직 영점 및 정중앙 완벽 박제
 # =========================================================================
 st.markdown("""
     <style>
@@ -52,9 +52,9 @@ st.markdown("""
             color: #0f172a !important;
         }
 
-        /* 🚨 [선생님 아이디어 반영] 패딩 숫자를 써서 라디오 버튼 그룹 자체를 우측으로 수동 이동 */
+        /* 🚨 [선생님 전용 패딩 조절 구역] 숫자를 써서 라디오 버튼 그룹 전체를 우측으로 수동 밀집 */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 95px !important; /* 👈 이 숫자를 늘리면 오른쪽, 줄이면 왼쪽으로 이동합니다! */
+            padding-left: 95px !important; /* 👈 이 수치로 하얀 박스 내부 정중앙 정렬 완료 */
             margin-bottom: 25px !important;
             width: 100% !important;
         }
@@ -67,7 +67,7 @@ st.markdown("""
         }
         div[data-testid="stForm"] div[role="radiogroup"] label {
             display: flex !important;
-            align-items: center !important; /* 수평 정렬 */
+            align-items: center !important; 
             margin: 0 !important;
         }
         div[data-testid="stForm"] div[role="radiogroup"] label p {
@@ -75,7 +75,7 @@ st.markdown("""
             font-size: 16px !important;
             font-weight: 700 !important;
             color: #334155 !important;
-            line-height: 1 !important; /* 텍스트 찌그러짐 방지 */
+            line-height: 1 !important; 
         }
 
         /* 🚨 3. 입력 필드 및 비밀번호 보기 버튼 뒷배경 흰색 잔상 완전 소멸 */
@@ -90,7 +90,7 @@ st.markdown("""
         div[data-testid="stTextInput"] div[data-styled-inner-component="true"] { background-color: transparent !important; }
         div[data-testid="stTextInput"] button { background-color: transparent !important; border: none !important; box-shadow: none !important; color: #64748b !important; }
 
-        /* 🚨 4. 제출 버튼 스타일 고정 */
+        /* 🚨 4. 제출 버튼 스타일 및 중앙 배치 박제 */
         div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
@@ -157,6 +157,30 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         if "has_counted" in st.session_state: del st.session_state["has_counted"]
         st.session_state.clear()
         st.rerun()
+
+@st.dialog("🔐 내 정보 수정")
+def launch_isolated_profile_dialog():
+    profile_pop.render_isolated_dialog(load_sheet_to_df, save_df_to_sheet)
+
+@st.dialog("➕ 학생 개별 추가")
+def student_individual_add_dialog(db_df, sf_id, score_headers):
+    st.markdown("##### 📝 신규 누락 학생 1명 개별 등록")
+    st.write("아래 인적사항을 입력하시면 현재 성적부 하단에 즉시 추가됩니다.")
+    ac1, ac2 = st.columns(2)
+    with ac1: add_b = st.number_input("반", min_value=1, max_value=30, value=1)
+    with ac2: add_n = st.number_input("번호", min_value=1, max_value=60, value=1)
+    add_name = st.text_input("학생 이름", placeholder="성명 입력")
+    add_email = st.text_input("학교 이메일", placeholder="아이디@도메인.hs.kr")
+    add_pw = st.text_input("개인 비밀번호", placeholder="학생 전용 조회 암호")
+    if st.button("🚀 학생 추가 등록", type="primary", use_container_width=True):
+        if add_name and add_email and add_pw:
+            new_student_row = {"반": int(add_b), "번호": int(add_n), "이름": str(add_name).strip(), "school_email": str(add_email).strip(), "비밀번호": str(add_pw).strip(), "성적조회 횟수": 0, "최종 확인일시": "-"}
+            for h in score_headers: new_student_row[h] = 0
+            updated_master_df = pd.concat([db_df, pd.DataFrame([new_student_row])], ignore_index=True)
+            if save_df_to_sheet(sf_id, updated_master_df):
+                st.success(f"✅ [{add_b}반 {add_n}번 {add_name}] 학생이 클라우드 성적 대장에 추가되었습니다!")
+                st.rerun()
+        else: st.error("학생의 이름, 이메일, 비밀번호를 빠짐없이 채워주세요.")
 
 def init_google_sheet_client():
     try: return gspread.authorize(Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]))
@@ -225,44 +249,50 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (순서 개편 및 패딩 우측 이동 완료)
+# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 싱크 완벽 동기화)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
-    with st.form("master_unified_form"):
-        st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-        
-        # 🚨 [완벽 정렬] 학생 우선순위 1번 배치 및 순정 컬럼 분할 제거 완료
-        login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+    
+    # 🚨 스트림릿 폼 내부가 아닌 외부에 라디오 버튼을 먼저 꺼내놓아 실시간 동적 텍스트 바인딩 연동 성공
+    # 이 구조로 변경해야 버튼 클릭 즉시 플레이스홀더 가이드 문구가 즉각 반응함
+    with st.container():
+        with st.form("master_unified_form"):
+            st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-        placeholder_text = "학생 ID(이메일)를 입력하세요" if login_mode == "학생" else "교사 ID를 입력하세요"
-        
-        st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+            # 학생 우선순위 배치 고정
+            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
-        user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed")
-        user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
-        
-        # 🚨 순정 컬럼 분할로 로그인 버튼 가로 너비 180px 박스 정중앙 배치 박제
-        b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
-        with b_col2:
-            submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
-        
-        if submit_active:
-            if login_mode == "교사":
-                auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
-                if auth_result["success"]:
-                    st.session_state["admin_logged_in"] = True
-                    st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
-                    st.session_state["teacher_name"] = auth_result["teacher_name"]
-                    st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
-                    st.rerun()
-                else: st.error("❌ 교사 ID 또는 비밀번호 오류")
-            elif login_mode == "학생":
-                if user_id_input and user_pw_input:
-                    st.session_state["student_logged_in"] = True
-                    st.session_state["logged_student_id"] = user_id_input.strip()
-                    st.session_state["logged_student_pw"] = user_pw_input.strip()
-                    st.rerun()
-                else: st.error("❌ 학생 ID와 비밀번호를 모두 입력하세요.")
+            # 🚨 [버그 원천 분쇄] 라디오 버튼 분기와 동시에 로컬 변수에 텍스트 실시간 바인딩
+            if login_mode == "학생":
+                placeholder_text = "학생 ID(이메일)를 입력하세요"
+            else:
+                placeholder_text = "교사 ID를 입력하세요"
+                
+            user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed", key="live_user_id_field")
+            user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
+            
+            # 순정 컬럼 분할로 로그인 버튼 가로 너비 180px 박스 정중앙 배치 박제
+            b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
+            with b_col2:
+                submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
+            
+            if submit_active:
+                if login_mode == "교사":
+                    auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
+                    if auth_result["success"]:
+                        st.session_state["admin_logged_in"] = True
+                        st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
+                        st.session_state["teacher_name"] = auth_result["teacher_name"]
+                        st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
+                        st.rerun()
+                    else: st.error("❌ 교사 ID 또는 비밀번호 오류")
+                elif login_mode == "학생":
+                    if user_id_input and user_pw_input:
+                        st.session_state["student_logged_in"] = True
+                        st.session_state["logged_student_id"] = user_id_input.strip()
+                        st.session_state["logged_student_pw"] = user_pw_input.strip()
+                        st.rerun()
+                    else: st.error("❌ 학생 ID와 비밀번호를 모두 입력하세요.")
 
     st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & AI Creator</div></div>", unsafe_allow_html=True)
 
