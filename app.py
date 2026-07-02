@@ -32,12 +32,12 @@ st.markdown("""
         [data-testid="stDialog"] button[kind="primary"] { background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 2. 하얀색 로그인 박스 완전 정렬 및 슬림화 */
+        /* 🚨 2. 하얀색 로그인 박스 완전 정렬 및 하단 찌꺼기 격리 */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; 
             border: 1px solid #cbd5e1 !important;
-            padding: 45px 40px 40px 40px !important; 
+            padding: 45px 40px 45px 40px !important; 
             border-radius: 24px !important;
             box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; 
             max-width: 440px !important; 
@@ -69,7 +69,7 @@ st.markdown("""
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
-            gap: 50px !important; /* 교사-학생 간격 고정 */
+            gap: 50px !important; 
         }
         div[data-testid="stForm"] div[role="radiogroup"] label {
             display: flex !important;
@@ -91,16 +91,13 @@ st.markdown("""
             border-radius: 8px !important; 
             overflow: hidden !important;
         }
-        /* 입력창 내부 투명 처리 */
         div[data-testid="stTextInput"] div[data-baseweb="base-input"], 
         div[data-testid="stTextInput"] input { 
             background-color: transparent !important; 
         }
-        /* 🚨 눈알 뒤쪽 여백 컴포넌트 찌꺼기 배경까지 강제 투명화 처리 */
         div[data-testid="stTextInput"] div[data-styled-inner-component="true"] {
             background-color: transparent !important;
         }
-        /* 우측 순정 눈알 버튼 배경 완전 제거 및 회색 고정 */
         div[data-testid="stTextInput"] button { 
             background-color: transparent !important; 
             border: none !important; 
@@ -112,32 +109,45 @@ st.markdown("""
             color: #1e293b !important; 
         }
 
-        /* 🚨 4. 로그인 시스템 제출 버튼 무조건 박스 내부 정중앙 정착 */
+        /* 🚨 4. 로그인 시스템 제출 버튼 무조건 박스 내부 정중앙 정착 및 마진 확보 */
         div[data-testid="stFormSubmitButton"] {
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
             width: 100% !important;
             margin-top: 15px !important;
+            margin-bottom: 5px !important;
         }
         div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
             font-weight: bold !important;
             border: none !important;
-            width: 180px !important; /* 버튼 가로 너비 박제 */
+            width: 180px !important; 
             padding: 0.75rem 0 !important;
             border-radius: 8px !important;
             font-size: 16px !important;
             box-shadow: 0 4px 12px rgba(74, 105, 189, 0.2) !important;
         }
         
-        .footer-text { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 25px; width: 100%; }
+        /* 🚨 5. 푸터 텍스트 박스 바깥으로 완전 탈출 및 고정 조치 */
+        .footer-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        .footer-text { 
+            text-align: center; 
+            font-size: 12px; 
+            color: #94a3b8; 
+            font-weight: 500;
+        }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 코어 백엔드 함수 대기 ---
+# --- 백엔드 함수 구역 (변동 없음) ---
 def load_master_subjects():
     default_structure = {"인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"], "수리·과학군": ["수학", "과학", "기술·가정", "정보"], "예체능군": ["음악", "미술", "체육"]}
     df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
@@ -297,16 +307,12 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 학생, 교사 우선순위 배치 박제
         login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
-        
-        # 모드 맞춤형 동적 플레이스홀더 분기
         placeholder_text = "학생 ID(이메일)를 입력하세요" if login_mode == "학생" else "교사 ID를 입력하세요"
             
         user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed")
         user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
         
-        # 🚨 무조건 고정 표출되는 폼 제출 버튼 (오류 완벽 분쇄)
         if st.form_submit_button("시스템 로그인"):
             if login_mode == "교사":
                 auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
@@ -326,7 +332,8 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                     st.rerun()
                 else: st.error("❌ 학생 ID와 비밀번호를 모두 채워주세요.")
 
-    st.markdown("<div class='footer-text'>Designed & Developed by User & AI Creator</div>", unsafe_allow_html=True)
+    # 🚨 푸터 컴포넌트를 st.form 구역 '바깥'으로 완벽 독립 분리배치
+    st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & AI Creator</div></div>", unsafe_allow_html=True)
 
 # =========================================================================
 # 🎓 [2단계-A] 분리 개설된 학생 전용 과목 선택 대시보드
