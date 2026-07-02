@@ -169,30 +169,6 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
-@st.dialog("🔐 내 정보 수정")
-def launch_isolated_profile_dialog():
-    profile_pop.render_isolated_dialog(load_sheet_to_df, save_df_to_sheet)
-
-@st.dialog("➕ 학생 개별 추가")
-def student_individual_add_dialog(db_df, sf_id, score_headers):
-    st.markdown("##### 📝 신규 누락 학생 1명 개별 등록")
-    st.write("아래 인적사항을 입력하시면 현재 성적부 하단에 즉시 추가됩니다.")
-    ac1, ac2 = st.columns(2)
-    with ac1: add_b = st.number_input("반", min_value=1, max_value=30, value=1)
-    with ac2: add_n = st.number_input("번호", min_value=1, max_value=60, value=1)
-    add_name = st.text_input("학생 이름", placeholder="성명 입력")
-    add_email = st.text_input("학교 이메일", placeholder="아이디@도메인.hs.kr")
-    add_pw = st.text_input("개인 비밀번호", placeholder="학생 전용 조회 암호")
-    if st.button("🚀 학생 추가 등록", type="primary", use_container_width=True):
-        if add_name and add_email and add_pw:
-            new_student_row = {"반": int(add_b), "번호": int(add_n), "이름": str(add_name).strip(), "school_email": str(add_email).strip(), "비밀번호": str(add_pw).strip(), "성적조회 횟수": 0, "최종 확인일시": "-"}
-            for h in score_headers: new_student_row[h] = 0
-            updated_master_df = pd.concat([db_df, pd.DataFrame([new_student_row])], ignore_index=True)
-            if save_df_to_sheet(sf_id, updated_master_df):
-                st.success(f"✅ [{add_b}반 {add_n}번 {add_name}] 학생이 클라우드 성적 대장에 추가되었습니다!")
-                st.rerun()
-        else: st.error("학생의 이름, 이메일, 비밀번호를 빠짐없이 채워주세요.")
-
 def init_google_sheet_client():
     try: return gspread.authorize(Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]))
     except: return None
@@ -426,7 +402,7 @@ elif st.session_state["admin_logged_in"]:
                 
                 with col_class_ed:
                     class_options_ed = ["전체"]
-                    if not db_df.empty Image_ed and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                    if not db_df.empty and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class_ed = st.selectbox("👥 학반 필터링", options=class_options_ed)
                 
                 if not db_df.empty:
