@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [우주 최강 레이아웃 고정 CSS] 불필요한 흰색 마진 및 잔상 원천 소멸
+# 🔄 [우주 최강 레이아웃 고정 CSS] 수평 수직 영점 및 정중앙 완벽 박제
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,7 +30,7 @@ st.markdown("""
         [data-testid="stDialog"] button[kind="primary"] { background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 2. 하얀색 로그인 박스 외형 박제 (내부는 순정 컬럼으로 제어) */
+        /* 🚨 2. 하얀색 로그인 박스 완전 중앙 정렬 및 수평 영점 박제 */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; 
@@ -64,7 +64,7 @@ st.markdown("""
         div[data-testid="stTextInput"] div[data-styled-inner-component="true"] { background-color: transparent !important; }
         div[data-testid="stTextInput"] button { background-color: transparent !important; border: none !important; box-shadow: none !important; color: #64748b !important; }
 
-        /* 🚨 4. 제출 버튼 순정 오버라이딩 */
+        /* 🚨 4. 제출 버튼 부모 컨테이너 및 버튼을 하얀 상자 기준 강제 '가운데' 정렬 */
         div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
@@ -84,7 +84,7 @@ st.markdown("""
 
 # --- 백엔드 데이터 연동 함수 정의 ---
 def load_master_subjects():
-    default_structure = {"인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"], "수리·과학군": ["수학", "과학", "기술·가정", "정보"], "예체능군": ["음악", "미술", "체육"]}
+    default_structure = {"인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"], "수리·과학군": ["수학", "과학", "기술· 가정", "정보"], "예체능군": ["음악", "미술", "체육"]}
     df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
     if not df.empty:
         for _, row in df.iterrows():
@@ -131,6 +131,30 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         if "has_counted" in st.session_state: del st.session_state["has_counted"]
         st.session_state.clear()
         st.rerun()
+
+@st.dialog("🔐 내 정보 수정")
+def launch_isolated_profile_dialog():
+    profile_pop.render_isolated_dialog(load_sheet_to_df, save_df_to_sheet)
+
+@st.dialog("➕ 학생 개별 추가")
+def student_individual_add_dialog(db_df, sf_id, score_headers):
+    st.markdown("##### 📝 신규 누락 학생 1명 개별 등록")
+    st.write("아래 인적사항을 입력하시면 현재 성적부 하단에 즉시 추가됩니다.")
+    ac1, ac2 = st.columns(2)
+    with ac1: add_b = st.number_input("반", min_value=1, max_value=30, value=1)
+    with ac2: add_n = st.number_input("번호", min_value=1, max_value=60, value=1)
+    add_name = st.text_input("학생 이름", placeholder="성명 입력")
+    add_email = st.text_input("학교 이메일", placeholder="아이디@도메인.hs.kr")
+    add_pw = st.text_input("개인 비밀번호", placeholder="학생 전용 조회 암호")
+    if st.button("🚀 학생 추가 등록", type="primary", use_container_width=True):
+        if add_name and add_email and add_pw:
+            new_student_row = {"반": int(add_b), "번호": int(add_n), "이름": str(add_name).strip(), "school_email": str(add_email).strip(), "비밀번호": str(add_pw).strip(), "성적조회 횟수": 0, "최종 확인일시": "-"}
+            for h in score_headers: new_student_row[h] = 0
+            updated_master_df = pd.concat([db_df, pd.DataFrame([new_student_row])], ignore_index=True)
+            if save_df_to_sheet(sf_id, updated_master_df):
+                st.success(f"✅ [{add_b}반 {add_n}번 {add_name}] 학생이 클라우드 성적 대장에 추가되었습니다!")
+                st.rerun()
+        else: st.error("학생의 이름, 이메일, 비밀번호를 빠짐없이 채워주세요.")
 
 def init_google_sheet_client():
     try: return gspread.authorize(Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]))
@@ -199,16 +223,16 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 학생 우선순위 배치)
+# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 수평 영점 박제)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
-        # 🚨 [물리 정렬 1단계] 순정 컬럼 기능으로 라디오 버튼 좌우 여백 확보하여 무조건 정중앙 강제 안착
+        # 🚨 [수평 영점 1단계] 컬럼 좌우 여백을 주어 라디오 버튼을 단정하게 정중앙에 모았습니다.
         r_col1, r_col2, r_col3 = st.columns([0.5, 3.0, 0.5])
         with r_col2:
-            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+            login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed")
             
         placeholder_text = "학생 ID(이메일)를 입력하세요" if login_mode == "학생" else "교사 ID를 입력하세요"
         
@@ -217,7 +241,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed")
         user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
         
-        # 🚨 [물리 정렬 2단계] 순정 컬럼 좌우 여백을 주어 로그인 버튼 가로폭 180px 크기로 정중앙 완전 고정
+        # 🚨 [수평 영점 2단계] 제출 버튼을 하얀 박스 기준 강제 '가운데' 정렬하여 단정하게 배치했습니다.
         b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
         with b_col2:
             submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
