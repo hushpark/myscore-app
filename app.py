@@ -14,17 +14,15 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [최종 무결점 마스터 CSS] Streamlit 내부 컨테이너 정밀 타격 및 강제 고정
+# 🔄 [우주 방어 레벨 5 CSS] 모든 컨테이너 요소를 통째로 묶어 정중앙 강제 고정
 # =========================================================================
 st.markdown("""
     <style>
-        /* 1. 배경 및 사이드바 기본 격리 */
+        /* 기본 배경 격리 */
         .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { background-color: #f1f5f9 !important; }
         div[data-testid="stHeader"] { display: none !important; }
         [data-testid="stSidebar"], section[data-testid="stSidebar"] { min-width: 260px !important; max-width: 260px !important; background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
         [data-testid="stAppViewContainer"] { margin-left: 0px !important; }
-        [data-testid="stSidebar"] h4 { color: #ffffff !important; font-weight: 800; font-size: 24px !important; margin-top: 10px !important; }
-        [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #f8fafc !important; font-weight: 700 !important; font-size: 16px !important; }
 
         /* 사이드바 고유 버튼 무전역 고정 */
         [data-testid="stSidebar"] button[kind="primary"] { background-color: #3b82f6 !important; border: 2px solid #2563eb !important; color: #ffffff !important; border-radius: 6px !important; font-weight: 700 !important; padding: 10px 16px !important; width: 100% !important; display: block !important; }
@@ -32,7 +30,7 @@ st.markdown("""
         [data-testid="stDialog"] button[kind="primary"] { background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 2. 하얀색 로그인 박스 완전 정렬 및 하단 찌꺼기 격리 */
+        /* 🚨 2. 하얀색 로그인 박스 완전 정렬 및 정중앙 밀집 박제 */
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] {
             background-color: #ffffff !important; 
@@ -44,6 +42,7 @@ st.markdown("""
             margin: 70px auto 0 auto !important; 
             display: flex !important;
             flex-direction: column !important;
+            align-items: center !important; 
         }
         
         /* 제목 완전 중앙 정렬 */
@@ -71,10 +70,6 @@ st.markdown("""
             align-items: center !important;
             gap: 50px !important; 
         }
-        div[data-testid="stForm"] div[role="radiogroup"] label {
-            display: flex !important;
-            align-items: center !important;
-        }
         div[data-testid="stForm"] div[role="radiogroup"] label p {
             margin: 0 0 0 8px !important;
             font-size: 16px !important;
@@ -82,41 +77,29 @@ st.markdown("""
             color: #334155 !important;
         }
 
-        /* -------------------------------------------------------------------------------- */
-        /* 🚨 3. 입력 필드 및 비밀번호 보기 버튼 뒷배경 흰색 잔상 완전 소멸 */
-        /* -------------------------------------------------------------------------------- */
+        /* 입력창 디자인 100% 너비 확보 */
+        div[data-testid="stTextInput"] {
+            width: 100% !important;
+        }
         div[data-testid="stTextInput"] div[data-baseweb="input"] { 
             background-color: #f8fafc !important; 
             border: 2px solid #e2e8f0 !important; 
             border-radius: 8px !important; 
             overflow: hidden !important;
+            width: 100% !important;
         }
         div[data-testid="stTextInput"] div[data-baseweb="base-input"], 
-        div[data-testid="stTextInput"] input { 
-            background-color: transparent !important; 
-        }
-        div[data-testid="stTextInput"] div[data-styled-inner-component="true"] {
-            background-color: transparent !important;
-        }
-        div[data-testid="stTextInput"] button { 
-            background-color: transparent !important; 
-            border: none !important; 
-            box-shadow: none !important; 
-            color: #64748b !important;
-        }
-        div[data-testid="stTextInput"] button:hover { 
-            background-color: transparent !important; 
-            color: #1e293b !important; 
-        }
+        div[data-testid="stTextInput"] input { background-color: transparent !important; }
+        div[data-testid="stTextInput"] div[data-styled-inner-component="true"] { background-color: transparent !important; }
+        div[data-testid="stTextInput"] button { background-color: transparent !important; border: none !important; box-shadow: none !important; color: #64748b !important; }
 
-        /* 🚨 4. 로그인 시스템 제출 버튼 무조건 박스 내부 정중앙 정착 및 마진 확보 */
+        /* 🚨 4. 제출 버튼 부모 컨테이너 및 버튼을 하얀 상자 기준 강제 '가운데' 정렬 */
         div[data-testid="stFormSubmitButton"] {
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
             width: 100% !important;
-            margin-top: 15px !important;
-            margin-bottom: 5px !important;
+            margin: 15px auto 5px auto !important;
         }
         div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
@@ -130,24 +113,13 @@ st.markdown("""
             box-shadow: 0 4px 12px rgba(74, 105, 189, 0.2) !important;
         }
         
-        /* 🚨 5. 푸터 텍스트 박스 바깥으로 완전 탈출 및 고정 조치 */
-        .footer-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-top: 25px;
-        }
-        .footer-text { 
-            text-align: center; 
-            font-size: 12px; 
-            color: #94a3b8; 
-            font-weight: 500;
-        }
+        .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
+        .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 백엔드 함수 구역 (변동 없음) ---
+# --- 백엔드 데이터 연동 함수 정의 ---
 def load_master_subjects():
     default_structure = {"인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"], "수리·과학군": ["수학", "과학", "기술·가정", "정보"], "예체능군": ["음악", "미술", "체육"]}
     df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
@@ -179,8 +151,7 @@ def verify_teacher_credentials(input_id, input_pw):
 
 def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
-    safe_semester = semester_str.replace(" ", "_").replace("/", "_")
-    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{safe_semester}"
+    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
@@ -222,13 +193,8 @@ def student_individual_add_dialog(db_df, sf_id, score_headers):
                 st.rerun()
         else: st.error("학생의 이름, 이메일, 비밀번호를 빠짐없이 채워주세요.")
 
-@st.cache_resource
 def init_google_sheet_client():
-    try:
-        credentials_info = st.secrets["gcp_service_account"]
-        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        creds = Credentials.from_service_account_info(credentials_info, scopes=scopes)
-        return gspread.authorize(creds)
+    try: return gspread.authorize(Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]))
     except: return None
 
 gc = init_google_sheet_client()
@@ -247,33 +213,27 @@ def save_df_to_sheet(sheet_name, df):
     if wks is None: return False
     try:
         wks.clear()
-        data = [df.fillna("").columns.tolist()] + df.fillna("").values.tolist()
-        wks.update(range_name="A1", values=data)
+        wks.update(range_name="A1", values=[df.fillna("").columns.tolist()] + df.fillna("").values.tolist())
         return True
     except: return False
 
-@st.cache_data(ttl=2)
 def load_sheet_to_df(sheet_name, default_cols=None):
     wks = get_google_sheet(sheet_name)
     if wks is None: return pd.DataFrame(columns=default_cols if default_cols else [])
     try:
         records = wks.get_all_records()
-        if not records: return pd.DataFrame(columns=default_cols if default_cols else [])
-        return pd.DataFrame(records)
+        return pd.DataFrame(records) if records else pd.DataFrame(columns=default_cols if default_cols else [])
     except: return pd.DataFrame(columns=default_cols if default_cols else [])
 
-@st.cache_data(ttl=3)
 def get_active_databases():
     active_list = []
     if gc is None: return active_list
     try:
         sh = gc.open(SPREADSHEET_NAME)
         for wks in sh.worksheets():
-            name = wks.title
-            if name.startswith("cfg_"):
-                core_name = name.replace("cfg_", "")
-                match = re.search(r"(.+?)_(1|2|3)_(.+)", core_name)
-                if match: active_list.append({"subject": match.group(1).replace("_", " "), "grade": f"{match.group(2)}학년", "semester": match.group(3).replace("_", " ")})
+            if wks.title.startswith("cfg_"):
+                match = re.search(r"cfg_([A-Za-z0-9_]+)_([1-3])Grade", wks.title)
+                if match: active_list.append({"subject": match.group(1).replace("_", " "), "grade": f"{match.group(2)}학년", "semester": "2026학년도 1학기"})
     except: pass
     return active_list
 
@@ -300,10 +260,9 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 교정 및 상시 노출)
+# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 학생 우선순위 배치)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
-    
     with st.form("master_unified_form"):
         st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
         
@@ -323,16 +282,14 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                     st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
                     st.rerun()
                 else: st.error("❌ 교사 ID 또는 비밀번호 오류")
-
             elif login_mode == "학생":
                 if user_id_input and user_pw_input:
                     st.session_state["student_logged_in"] = True
                     st.session_state["logged_student_id"] = user_id_input.strip()
                     st.session_state["logged_student_pw"] = user_pw_input.strip()
                     st.rerun()
-                else: st.error("❌ 학생 ID와 비밀번호를 모두 채워주세요.")
+                else: st.error("❌ 학생 ID와 비밀번호를 모두 입력하세요.")
 
-    # 🚨 푸터 컴포넌트를 st.form 구역 '바깥'으로 완벽 독립 분리배치
     st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & AI Creator</div></div>", unsafe_allow_html=True)
 
 # =========================================================================
@@ -340,52 +297,44 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown(f"<h2>수행평가 점수 확인 시스템 <span style='font-size:16px; color:#3b82f6;'>(학생 모드)</span></h2>", unsafe_allow_html=True)
-    
-    col_st_info, col_st_logout = st.columns([5, 1])
-    with col_st_info: st.write(f"👤 접속 이메일: **{st.session_state['logged_student_id']}**")
-    with col_st_logout:
-        if st.button("🚪 안전 로그아웃", use_container_width=True):
-            st.session_state["student_logged_in"] = False
-            st.session_state["logged_student_id"] = ""
-            st.session_state["logged_student_pw"] = ""
-            st.rerun()
-        
+    if st.button("🚪 안전 로그아웃"):
+        st.session_state["student_logged_in"] = False
+        st.rerun()
+    st.write(f"👤 접속 이메일: **{st.session_state['logged_student_id']}**")
     st.markdown("---")
     
-    with st.container(border=True):
-        st.markdown("### 📚 성적 조회 대상 교과 설정")
-        active_dbs = get_active_databases()
-        if not active_dbs:
-            st.warning("현재 평가 데이터베이스에 활성화된 과목 파티션이 존재하지 않습니다.")
-        else:
-            opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
-            sel_s = st.selectbox("조회할 교과과정 선택", opts_s)
-            
-            if sel_s != "과목 및 학기를 선택하세요.":
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("🚀 나의 수행평가 성적 실시간 검증", type="primary", use_container_width=True):
-                    db = active_dbs[opts_s.index(sel_s)-1]
-                    cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
-                    config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
-                    
-                    if config:
-                        df_st = load_sheet_to_df(sf_id)
-                        if not df_st.empty:
-                            st_id = st.session_state["logged_student_id"]
-                            st_pw = st.session_state["logged_student_pw"]
+    active_dbs = get_active_databases()
+    if not active_dbs:
+        st.warning("현재 평가 데이터베이스에 활성화된 과목 파티션이 존재하지 않습니다.")
+    else:
+        opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
+        sel_s = st.selectbox("조회할 교과과정 선택", opts_s)
+        
+        if sel_s != "과목 및 학기를 선택하세요.":
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🚀 나의 수행평가 성적 실시간 검증", type="primary", use_container_width=True):
+                db = active_dbs[opts_s.index(sel_s)-1]
+                cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
+                config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
+                
+                if config:
+                    df_st = load_sheet_to_df(sf_id)
+                    if not df_st.empty:
+                        st_id = st.session_state["logged_student_id"]
+                        st_pw = st.session_state["logged_student_pw"]
+                        
+                        if "school_email" in df_st.columns:
+                            res = df_st[(df_st['school_email'].astype(str).str.strip() == str(st_id)) & (df_st['비밀번호'].astype(str) == str(st_pw))]
+                        else:
+                            res = df_st[(df_st['이름'].astype(str).str.strip() == str(st_id)) & (df_st['비밀번호'].astype(str) == str(st_pw))]
                             
-                            if "school_email" in df_st.columns:
-                                res = df_st[(df_st['school_email'].astype(str).str.strip() == str(st_id)) & (df_st['비밀번호'].astype(str) == str(st_pw))]
-                            else:
-                                res = df_st[(df_st['이름'].astype(str).str.strip() == str(st_id)) & (df_st['비밀번호'].astype(str) == str(st_pw))]
-                                
-                            if not res.empty:
-                                idx = res.index[0]
-                                st_name = res.iloc[0].get('이름', '학생')
-                                scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
-                                show_result_dialog(st_name, scores, sf_id, idx, df_st)
-                            else: 
-                                st.error("❌ 입력하신 로그인 계정 정보와 일치하는 성적 대장 데이터 행을 찾을 수 없습니다.")
+                        if not res.empty:
+                            idx = res.index[0]
+                            st_name = res.iloc[0].get('이름', '학생')
+                            scores = {config[f'항목{i+1}_이름']: [df_st.loc[idx, config[f'항목{i+1}_이름']]] for i in range(int(config['항목개수']))}
+                            show_result_dialog(st_name, scores, sf_id, idx, df_st)
+                        else: 
+                            st.error("❌ 입력하신 로그인 계정 정보와 일치하는 성적 대장 데이터 행을 찾을 수 없습니다.")
 
 # =========================================================================
 # 🔒 [2단계-B] 교사 마스터 제어 대시보드
@@ -477,7 +426,7 @@ elif st.session_state["admin_logged_in"]:
                 
                 with col_class_ed:
                     class_options_ed = ["전체"]
-                    if not db_df.empty and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                    if not db_df.empty Image_ed and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class_ed = st.selectbox("👥 학반 필터링", options=class_options_ed)
                 
                 if not db_df.empty:
