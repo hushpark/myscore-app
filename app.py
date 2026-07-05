@@ -14,7 +14,7 @@ import profile_pop
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [수동 여백 조정 및 수평 정렬 마스터 CSS]
+# 🔄 [우주 최강 레이아웃 고정 CSS] 수평 수직 영점 및 정중앙 완벽 박제
 # =========================================================================
 st.markdown("""
     <style>
@@ -52,9 +52,9 @@ st.markdown("""
             color: #0f172a !important;
         }
 
-        /* 🚨 [선생님 전용 여백 조절 밸브] 라디오 버튼을 수동 숫자로 지정하여 우측 정밀 이동 */
+        /* 🚨 [선생님 전용 패딩 조절 구역] 숫자를 써서 라디오 버튼 그룹 전체를 우측으로 수동 밀집 */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 110px !important; /* 👈 숫자를 늘리면 오른쪽으로 더 가고, 줄이면 왼쪽으로 갑니다! */
+            padding-left: 110px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
@@ -62,7 +62,7 @@ st.markdown("""
         /* 원형 버튼과 글자가 삐뚤어지지 않도록 완벽하게 수평 정렬 일직선 고정 */
         div[data-testid="stForm"] div[role="radiogroup"] {
             display: flex !important;
-            gap: 50px !important; /* 학생과 교사 간격 */
+            gap: 50px !important; 
             align-items: center !important;
         }
         div[data-testid="stForm"] div[role="radiogroup"] label {
@@ -90,7 +90,7 @@ st.markdown("""
         div[data-testid="stTextInput"] div[data-styled-inner-component="true"] { background-color: transparent !important; }
         div[data-testid="stTextInput"] button { background-color: transparent !important; border: none !important; box-shadow: none !important; color: #64748b !important; }
 
-        /* 🚨 4. 제출 버튼 스타일 고정 */
+        /* 🚨 4. 제출 버튼 스타일 및 중앙 배치 박제 */
         div[data-testid="stFormSubmitButton"] button {
             background-color: #4a69bd !important;
             color: #ffffff !important;
@@ -225,17 +225,16 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 학생 우선순위 배치)
+# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 실시간 연동 완벽 고정)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 학생, 교사 우선배치 고정
+            # 학생 우선배치 고정
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
-            # 동적 텍스트 동기화 결합
             if login_mode == "학생":
                 placeholder_text = "학생 ID(이메일)를 입력하세요"
             else:
@@ -244,7 +243,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
             user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed", key="live_user_id_field")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
-            # 순정 컬럼 분할로 로그인 버튼 가로 너비 180px 박스 정중앙 배치 박제
+            # 버튼 180px 정중앙 고정
             b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
             with b_col2:
                 submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
