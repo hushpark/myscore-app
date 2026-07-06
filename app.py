@@ -138,7 +138,7 @@ def load_master_subjects():
             if group in default_structure and sub not in default_structure[group]: default_structure[group].append(sub)
     return default_structure
 
-# 🔴 [연동 복구 완료] 구글 시트 교사 계정 조회 로직 정상 동기화
+# 👥 구글 시트 교사 계정 조회 로직
 def verify_teacher_credentials(input_id, input_pw):
     df = load_sheet_to_df("teacher_accounts", ["교사_ID", "비밀번호", "교사_성명", "담당_과목"])
     if not df.empty:
@@ -150,6 +150,24 @@ def verify_teacher_credentials(input_id, input_pw):
             return {"success": True, "teacher_id": str(row['교사_ID']).strip(), "teacher_name": str(row['교사_성명']).strip(), "authorized_subjects": [s.strip() for s in str(row['담당_과목']).split(",") if s.strip()]}
     if input_id.strip() == "admin" and input_pw.strip() == "1234": return {"success": True, "teacher_id": "admin", "teacher_name": "최고관리자", "authorized_subjects": ["마스터"]}
     return {"success": False, "teacher_name": "", "authorized_subjects": []}
+
+# 🎓 구글 시트 학생 계정 존재 여부 실시간 매칭 검증 로직
+def verify_student_credentials(input_id, input_pw):
+    active_dbs = get_active_databases()
+    if not active_dbs: return False
+    
+    first_db = active_dbs[0]
+    _, sf_id = get_sheet_names_id(first_db['subject'], first_db['grade'].replace("학년",""), first_db['semester'])
+    df_st = load_sheet_to_df(sf_id)
+    
+    if not df_st.empty:
+        if "school_email" in df_st.columns:
+            match = df_st[(df_st['school_email'].astype(str).str.strip() == str(input_id).strip()) & (df_st['비밀번호'].astype(str).str.strip() == str(input_pw).strip())]
+            if not match.empty: return True
+        else:
+            match = df_st[(df_st['이름'].astype(str).str.strip() == str(input_id).strip()) & (df_st['비밀번호'].astype(str).str.strip() == str(input_pw).strip())]
+            if not match.empty: return True
+    return False
 
 def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
@@ -202,7 +220,8 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
+            # 🔴 [선생님 피드백 반영] 예전 오리지널 순서대로 [교사, 학생] 전격 원상복구 완료!
+            login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
             
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="pure_user_id_field")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="pure_user_pw_field")
@@ -212,6 +231,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 submit_active = st.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
+                # 🔴 순서 원상복구에 맞춰 백엔드 매칭 회선도 정확하게 재정렬 완료
                 if login_mode == "교사":
                     auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
                     if auth_result["success"]:
@@ -223,10 +243,12 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                     else: st.error("❌ 교사 ID 또는 비밀번호 오류")
                 elif login_mode == "학생":
                     if user_id_input and user_pw_input:
-                        st.session_state["student_logged_in"] = True
-                        st.session_state["logged_student_id"] = user_id_input.strip()
-                        st.session_state["logged_student_pw"] = user_pw_input.strip()
-                        st.rerun()
+                        if verify_student_credentials(user_id_input, user_pw_input):
+                            st.session_state["student_logged_in"] = True
+                            st.session_state["logged_student_id"] = user_id_input.strip()
+                            st.session_state["logged_student_pw"] = user_pw_input.strip()
+                            st.rerun()
+                        else: st.error("❌ 등록되지 않은 학생 계정이거나 비밀번호가 다릅니다.")
                     else: st.error("❌ 학생 ID와 비밀번호를 모두 입력하세요.")
 
     st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & AI Creator</div></div>", unsafe_allow_html=True)
@@ -312,7 +334,7 @@ elif st.session_state["admin_logged_in"]:
                 cfg_df = load_sheet_to_df(cf_id)
                 with col_class:
                     class_options = ["전체 학급 보기"]
-                    if not db_df.empty and "반" in db_df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                    if not db_df.empty navigate and "반" in db_df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class = st.selectbox("🎯 필터링할 학급 선택", options=class_options, key="t_class_select_1_unique")
                 if not db_df.empty:
                     render_df = db_df.copy()
