@@ -58,7 +58,7 @@ st.markdown("""
            - 버튼 그룹 전체를 더 왼쪽으로 당기고 싶다면: 130px를 더 작게 (예: 120px, 110px)
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 130px !important; 
+            padding-left: 95px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
@@ -238,8 +238,8 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 학생, 교사 라디오 버튼 
-            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+            # 폼 내부 단일 라디오 버튼 선언 (Unique Key 할당으로 중복 ID 완벽 격리)
+            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="system_login_role_selector")
             
             # 누구든 상관없이 깔끔하게 "ID를 입력하세요" 단일 고정 예시
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="live_user_id_field")
