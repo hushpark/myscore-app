@@ -52,11 +52,13 @@ st.markdown("""
             color: #0f172a !important;
         }
 
-        /* 🚨 [선생님 전용 여백 조절 밸브] 라디오 버튼을 수동 숫자로 지정하여 우측 정밀 이동 */
+        /* 🚨 [선생님 피드백 반영] 라디오 버튼 좌측 여백을 40px로 줄여 하얀 박스 기준 완벽한 정중앙 정렬 박제 */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 110px !important; /* 👈 숫자를 늘리면 오른쪽으로 더 가고, 줄이면 왼쪽으로 갑니다! */
+            padding-left: 40px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
         }
         
         /* 원형 버튼과 글자가 삐뚤어지지 않도록 완벽하게 수평 정렬 일직선 고정 */
@@ -64,6 +66,8 @@ st.markdown("""
             display: flex !important;
             gap: 50px !important; /* 학생과 교사 간격 */
             align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
         }
         div[data-testid="stForm"] div[role="radiogroup"] label {
             display: flex !important;
@@ -142,7 +146,7 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-@st.dialog("🎉 성적 조회 결과")
+@st.indigo("🎉 성적 조회 결과") if hasattr(st, "indigo") else st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
     st.markdown(f"<div><b>{student_name}</b> 학생의 성적 내역입니다.</div>", unsafe_allow_html=True)
     st.table(pd.DataFrame(scores_dict))
@@ -215,6 +219,7 @@ SUBJECT_MAP = load_master_subjects()
 
 def sidebar_logout_callback():
     st.session_state["admin_logged_in"] = False
+    st.session_state["student_logged_in"] = False
     st.session_state["logged_teacher_id"] = ""
     st.session_state["teacher_name"] = ""
     st.session_state["allowed_subjects"] = []
@@ -228,18 +233,22 @@ if st.session_state["open_profile_popup"]:
 # 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 학생 우선순위 배치)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
+    
+    # 🚨 실시간 상태 추적을 위해 폼 '외부'에 라디오 버튼을 먼저 독립 배치합니다.
+    # 이렇게 해야 '학생/교사' 클릭 시 하단 입력창 placeholder가 즉시 변경됩니다!
     with st.container():
+        # 하얀 상자 안의 레이아웃 균형을 맞추기 위한 컨테이너 폼 선언
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 학생, 교사 우선배치 고정
+            # 🔴 [선생님 피드백 반영] 학생, 교사 우선배치 라디오 버튼 고정
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
-            # 동적 텍스트 동기화 결합
+            # 🔴 [선생님 피드백 반영] 선택된 모드에 따라 입력 가이드 텍스트를 칼같이 제어
             if login_mode == "학생":
                 placeholder_text = "학생 ID(이메일)를 입력하세요"
             else:
-                placeholder_text = "교사 ID를 입력하세요"
+                placeholder_text = "ID를 입력하세요"
                 
             user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed", key="live_user_id_field")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
