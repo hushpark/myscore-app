@@ -8,7 +8,6 @@ import re
 import gspread
 from google.oauth2.service_account import Credentials
 import csv
-import profile_pop
 
 # 🚨 [최상단 규칙 엄수] 와이드 레이아웃 설정
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
@@ -26,7 +25,7 @@ st.markdown("""
 
         /* 사이드바 고유 버튼 무전역 고정 */
         [data-testid="stSidebar"] button[kind="primary"] { background-color: #3b82f6 !important; border: 2px solid #2563eb !important; color: #ffffff !important; border-radius: 6px !important; font-weight: 700 !important; padding: 10px 16px !important; width: 100% !important; display: block !important; }
-        [data-testid="stSidebar"] button[kind="secondary"] { background-color: #475569 !important; border: 2px solid #334155 !important; color: #ffffff !important; border-radius: 6px !important; font-weight: 700 !important; padding: 10px 16px !important; width: 100% !important; display: block !important; }
+        [data-testid="stSidebar"] button[kind="secondary"] { background-color: #475569 !important; border: 2px solid #334155 !important; color: #ffffff !important; border-radius: 6px !important; width: 100% !important; display: block !important; }
         [data-testid="stDialog"] button[kind="primary"] { background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
 
         /* -------------------------------------------------------------------------------- */
@@ -52,34 +51,18 @@ st.markdown("""
             color: #0f172a !important;
         }
 
-        /* -------------------------------------------------------------------------------- */
-        /* 💡 [선생님 전용 수동 밸브] 라디오 버튼 좌측 여백 제어용 CSS 조절 장치
-           - 버튼들을 더 우측(오른쪽)으로 밀어내고 싶다면: 130px 값을 더 크게 고치세요 (예: 140px, 150px)
-           - 버튼들을 더 좌측(왼쪽)으로 당겨오고 싶다면: 130px 값을 더 작게 고치세요 (예: 110px, 100px)
-        /* -------------------------------------------------------------------------------- */
+        /* 🔴 [선생님 지정값] 라디오 버튼 여백 95px 깔끔하게 고정 */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
             padding-left: 95px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
         
-        /* 원형 버튼과 글자 수평 일직선 고정 */
+        /* 원형 버튼과 글자 수평 일직선 구조만 안전하게 유지 (글자 여백 4px 내부 코드는 완벽 삭제) */
         div[data-testid="stForm"] div[role="radiogroup"] {
             display: flex !important;
-            gap: 50px !important; 
+            gap: 35px !important; 
             align-items: center !important;
-        }
-        div[data-testid="stForm"] div[role="radiogroup"] label {
-            display: flex !important;
-            align-items: center !important; 
-            margin: 0 !important;
-        }
-        div[data-testid="stForm"] div[role="radiogroup"] label p {
-            margin: 0 0 0 4px !important; 
-            font-size: 16px !important;
-            font-weight: 700 !important;
-            color: #334155 !important;
-            line-height: 1 !important; 
         }
 
         /* 🚨 3. 입력 필드 스타일 */
@@ -123,13 +106,6 @@ def load_master_subjects():
             if group in default_structure and sub not in default_structure[group]: default_structure[group].append(sub)
     return default_structure
 
-def save_new_subject_to_master(group, subject):
-    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not ((df['교과군'] == group) & (df['과목명'] == subject)).any():
-        new_row = pd.DataFrame([{"교과군": group, "과목명": subject}])
-        df = pd.concat([df, new_row], ignore_index=True)
-        save_df_to_sheet("master_subjects", df)
-
 def verify_teacher_credentials(input_id, input_pw):
     df = load_sheet_to_df("teacher_accounts", ["교사_ID", "비밀번호", "교사_성명", "담당_과목"])
     if not df.empty:
@@ -146,12 +122,12 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-@st.indigo("🎉 성적 조회 결과") if hasattr(st, "indigo") else st.dialog("🎉 성적 조회 결과")
+@st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
     st.markdown(f"<div><b>{student_name}</b> 학생의 성적 내역입니다.</div>", unsafe_allow_html=True)
     st.table(pd.DataFrame(scores_dict))
     if "has_counted" not in st.session_state:
-        try: current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조ation 횟수"]) else 0
+        try: current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조회 횟수"]) else 0
         except: current_count = 0
         current_df.loc[student_row_idx, "성적조회 횟수"] = current_count + 1
         current_df.loc[student_row_idx, "최종 확인일시"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -206,7 +182,7 @@ def get_active_databases():
     except: pass
     return active_list
 
-# 세션 상태 초기화
+# 세션 초기화
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "student_logged_in" not in st.session_state: st.session_state["student_logged_in"] = False
 if "logged_student_id" not in st.session_state: st.session_state["logged_student_id"] = ""
@@ -217,36 +193,25 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 
 SUBJECT_MAP = load_master_subjects()
 
-def sidebar_logout_callback():
-    st.session_state["admin_logged_in"] = False
-    st.session_state["student_logged_in"] = False
-    st.session_state["logged_teacher_id"] = ""
-    st.session_state["teacher_name"] = ""
-    st.session_state["allowed_subjects"] = []
-
-if "open_profile_popup" not in st.session_state: st.session_state["open_profile_popup"] = False
-if st.session_state["open_profile_popup"]:
-    st.session_state["open_profile_popup"] = False
-    launch_isolated_profile_dialog()
-
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 학생 우선순위 배치)
+# 🔓 [1단계] 클린 통합 로그인 시스템
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 학생, 교사 라디오 버튼 (안심 순정 구조 원복)
-            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+            # 단일 라디오 버튼 
+            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
             
-            # 🔴 [선생님 피드백 반영] 누구든 상관없이 깔끔하게 "ID를 입력하세요" 단일 고정!
-            user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="live_user_id_field")
-            user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
+            # 누구든 상관없이 깔끔하게 "ID를 입력하세요" 단일 고정 예시
+            user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="pure_user_id_field")
+            user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="pure_user_pw_field")
             
-            # 로그인 버튼 가로 분할 정렬
+            # 로그인 버튼 정렬
             b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
             with b_col2:
+                # 🔴 [선생님 피드백 반영] '로그인' 수정 완료
                 submit_active = st.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
@@ -270,12 +235,12 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
     st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & AI Creator</div></div>", unsafe_allow_html=True)
 
 # =========================================================================
-# 🎓 [2단계-A] 분리 개설된 학생 전용 과목 선택 대시보드
+# 🎓 [2단계-A] 학생 대시보드
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown(f"<h2>수행평가 점수 확인 시스템 <span style='font-size:16px; color:#3b82f6;'>(학생 모드)</span></h2>", unsafe_allow_html=True)
-    if st.button("🚪 안전 로그아웃"):
-        st.session_state["student_logged_in"] = False
+    if st.button("🚪 안전 로그아웃", key="student_logout_btn"):
+        st.session_state.clear()
         st.rerun()
     st.write(f"👤 접속 이메일: **{st.session_state['logged_student_id']}**")
     st.markdown("---")
@@ -285,11 +250,11 @@ elif st.session_state["student_logged_in"]:
         st.warning("현재 평가 데이터베이스에 활성화된 과목 파티션이 존재하지 않습니다.")
     else:
         opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
-        sel_s = st.selectbox("조회할 교과과정 선택", opts_s)
+        sel_s = st.selectbox("조회할 교과과정 선택", opts_s, key="student_subject_select")
         
         if sel_s != "과목 및 학기를 선택하세요.":
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🚀 나의 수행평가 성적 실시간 검증", type="primary", use_container_width=True):
+            if st.button("🚀 나의 수행평가 성적 실시간 검증", type="primary", use_container_width=True, key="student_verify_score_btn"):
                 db = active_dbs[opts_s.index(sel_s)-1]
                 cf_id, sf_id = get_sheet_names_id(db['subject'], db['grade'].replace("학년",""), db['semester'])
                 config = load_sheet_to_df(cf_id).iloc[0].to_dict() if not load_sheet_to_df(cf_id).empty else None
@@ -314,110 +279,87 @@ elif st.session_state["student_logged_in"]:
                             st.error("❌ 입력하신 로그인 계정 정보와 일치하는 성적 대장 데이터 행을 찾을 수 없습니다.")
 
 # =========================================================================
-# 🔒 [2단계-B] 교사 마스터 제어 대시보드
+# 🔒 [2단계-B] 교사 대시보드
 # =========================================================================
 elif st.session_state["admin_logged_in"]:
     with st.sidebar:
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:12px; color:#94a3b8; margin-bottom:15px;'>👤 {st.session_state['teacher_name']} 선생님 접속 중</div>", unsafe_allow_html=True)
         st.markdown("---")
-        menu_selection = st.radio("메뉴 선택", ["▶ 학생 조회 현황 모니터링", "▶ 개인별 성적 입력", "▶ 평가 대상 과목 구성", "▶ 성적 전체 일괄 업로드(CSV)"], label_visibility="collapsed")
+        menu_selection = st.radio("메뉴 선택", ["▶ 학생 조회 현황 모니터링", "▶ 개인별 성적 입력", "▶ 평가 대상 과목 구성", "▶ 성적 전체 일괄 업로드(CSV)"], label_visibility="collapsed", key="teacher_pure_sidebar_radio")
         st.markdown("---")
         
-        if st.button("🔐 내 정보 수정", type="primary", use_container_width=True):
-            st.session_state["open_profile_popup"] = True
+        if st.button("🚪 시스템 로그아웃", type="secondary", use_container_width=True, key="teacher_logout_btn"):
+            st.session_state.clear()
             st.rerun()
-            
-        st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
-        st.button("🚪 시스템 로그아웃", type="secondary", use_container_width=True, on_click=sidebar_logout_callback)
 
     st.markdown(f"<h2>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
     st.write(f"현재 위치: 교사 모드 > {menu_selection}")
     st.markdown("<div style='text-align:center; height: 5px;'></div>", unsafe_allow_html=True)
 
-    # 📊 모듈 1: 학생 조회 현황 모니터링
     if menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown(f"<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
-            
             registered_dbs = get_active_databases()
             if "마스터" not in st.session_state["allowed_subjects"]:
                 registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
-                
-            if not registered_dbs:
-                st.warning("⚠️ 현재 개설 파티션이 없습니다.")
+            if not registered_dbs: st.warning("⚠️ 현재 개설 파티션이 없습니다.")
             else:
                 col_sub, col_class = st.columns(2)
                 with col_sub:
                     selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
-                    selected_db_str = st.selectbox("📂 대상 교과 선택", options=selector_options)
+                    selected_db_str = st.selectbox("📂 대상 교과 선택", options=selector_options, key="t_sub_select_1")
                     chosen_db = registered_dbs[selector_options.index(selected_db_str)]
-                
                 cf_id, sf_id = get_sheet_names_id(chosen_db['subject'], chosen_db['grade'].replace("학년",""), chosen_db['semester'])
                 db_df = load_sheet_to_df(sf_id)
                 cfg_df = load_sheet_to_df(cf_id)
-                
                 with col_class:
                     class_options = ["전체 학급 보기"]
-                    if not db_df.empty and "반" in db_df.columns:
-                        class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
-                    selected_class = st.selectbox("🎯 필터링할 학급 선택", options=class_options)
-                
+                    if not db_df.empty and "반" in db_df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                    selected_class = st.selectbox("🎯 필터링할 학급 선택", options=class_options, key="t_class_select_1")
                 if not db_df.empty:
                     render_df = db_df.copy()
-                    if selected_class != "전체 학급 보기":
-                        render_df = render_df[render_df['반'].astype(int) == int(selected_class.replace("반",""))]
-                        
+                    if selected_class != "전체 학급 보기": render_df = render_df[render_df['반'].astype(int) == int(selected_class.replace("반",""))]
                     if not cfg_df.empty:
                         cfg_dict = cfg_df.iloc[0].to_dict()
                         cnt = int(cfg_dict.get('항목개수', 3))
                         score_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
                     else: score_headers = []
-                    
                     display_cols = ["반", "번호", "이름"]
                     if "school_email" in render_df.columns: display_cols.append("school_email")
                     display_cols.extend(score_headers)
                     display_cols.extend(["성적조회 횟수", "최종 확인일시"])
-                    
                     st.dataframe(render_df[[c for c in display_cols if c in render_df.columns]].fillna("-"), use_container_width=True, hide_index=True)
 
-    # 📝 모듈 2: 개인별 성적 입력
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
             st.markdown("<h3>📝 개인별 성적 데이터 편집</h3>", unsafe_allow_html=True)
             registered_dbs = get_active_databases()
-            if "마스터" not in st.session_state["allowed_subjects"]:
-                registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
-                
+            if "마스터" not in st.session_state["allowed_subjects"]: registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
             if not registered_dbs: st.warning("⚠️ 권한 파티션이 없습니다.")
             else:
                 col_sub_ed, col_class_ed = st.columns(2)
                 with col_sub_ed:
                     selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
-                    selected_db_str = st.selectbox("📂 관리할 교과 선택", options=selector_options)
+                    selected_db_str = st.selectbox("📂 관리할 교과 선택", options=selector_options, key="t_sub_select_2")
                     chosen_db = registered_dbs[selector_options.index(selected_db_str)]
-                
                 cf_id, sf_id = get_sheet_names_id(chosen_db['subject'], chosen_db['grade'].replace("학년",""), chosen_db['semester'])
                 db_df = load_sheet_to_df(sf_id)
                 cfg_df = load_sheet_to_df(cf_id)
-                
                 with col_class_ed:
                     class_options_ed = ["전체"]
                     if not db_df.empty and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
-                    selected_class_ed = st.selectbox("👥 학반 필터링", options=class_options_ed)
-                
+                    selected_class_ed = st.selectbox("👥 학반 필터링", options=class_options_ed, key="t_class_select_2")
                 if not db_df.empty:
                     if not cfg_df.empty:
                         cfg_dict = cfg_df.iloc[0].to_dict()
                         cnt = int(cfg_dict.get('항목개수', 3))
                         score_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
                     else: score_headers = []
-                    
                     display_cols = ["반", "번호", "이름"]
                     if "school_email" in db_df.columns: display_cols.append("school_email")
                     if "비밀번호" in db_df.columns: display_cols.append("비밀번호")
                     display_cols.extend(score_headers)
-                    
                     valid_cols = [c for c in display_cols if c in db_df.columns]
                     if selected_class_ed != "전체":
                         filtered_idx = db_df[db_df["반"].astype(int) == int(selected_class_ed.replace("반", ""))].index
@@ -425,40 +367,32 @@ elif st.session_state["admin_logged_in"]:
                     else:
                         filtered_idx = db_df.index
                         edit_target_df = db_df[valid_cols]
-                    
-                    edited_df = st.data_editor(edit_target_df, use_container_width=True, num_rows="dynamic", disabled=["반", "번호", "이름"], hide_index=True)
-                    
+                    edited_df = st.data_editor(edit_target_df, use_container_width=True, num_rows="dynamic", disabled=["반", "번호", "이름"], hide_index=True, key="teacher_editor_main")
                     st.markdown("<br>", unsafe_allow_html=True)
                     bc1, bc2 = st.columns([5, 1])
                     with bc2:
-                        if st.button("💾 수정 저장", use_container_width=True, type="primary"):
+                        if st.button("💾 수정 저장", use_container_width=True, type="primary", key="save_edit_btn"):
                             for idx_pos, row_idx in enumerate(filtered_idx):
                                 for col in edited_df.columns: db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
-                            if save_df_to_sheet(sf_id, db_df):
-                                st.success("🎉 저장 동기화 완료!")
-                                st.rerun()
+                            if save_df_to_sheet(sf_id, db_df): st.success("🎉 저장 동기화 완료!"); st.rerun()
 
-    # 📁 모듈 3: 평가 대상 과목 구성
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown("<h3>⚙️ 수행평가 항목 구성 및 파티션 개설</h3>", unsafe_allow_html=True)
             r1, r2 = st.columns(2)
-            with r1: sel_g = st.selectbox("교과군 분류", options=["인문·사회군", "수리·과학군", "예체능군"])
-            with r2: sel_gr = st.selectbox("학년 선택", options=["1학년", "2학년", "3학년"])
-            
+            with r1: sel_g = st.selectbox("교과군 분류", options=["인문·사회군", "수리·과학군", "예체능군"], key="cfg_group_select")
+            with r2: sel_gr = st.selectbox("학년 선택", options=["1학년", "2학년", "3학년"], key="cfg_grade_select")
             r3, r4 = st.columns(2)
-            with r3: final_sub = st.selectbox("세부 과목", options=SUBJECT_MAP.get(sel_g, ["국어"]))
-            with r4: sel_se = st.selectbox("학기 선택", options=["2026학년도 1학기", "2026학년도 2학기"])
-            
-            item_count = st.selectbox("🎯 평가 반영 항목 개수", [1, 2, 3, 4, 5], index=2)
+            with r3: final_sub = st.selectbox("세부 과목", options=SUBJECT_MAP.get(sel_g, ["국어"]), key="cfg_sub_select")
+            with r4: sel_se = st.selectbox("학기 선택", options=["2026학년도 1학기", "2026학년도 2학기"], key="cfg_sem_select")
+            item_count = st.selectbox("🎯 평가 반영 항목 개수", [1, 2, 3, 4, 5], index=2, key="cfg_item_cnt_select")
             item_titles = []
             cols_items = st.columns(item_count)
             for i in range(item_count):
                 with cols_items[i]:
-                    t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가_{i+1}")
+                    t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가_{i+1}", key=f"pure_item_title_{i}")
                     item_titles.append(t_in.strip())
-            
-            if st.button("🚀 기본 설정 파티션 저장 개설", type="primary", use_container_width=True):
+            if st.button("🚀 기본 설정 파티션 저장 개설", type="primary", use_container_width=True, key="make_partition_btn"):
                 if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
                     st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
                 else:
@@ -466,20 +400,17 @@ elif st.session_state["admin_logged_in"]:
                     config_df = pd.DataFrame([{"선택된반 목록": "1,2,3", "항목개수": item_count, **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}}])
                     if save_df_to_sheet(cf_id, config_df): st.success("✅ 파티션 연동 기본 설정 저장 완료!")
 
-    # 📤 모듈 4: 성적 전체 일괄 업로드(CSV)
     elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV)":
         with st.container(border=True):
             st.markdown("<h3>📥 전체 일괄 성적 대장 CSV 업로드</h3>", unsafe_allow_html=True)
             registered_dbs = get_active_databases()
             if "마스터" not in st.session_state["allowed_subjects"]: registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
-            
             if not registered_dbs: st.warning("개설 파티션이 없습니다.")
             else:
-                selected_db_str = st.selectbox("📂 성적 연동 과목 파티션 선택", options=[f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs])
+                selected_db_str = st.selectbox("📂 성적 연동 과목 파티션 선택", options=[f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs], key="csv_db_select")
                 chosen_db = registered_dbs[[f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs].index(selected_db_str)]
                 cf_id, sf_id = get_sheet_names_id(chosen_db['subject'], chosen_db['grade'].replace("학년",""), chosen_db['semester'])
-                
-                up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type="csv")
+                up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type="csv", key="csv_file_uploader")
                 if up_f:
                     df_up = pd.read_csv(up_f, encoding='cp949')
                     if "school_email" not in df_up.columns: df_up["school_email"] = ""
