@@ -46,13 +46,13 @@ st.markdown("""
             margin-bottom: 25px !important;
         }
 
-        /* 🚨 [핵심 해결] 사이드바 라디오 버튼 모든 내부 텍스트 무조건 흰색/굵게 강제 고정 */
-        [data-testid="stSidebar"] [data-testid="stRadio"] label,
-        [data-testid="stSidebar"] [data-testid="stRadio"] label *,
+        /* 🚨 [핵심 해결] 사이드바 라디오 버튼 내부의 모든 글자 태그를 무조건 순백색으로 강제 덮어쓰기 */
+        [data-testid="stSidebar"] .stRadio label p,
+        [data-testid="stSidebar"] .stRadio label span,
+        [data-testid="stSidebar"] .stRadio label div,
         [data-testid="stSidebar"] div[role="radiogroup"] label *,
         [data-testid="stSidebar"] div[role="radiogroup"] p,
-        [data-testid="stSidebar"] div[role="radiogroup"] span,
-        [data-testid="stSidebar"] div[role="radiogroup"] div {
+        [data-testid="stSidebar"] div[role="radiogroup"] span {
             color: #ffffff !important;
             font-size: 16px !important;
             font-weight: 700 !important;
@@ -62,7 +62,7 @@ st.markdown("""
             color: #60a5fa !important;
         }
 
-        /* 사이드바 하단 버튼 스타일 고정 (하얀색 박스 형태) */
+        /* 사이드바 하단 버튼 스타일 고정 (하얀색 박스 및 텍스트) */
         [data-testid="stSidebar"] button[kind="secondary"] { 
             background-color: #ffffff !important; 
             border: 1px solid #cbd5e1 !important; 
@@ -205,7 +205,7 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-# 🔐 [복원 완료] 비밀번호 변경 팝업 다이얼로그 (과거 profile_pop 기능 내장)
+# 🔐 [완벽 복원] 비밀번호 변경 팝업 다이얼로그
 @st.dialog("🔐 내 계정 비밀번호 변경")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님 계정의 비밀번호를 수정합니다.</div><br>", unsafe_allow_html=True)
@@ -537,4 +537,17 @@ elif st.session_state["admin_logged_in"]:
         with st.container(border=True):
             st.markdown("<h3>📥 전체 일괄 성적 대장 CSV 업로드</h3>", unsafe_allow_html=True)
             registered_dbs = get_active_databases()
-            if "마스터" not
+            if "마스터" not in st.session_state["allowed_subjects"]: registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
+            if not registered_dbs: st.warning("개설된 파티션이 없습니다.")
+            else:
+                selected_db_str = st.selectbox("📂 성적 연동 과목 파티션 선택", options=[f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs], key="csv_db_select_unique")
+                chosen_db = registered_dbs[[f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs].index(selected_db_str)]
+                cf_id, sf_id = get_sheet_names_id(chosen_db['subject'], chosen_db['grade'].replace("학년",""), chosen_db['semester'])
+                up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type="csv", key="csv_file_uploader_unique")
+                if up_f:
+                    df_up = pd.read_csv(up_f, encoding='cp949')
+                    df_up.columns = [c.strip() for c in df_up.columns]
+                    if "school_email" not in df_up.columns: df_up["school_email"] = ""
+                    if "성적조회 횟수" not in df_up.columns: df_up["성적조회 횟수"] = "0"
+                    if "최종 확인일시" not in df_up.columns: df_up["최종 확인일시"] = "-"
+                    if save_df_to_sheet(sf_id, df_up): st.success("🎉 클라우드 데이터베이스 미러링 마감 성공!")
