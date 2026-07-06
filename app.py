@@ -58,7 +58,7 @@ st.markdown("""
            - 버튼들을 더 좌측(왼쪽)으로 당겨오고 싶다면: 130px 값을 더 작게 고치세요 (예: 110px, 100px)
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 100px !important; 
+            padding-left: 95px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
