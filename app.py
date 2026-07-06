@@ -118,23 +118,25 @@ def save_df_to_sheet(sheet_name, df):
         return True
     except: return False
 
-# 🔄 [초강력 업그레이드] 유령 서식이나 공백이 있어도 강제로 2차원 값으로 변환해 긁어오는 무적 로드 함수
+# 🔄 [데이터 파싱 강화] 텍스트/숫자 혼합 형태도 문자열로 강제 흡수하여 유실을 차단하는 로드 함수
 def load_sheet_to_df(sheet_name):
     wks = get_google_sheet(sheet_name)
     if wks is None: return pd.DataFrame()
     try:
-        # get_all_records 실패 대비 강제 로우 데이터 추출 기법 적용
         all_values = wks.get_all_values()
-        if not all_values: return pd.DataFrame()
+        if not all_values or len(all_values) < 1: return pd.DataFrame()
         headers = [str(h).strip() for h in all_values[0]]
         rows = all_values[1:]
-        df = pd.DataFrame(rows, columns=headers)
-        return df
+        
+        # 행 데이터 크기 균일화 가공
+        cleaned_rows = []
+        for r in rows:
+            if len(r) < len(headers): r = r + [""] * (len(headers) - len(r))
+            cleaned_rows.append([str(cell).strip() for cell in r[:len(headers)]])
+            
+        return pd.DataFrame(cleaned_rows, columns=headers)
     except:
-        try:
-            records = wks.get_all_records()
-            return pd.DataFrame(records) if records else pd.DataFrame()
-        except: return pd.DataFrame()
+        return pd.DataFrame()
 
 def load_master_subjects():
     df = load_sheet_to_df("master_subjects")
@@ -157,7 +159,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
     if "has_counted" not in st.session_state:
         try: current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조회 횟수"]) else 0
         except: current_count = 0
-        current_df.loc[student_row_idx, "성적조회 횟수"] = current_count + 1
+        current_df.loc[student_row_idx, "성적조회 횟수"] = str(current_count + 1)
         current_df.loc[student_row_idx, "최종 확인일시"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         save_df_to_sheet(sf_id, current_df)
         st.session_state["has_counted"] = True
@@ -414,7 +416,6 @@ elif st.session_state["admin_logged_in"]:
                     display_cols = ["반", "번호", "이름"]
                     if "school_email" in db_df.columns: display_cols.append("school_email")
                     if "비밀번호" in db_df.columns: display_cols.append("비밀번호")
-                    display_cols.extend(score_headers)
                     valid_cols = [c for c in display_cols if c in db_df.columns]
                     if selected_class_ed != "전체" and "반" in db_df.columns:
                         filtered_idx = db_df[db_df["반"].astype(int) == int(selected_class_ed.replace("반", ""))].index
@@ -470,6 +471,6 @@ elif st.session_state["admin_logged_in"]:
                     df_up = pd.read_csv(up_f, encoding='cp949')
                     df_up.columns = [c.strip() for c in df_up.columns]
                     if "school_email" not in df_up.columns: df_up["school_email"] = ""
-                    if "성적조회 횟수" not in df_up.columns: df_up["성적조회 횟수"] = 0
+                    if "성적조회 횟수" not in df_up.columns: df_up["성적조회 횟수"] = "0"
                     if "최종 확인일시" not in df_up.columns: df_up["최종 확인일시"] = "-"
                     if save_df_to_sheet(sf_id, df_up): st.success("🎉 클라우드 데이터베이스 미러링 마감 성공!")
