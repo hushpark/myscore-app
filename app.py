@@ -49,7 +49,7 @@ st.markdown("""
             margin-bottom: 25px !important;
         }
 
-        /* 🚨 [사이드바 메뉴 가독성 끝판왕] -webkit-text-fill-color 속성으로 브라우저 어두운 글자 강제 백색 관통 */
+        /* 🚨 [사이드바 메뉴 가독성 끝판왕] 브라우저 강제 관통 순백색 고정 */
         [data-testid="stSidebar"] label,
         [data-testid="stSidebar"] label *,
         [data-testid="stSidebar"] div[role="radiogroup"] *,
@@ -220,84 +220,116 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-# 🔐 [상태 자물쇠 완벽 탑재] 그림 1로 절대 튕겨 나가지 않고, 닫기 클릭 시 100% 소멸
-@st.dialog("🔐 내 계정 비밀번호 변경")
+# 👤 [업그레이드 완료] 내 정보 수정 (비밀번호 변경 + 담당과목 변경 종합 팝업)
+@st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
-    st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님 계정의 비밀번호를 수정합니다.</div><br>", unsafe_allow_html=True)
+    st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
     
-    # 세션 자물쇠 초기화 (창을 새로 열 때만 False)
-    if "pw_step_unlocked" not in st.session_state:
-        st.session_state["pw_step_unlocked"] = False
+    # 상단 탭(Radio) 선택 메뉴
+    edit_mode = st.radio("관리할 항목 선택", ["🔐 비밀번호 변경", "📚 담당과목 변경"], horizontal=True)
+    st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
-    # 1. 현재 비밀번호 입력칸
-    curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 비밀번호 입력 후 엔터(Enter)", key="curr_pw_input_field")
-    
-    # 1단계 검증 로직 (아직 자물쇠가 안 열렸을 때만 수행)
-    if not st.session_state["pw_step_unlocked"] and curr_pw:
-        if st.session_state["logged_teacher_id"] == "admin":
-            st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 최고관리자(admin) 계정은 변경할 수 없습니다.</p>", unsafe_allow_html=True)
-        elif curr_pw != st.session_state.get("logged_teacher_pw", ""):
-            st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
+    # ==========================================
+    # 1. 🔐 비밀번호 변경 루틴
+    # ==========================================
+    if edit_mode == "🔐 비밀번호 변경":
+        if "pw_step_unlocked" not in st.session_state:
+            st.session_state["pw_step_unlocked"] = False
+
+        curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 비밀번호 입력 후 엔터(Enter)", key="curr_pw_input_field")
+        
+        if not st.session_state["pw_step_unlocked"] and curr_pw:
+            if st.session_state["logged_teacher_id"] == "admin":
+                st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 최고관리자(admin) 계정은 변경할 수 없습니다.</p>", unsafe_allow_html=True)
+            elif curr_pw != st.session_state.get("logged_teacher_pw", ""):
+                st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
+            else:
+                st.session_state["pw_step_unlocked"] = True
+                st.rerun()
+
+        if st.session_state["pw_step_unlocked"]:
+            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호", key="new_pw_input_field")
+            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_input_field")
+            
+            components.html("""
+                <script>
+                    setTimeout(function() {
+                        const inputs = window.parent.document.querySelectorAll('input[type="password"]');
+                        if (inputs.length >= 2) { inputs[1].focus(); }
+                    }, 150);
+                </script>
+            """, height=0, width=0)
+
+            msg_box = st.empty()
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True, key="save_pw_unique_btn")
+            with col2:
+                if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step2_btn"):
+                    st.session_state["pw_step_unlocked"] = False
+                    st.rerun()
+                    
+            if save_btn:
+                if not new_pw or new_pw != new_pw_confirm:
+                    msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다.</p>", unsafe_allow_html=True)
+                elif new_pw == st.session_state.get("logged_teacher_pw", ""):
+                    msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 현재 사용 중인 비밀번호와 동일합니다.</p>", unsafe_allow_html=True)
+                else:
+                    df_tc = load_sheet_to_df("teacher_accounts")
+                    if not df_tc.empty and "교사_ID" in df_tc.columns:
+                        idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
+                        if len(idx) > 0:
+                            df_tc.loc[idx[0], "비밀번호"] = new_pw
+                            if save_df_to_sheet("teacher_accounts", df_tc):
+                                msg_box.success("🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.")
+                                st.session_state["logged_teacher_pw"] = new_pw
+                            else: msg_box.error("❌ 구글 시트 저장에 실패했습니다.")
+                        else: msg_box.error("❌ 명단에서 계정을 찾을 수 없습니다.")
         else:
-            # 일치하면 상태 자물쇠를 꽉 잠그고 리렌더링
-            st.session_state["pw_step_unlocked"] = True
-            st.rerun()
-
-    # 2. 자물쇠가 열렸을 때 (그림 2 상태 유지)
-    if st.session_state["pw_step_unlocked"]:
-        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
-        new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호", key="new_pw_input_field")
-        new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_input_field")
-        
-        # 🚀 0.15초 뒤 새 비밀번호 입력칸으로 커서 자동 이동!
-        components.html("""
-            <script>
-                setTimeout(function() {
-                    const inputs = window.parent.document.querySelectorAll('input[type="password"]');
-                    if (inputs.length >= 2) {
-                        inputs[1].focus();
-                    }
-                }, 150);
-            </script>
-        """, height=0, width=0)
-
-        msg_box = st.empty()
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True, key="save_pw_unique_btn")
-        with col2:
-            # 🚨 그림 2에서 닫기 누르면 자물쇠 풀고 창 100% 영구 파괴
-            if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step2_btn"):
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn"):
                 st.session_state["pw_step_unlocked"] = False
                 st.rerun()
-                
-        if save_btn:
-            if not new_pw or new_pw != new_pw_confirm:
-                msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다.</p>", unsafe_allow_html=True)
-            elif new_pw == st.session_state.get("logged_teacher_pw", ""):
-                msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 현재 사용 중인 비밀번호와 동일합니다.</p>", unsafe_allow_html=True)
-            else:
-                df_tc = load_sheet_to_df("teacher_accounts")
-                if not df_tc.empty and "교사_ID" in df_tc.columns:
-                    idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
-                    if len(idx) > 0:
-                        df_tc.loc[idx[0], "비밀번호"] = new_pw
-                        if save_df_to_sheet("teacher_accounts", df_tc):
-                            # 저장 성공해도 자물쇠(pw_step_unlocked)가 풀리지 않아 그림 2 화면이 유지됨!
-                            msg_box.success("🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.")
-                            st.session_state["logged_teacher_pw"] = new_pw
-                        else:
-                            msg_box.error("❌ 구글 시트 저장에 실패했습니다.")
-                    else:
-                        msg_box.error("❌ 명단에서 계정을 찾을 수 없습니다.")
-    else:
-        # 그림 1 상태에서 닫기 클릭 시 100% 영구 파괴
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn"):
-            st.session_state["pw_step_unlocked"] = False
-            st.rerun()
+
+    # ==========================================
+    # 2. 📚 담당과목 변경 루틴
+    # ==========================================
+    elif edit_mode == "📚 담당과목 변경":
+        if st.session_state["logged_teacher_id"] == "admin":
+            st.warning("⚠️ 최고관리자(admin) 계정은 마스터 모든 과목 열람 권한이 고정되어 있습니다.")
+            if st.button("닫기", type="secondary", use_container_width=True, key="close_admin_sub_btn"):
+                st.rerun()
+        else:
+            curr_subs_str = ", ".join(st.session_state.get("allowed_subjects", []))
+            new_subs_str = st.text_input("담당 과목 변경 (여러 과목은 콤마[,]로 분리)", value=curr_subs_str, placeholder="예: 정보, 수학")
+            
+            msg_box_sub = st.empty()
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                save_sub_btn = st.button("💾 과목 저장하기", type="primary", use_container_width=True, key="save_sub_unique_btn")
+            with col2:
+                if st.button("닫기", type="secondary", use_container_width=True, key="close_sub_unique_btn"):
+                    st.rerun()
+                    
+            if save_sub_btn:
+                if not new_subs_str.strip():
+                    msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
+                else:
+                    df_tc = load_sheet_to_df("teacher_accounts")
+                    if not df_tc.empty and "교사_ID" in df_tc.columns:
+                        idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
+                        if len(idx) > 0:
+                            df_tc.loc[idx[0], "담당_과목"] = new_subs_str.strip()
+                            if save_df_to_sheet("teacher_accounts", df_tc):
+                                # 세션 과목 리스트 즉시 최신화
+                                st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
+                                msg_box_sub.success("🎉 담당 과목이 성공적으로 수정되었습니다! (즉시 반영됨)")
+                            else: msg_box_sub.error("❌ 구글 시트 저장 실패")
+                        else: msg_box_sub.error("❌ 명단에서 계정을 찾을 수 없습니다.")
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
@@ -481,8 +513,9 @@ elif st.session_state["admin_logged_in"]:
         
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        if st.button("🔐 비밀번호 변경", type="secondary", use_container_width=True, key="open_profile_popup_btn"):
-            st.session_state["pw_step_unlocked"] = False # 창을 열 때마다 자물쇠 초기화!
+        # 👤 사이드바 '내 정보 수정' 클릭 시 종합 관리 팝업 호출!
+        if st.button("👤 내 정보 수정", type="secondary", use_container_width=True, key="open_profile_popup_btn"):
+            st.session_state["pw_step_unlocked"] = False
             show_profile_popup_dialog()
             
         st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
