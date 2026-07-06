@@ -33,6 +33,7 @@ st.markdown("""
         /* 사이드바 제목 (📋 교사 메뉴) */
         .sidebar-title {
             color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
             font-size: 24px !important;
             font-weight: 800 !important;
             margin-bottom: 5px !important;
@@ -42,12 +43,13 @@ st.markdown("""
         /* 접속 교사 안내 텍스트 */
         .user-info {
             color: #38bdf8 !important;
+            -webkit-text-fill-color: #38bdf8 !important;
             font-size: 14px !important;
             font-weight: 600 !important;
             margin-bottom: 25px !important;
         }
 
-        /* 🚨 [사이드바 메뉴 가독성 끝판왕] 내부 모든 중첩 글자 태그 무조건 순백색 고정 */
+        /* 🚨 [사이드바 메뉴 가독성 끝판왕] -webkit-text-fill-color 속성으로 브라우저 어두운 글자 강제 백색 관통 */
         [data-testid="stSidebar"] label,
         [data-testid="stSidebar"] label *,
         [data-testid="stSidebar"] div[role="radiogroup"] *,
@@ -55,6 +57,7 @@ st.markdown("""
         [data-testid="stSidebar"] div[role="radiogroup"] p,
         [data-testid="stSidebar"] div[role="radiogroup"] span {
             color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
             font-size: 16px !important;
             font-weight: 700 !important;
             line-height: 2.2 !important;
@@ -62,6 +65,7 @@ st.markdown("""
         }
         [data-testid="stSidebar"] div[role="radiogroup"] label:hover * {
             color: #60a5fa !important;
+            -webkit-text-fill-color: #60a5fa !important;
         }
 
         /* 🚨 [사이드바 하단 버튼 방탄 고정] 흰색 배경 박스 + 어두운 남색 글자 고정 */
@@ -80,6 +84,7 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] p,
         [data-testid="stSidebar"] button[kind="secondary"] span {
             color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
             font-size: 15px !important;
             font-weight: 700 !important;
         }
@@ -215,30 +220,36 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-# 🔐 [선생님 기획 100% 반영] Enter 자동 포커스 이동 & 닫기 클릭 시 100% 파괴 종료 팝업
+# 🔐 [상태 자물쇠 완벽 탑재] 그림 1로 절대 튕겨 나가지 않고, 닫기 클릭 시 100% 소멸
 @st.dialog("🔐 내 계정 비밀번호 변경")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님 계정의 비밀번호를 수정합니다.</div><br>", unsafe_allow_html=True)
     
-    # 1. 현재 비밀번호 입력
+    # 세션 자물쇠 초기화 (창을 새로 열 때만 False)
+    if "pw_step_unlocked" not in st.session_state:
+        st.session_state["pw_step_unlocked"] = False
+
+    # 1. 현재 비밀번호 입력칸
     curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 비밀번호 입력 후 엔터(Enter)", key="curr_pw_input_field")
     
-    is_step1_ok = False
-    if curr_pw:
+    # 1단계 검증 로직 (아직 자물쇠가 안 열렸을 때만 수행)
+    if not st.session_state["pw_step_unlocked"] and curr_pw:
         if st.session_state["logged_teacher_id"] == "admin":
             st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 최고관리자(admin) 계정은 변경할 수 없습니다.</p>", unsafe_allow_html=True)
         elif curr_pw != st.session_state.get("logged_teacher_pw", ""):
             st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
         else:
-            is_step1_ok = True
+            # 일치하면 상태 자물쇠를 꽉 잠그고 리렌더링
+            st.session_state["pw_step_unlocked"] = True
+            st.rerun()
 
-    # 2. 현재 비밀번호 일치 시 새 비밀번호 창 개방 & JS로 커서 자동 이동!
-    if is_step1_ok:
+    # 2. 자물쇠가 열렸을 때 (그림 2 상태 유지)
+    if st.session_state["pw_step_unlocked"]:
         st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
         new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호", key="new_pw_input_field")
         new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_input_field")
         
-        # 🚀 [핵심 엔진] 0.1초 뒤 두 번째 비밀번호 박스(새 비밀번호 입력)로 커서 자동 이동!
+        # 🚀 0.15초 뒤 새 비밀번호 입력칸으로 커서 자동 이동!
         components.html("""
             <script>
                 setTimeout(function() {
@@ -257,8 +268,9 @@ def show_profile_popup_dialog():
         with col1:
             save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True, key="save_pw_unique_btn")
         with col2:
-            # 🚨 닫기 클릭 시 무조건 창 100% 닫기
-            if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_unique_btn"):
+            # 🚨 그림 2에서 닫기 누르면 자물쇠 풀고 창 100% 영구 파괴
+            if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step2_btn"):
+                st.session_state["pw_step_unlocked"] = False
                 st.rerun()
                 
         if save_btn:
@@ -273,6 +285,7 @@ def show_profile_popup_dialog():
                     if len(idx) > 0:
                         df_tc.loc[idx[0], "비밀번호"] = new_pw
                         if save_df_to_sheet("teacher_accounts", df_tc):
+                            # 저장 성공해도 자물쇠(pw_step_unlocked)가 풀리지 않아 그림 2 화면이 유지됨!
                             msg_box.success("🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.")
                             st.session_state["logged_teacher_pw"] = new_pw
                         else:
@@ -280,9 +293,10 @@ def show_profile_popup_dialog():
                     else:
                         msg_box.error("❌ 명단에서 계정을 찾을 수 없습니다.")
     else:
-        # 1단계 틀렸거나 입력 전 닫기 클릭 시 100% 창 파괴 종료
+        # 그림 1 상태에서 닫기 클릭 시 100% 영구 파괴
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn_unique"):
+        if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn"):
+            st.session_state["pw_step_unlocked"] = False
             st.rerun()
 
 @st.dialog("🎉 성적 조회 결과")
@@ -468,6 +482,7 @@ elif st.session_state["admin_logged_in"]:
         st.markdown("<br><br>", unsafe_allow_html=True)
         
         if st.button("🔐 비밀번호 변경", type="secondary", use_container_width=True, key="open_profile_popup_btn"):
+            st.session_state["pw_step_unlocked"] = False # 창을 열 때마다 자물쇠 초기화!
             show_profile_popup_dialog()
             
         st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
