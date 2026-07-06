@@ -101,13 +101,21 @@ def init_google_sheet_client():
 gc = init_google_sheet_client()
 SPREADSHEET_NAME = "수행평가_데이터베이스"
 
+# 🔄 [안전 보완] 시트 검색 시 순서 상관없이 이름 기반 정밀 타격 매칭
 def get_google_sheet(sheet_name):
     if gc is None: return None
     try:
         sh = gc.open(SPREADSHEET_NAME)
-        try: return sh.worksheet(sheet_name)
-        except: return sh.add_worksheet(title=sheet_name, rows="100", cols="20")
-    except: return None
+        # 전체 워크시트를 하나씩 돌면서 공백을 제거한 순수 이름이 일치하는지 타격 검색
+        for ws in sh.worksheets():
+            if ws.title.strip() == sheet_name.strip():
+                return ws
+        return sh.worksheet(sheet_name)
+    except:
+        try:
+            sh = gc.open(SPREADSHEET_NAME)
+            return sh.add_worksheet(title=sheet_name, rows="100", cols="20")
+        except: return None
 
 def save_df_to_sheet(sheet_name, df):
     wks = get_google_sheet(sheet_name)
@@ -118,19 +126,19 @@ def save_df_to_sheet(sheet_name, df):
         return True
     except: return False
 
-# 🔄 [데이터 파싱 강화] 텍스트/숫자 혼합 형태도 문자열로 강제 흡수하여 유실을 차단하는 로드 함수
+# 🔄 [무적 로드 설계] 줄바꿈, 유령 서식, 무한 빈 행이 섞여있어도 순수 셀 배열로 강제 가공
 def load_sheet_to_df(sheet_name):
     wks = get_google_sheet(sheet_name)
     if wks is None: return pd.DataFrame()
     try:
         all_values = wks.get_all_values()
         if not all_values or len(all_values) < 1: return pd.DataFrame()
-        headers = [str(h).strip() for h in all_values[0]]
+        headers = [str(h).strip() for h in all_values[0] if str(h).strip()]
         rows = all_values[1:]
         
-        # 행 데이터 크기 균일화 가공
         cleaned_rows = []
         for r in rows:
+            # 헤더 길이보다 데이터가 부족하면 빈 문자열로 수평 정렬 일치화
             if len(r) < len(headers): r = r + [""] * (len(headers) - len(r))
             cleaned_rows.append([str(cell).strip() for cell in r[:len(headers)]])
             
@@ -175,8 +183,10 @@ def get_active_databases():
         sh = gc.open(SPREADSHEET_NAME)
         for wks in sh.worksheets():
             if wks.title.startswith("cfg_"):
-                match = re.search(r"cfg_([A-Za-z0-9_]+)_([1-3])Grade", wks.title)
-                if match: active_list.append({"subject": match.group(1).replace("_", " "), "grade": f"{match.group(2)}학년", "semester": "2026학년도 1학기"})
+                # 정규식 패턴을 더 유연하게 교정 (학년 및 텍스트 포함 매칭 보완)
+                match = re.search(r"cfg_([A-Za-z0-9_가-힣]+)_([1-3])Grade", wks.title)
+                if match: 
+                    active_list.append({"subject": match.group(1).replace("_", " "), "grade": f"{match.group(2)}학년", "semester": "2026학년도 1학기"})
     except: pass
     return active_list
 
