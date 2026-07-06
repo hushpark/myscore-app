@@ -214,61 +214,46 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-# 🔐 [스마트 2단계 검증 팝업] 1단계: 현재 비번 확인 -> 2단계: 일치할 때만 새 비번 창 개방
+# 🔐 [선생님 기획 100% 반영] Enter 자동 진행 & 입력창 아래 작은 빨간 글씨 경고 팝업
 @st.dialog("🔐 내 계정 비밀번호 변경")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님 계정의 비밀번호를 수정합니다.</div><br>", unsafe_allow_html=True)
     
-    # 세션 내 단계별 검증 상태 초기화
-    if "pw_step1_verified" not in st.session_state:
-        st.session_state["pw_step1_verified"] = False
+    # 1. 현재 비밀번호 입력 (Enter를 누르면 즉시 변수 curr_pw에 담기며 리렌더링됨)
+    curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 비밀번호 입력 후 엔터(Enter)")
+    
+    # 현재 비밀번호를 입력했을 때 검증 로직
+    is_step1_ok = False
+    if curr_pw:
+        if st.session_state["logged_teacher_id"] == "admin":
+            st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 최고관리자(admin) 계정은 변경할 수 없습니다.</p>", unsafe_allow_html=True)
+        elif curr_pw != st.session_state.get("logged_teacher_pw", ""):
+            # 바탕색 없이 입력박스 바로 밑에 작은 붉은 글씨 출력!
+            st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
+        else:
+            is_step1_ok = True
 
-    # --- [1단계: 현재 비밀번호 검증 단계] ---
-    if not st.session_state["pw_step1_verified"]:
-        curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호를 입력하세요")
-        msg_container = st.empty()
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            verify_btn = st.button("🔑 비밀번호 확인", type="primary", use_container_width=True, key="verify_curr_pw_btn")
-        with col2:
-            if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn"):
-                st.session_state["pw_step1_verified"] = False
-                st.rerun()
-                
-        if verify_btn:
-            if st.session_state["logged_teacher_id"] == "admin":
-                msg_container.warning("⚠️ 최고관리자(admin) 계정은 고정 마스터 계정으로 변경할 수 없습니다.")
-            elif curr_pw != st.session_state.get("logged_teacher_pw", ""):
-                # 틀렸을 때 선생님 지시대로 즉각 오류 반환!
-                msg_container.error("❌ 현재 비밀번호가 일치하지 않아 변경할 수 없습니다. 다시 입력해 주세요.")
-            else:
-                st.session_state["pw_step1_verified"] = True
-                st.rerun()
-
-    # --- [2단계: 새 비밀번호 변경 단계 (1단계 통과 시에만 열림)] ---
-    else:
-        st.success("✅ 현재 비밀번호가 일치합니다. 변경할 새 비밀번호를 입력해 주세요.")
-        new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="변경할 새로운 비밀번호")
+    # 2. 현재 비밀번호가 맞았을 때만 아래에 새 비밀번호 입력창 스르륵 개방!
+    if is_step1_ok:
+        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+        new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
         new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
         
-        msg_container = st.empty()
+        msg_box = st.empty()
         st.markdown("<br>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         with col1:
-            save_btn = st.button("💾 변경 저장하기", type="primary", use_container_width=True, key="save_new_pw_btn")
+            save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True, key="save_pw_unique_btn")
         with col2:
-            if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step2_btn"):
-                st.session_state["pw_step1_verified"] = False
+            if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_unique_btn"):
                 st.rerun()
                 
         if save_btn:
             if not new_pw or new_pw != new_pw_confirm:
-                msg_container.error("❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다.")
+                msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다.</p>", unsafe_allow_html=True)
             elif new_pw == st.session_state.get("logged_teacher_pw", ""):
-                msg_container.warning("⚠️ 현재 비밀번호와 동일한 비밀번호로는 변경할 수 없습니다.")
+                msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 현재 사용 중인 비밀번호와 동일합니다.</p>", unsafe_allow_html=True)
             else:
                 df_tc = load_sheet_to_df("teacher_accounts")
                 if not df_tc.empty and "교사_ID" in df_tc.columns:
@@ -276,13 +261,17 @@ def show_profile_popup_dialog():
                     if len(idx) > 0:
                         df_tc.loc[idx[0], "비밀번호"] = new_pw
                         if save_df_to_sheet("teacher_accounts", df_tc):
-                            msg_container.success("🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.")
+                            msg_box.success("🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.")
                             st.session_state["logged_teacher_pw"] = new_pw
-                            st.session_state["pw_step1_verified"] = False
                         else:
-                            msg_container.error("❌ 구글 시트 저장에 실패했습니다.")
+                            msg_box.error("❌ 구글 시트 저장에 실패했습니다.")
                     else:
-                        msg_container.error("❌ 명단에서 계정을 찾을 수 없습니다.")
+                        msg_box.error("❌ 명단에서 계정을 찾을 수 없습니다.")
+    else:
+        # 현재 비번 입력 전이거나 틀렸을 때 하단 닫기 버튼 배치
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn_unique"):
+            st.rerun()
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
@@ -466,14 +455,11 @@ elif st.session_state["admin_logged_in"]:
         
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # 🔐 자물쇠 버튼 클릭 시 1단계->2단계 스마트 검증 팝업 호출!
         if st.button("🔐 비밀번호 변경", type="secondary", use_container_width=True, key="open_profile_popup_btn"):
-            st.session_state["pw_step1_verified"] = False # 열 때마다 1단계 검증 상태 초기화
             show_profile_popup_dialog()
             
         st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
         
-        # 🚪 버튼 라벨 '로그아웃'으로 간소화!
         if st.button("🚪 로그아웃", type="secondary", use_container_width=True, key="teacher_logout_btn_unique"):
             st.session_state.clear()
             st.rerun()
@@ -579,7 +565,7 @@ elif st.session_state["admin_logged_in"]:
             for i in range(item_count):
                 with cols_items[i]:
                     t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가_{i+1}", key=f"pure_item_title_{i}_unique")
-                    item_titles.append(t_in.strip())
+                    item_titles.append(t_in.strip)
             if st.button("🚀 기본 설정 파티션 저장 개설", type="primary", use_container_width=True, key="make_partition_btn_unique"):
                 if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
                     st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
