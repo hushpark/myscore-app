@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit st
 import pandas as pd
 import os
 from datetime import datetime
@@ -220,8 +220,8 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 오리지널 순서 [교사, 학생] 유지
-            login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
+            # 🔴 [선생님 지시사항 반영] 라디오 버튼 순서를 완전히 ["학생", "교사"]로 고정!
+            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
             
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="pure_user_id_field")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="pure_user_pw_field")
@@ -231,16 +231,8 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 submit_active = st.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
-                if login_mode == "교사":
-                    auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
-                    if auth_result["success"]:
-                        st.session_state["admin_logged_in"] = True
-                        st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
-                        st.session_state["teacher_name"] = auth_result["teacher_name"]
-                        st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
-                        st.rerun()
-                    else: st.error("❌ 교사 ID 또는 비밀번호 오류")
-                elif login_mode == "학생":
+                # 🔴 [선생님 지시사항 반영] 나머지 백엔드 로직도 분기문을 ["학생", "교사"] 순서로 완전히 맞춤 설계!
+                if login_mode == "학생":
                     if user_id_input and user_pw_input:
                         if verify_student_credentials(user_id_input, user_pw_input):
                             st.session_state["student_logged_in"] = True
@@ -249,6 +241,16 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                             st.rerun()
                         else: st.error("❌ 등록되지 않은 학생 계정이거나 비밀번호가 다릅니다.")
                     else: st.error("❌ 학생 ID와 비밀번호를 모두 입력하세요.")
+                    
+                elif login_mode == "교사":
+                    auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
+                    if auth_result["success"]:
+                        st.session_state["admin_logged_in"] = True
+                        st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
+                        st.session_state["teacher_name"] = auth_result["teacher_name"]
+                        st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
+                        st.rerun()
+                    else: st.error("❌ 교사 ID 또는 비밀번호 오류")
 
     st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & AI Creator</div></div>", unsafe_allow_html=True)
 
@@ -333,7 +335,6 @@ elif st.session_state["admin_logged_in"]:
                 cfg_df = load_sheet_to_df(cf_id)
                 with col_class:
                     class_options = ["전체 학급 보기"]
-                    # 🔴 [오타 완벽 수술] 문법 에러를 유발하던 영단어 'navigate' 완벽 박멸
                     if not db_df.empty and "반" in db_df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class = st.selectbox("🎯 필터링할 학급 선택", options=class_options, key="t_class_select_1_unique")
                 if not db_df.empty:
