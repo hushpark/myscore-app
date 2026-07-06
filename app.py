@@ -12,7 +12,7 @@ import csv
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [최종 완성 CSS] 사이드바 글자 가독성 100% 해결 & 하얀색 로그인 폼 고정
+# 🔄 [최종 완성 CSS] 사이드바 글자 가독성 100% 해결 & 버튼 2개 배치 고정
 # =========================================================================
 st.markdown("""
     <style>
@@ -46,19 +46,19 @@ st.markdown("""
             margin-bottom: 25px !important;
         }
 
-        /* 🚨 [핵심 해결] 사이드바 메뉴(라디오 버튼) 글자색을 무조건 100% 흰색으로 강제 관통 */
-        [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label,
-        [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label *,
-        [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p,
-        [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label span,
-        [data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p {
+        /* 🚨 [핵심 해결] 사이드바 라디오 버튼 내부의 모든 글자 태그를 무조건 순백색으로 강제 덮어쓰기 */
+        [data-testid="stSidebar"] .stRadio label p,
+        [data-testid="stSidebar"] .stRadio label span,
+        [data-testid="stSidebar"] .stRadio label div,
+        [data-testid="stSidebar"] div[role="radiogroup"] label *,
+        [data-testid="stSidebar"] div[role="radiogroup"] p,
+        [data-testid="stSidebar"] div[role="radiogroup"] span {
             color: #ffffff !important;
-            opacity: 1 !important;
             font-size: 16px !important;
             font-weight: 700 !important;
             line-height: 2.2 !important;
         }
-        [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover * {
+        [data-testid="stSidebar"] div[role="radiogroup"] label:hover * {
             color: #60a5fa !important;
         }
 
@@ -205,52 +205,30 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-# 🔐 [선생님 기획 100% 반영] 안전하고 완벽한 비밀번호 검증 및 변경 팝업
+# 🔐 [완벽 복원] 비밀번호 변경 팝업 다이얼로그
 @st.dialog("🔐 내 계정 비밀번호 변경")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님 계정의 비밀번호를 수정합니다.</div><br>", unsafe_allow_html=True)
+    new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
+    new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="비밀번호 다시 입력")
     
-    curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호를 입력하세요")
-    st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
-    new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="변경할 새로운 비밀번호")
-    new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # 알림 메시지가 버튼들 바로 위에 선명하게 뜨도록 자리 지정
-    alert_box = st.empty()
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        save_btn = st.button("💾 변경 저장하기", type="primary", use_container_width=True, key="save_new_pw_btn_unique")
-    with col2:
-        close_btn = st.button("닫기", type="secondary", use_container_width=True, key="close_pw_dialog_btn_unique")
-        
-    if close_btn:
-        st.rerun()
-        
-    if save_btn:
-        if st.session_state["logged_teacher_id"] == "admin":
-            alert_box.warning("⚠️ 최고관리자(admin) 계정은 고정 마스터 계정으로 변경할 수 없습니다.")
-        elif curr_pw != st.session_state.get("logged_teacher_pw", ""):
-            alert_box.error("❌ 현재 비밀번호가 일치하지 않습니다. 다시 확인해주세요.")
-        elif not new_pw or new_pw != new_pw_confirm:
-            alert_box.error("❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다.")
-        elif curr_pw == new_pw:
-            alert_box.warning("⚠️ 현재 비밀번호와 동일한 비밀번호로는 변경할 수 없습니다.")
+    if st.button("💾 변경 저장하기", type="primary", use_container_width=True, key="save_new_pw_btn"):
+        if not new_pw or new_pw != new_pw_confirm:
+            st.error("❌ 비밀번호가 일치하지 않거나 비어있습니다.")
         else:
-            df_tc = load_sheet_to_df("teacher_accounts")
-            if not df_tc.empty and "교사_ID" in df_tc.columns:
-                idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
-                if len(idx) > 0:
-                    df_tc.loc[idx[0], "비밀번호"] = new_pw
-                    if save_df_to_sheet("teacher_accounts", df_tc):
-                        alert_box.success("🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.")
-                        st.session_state["logged_teacher_pw"] = new_pw
-                    else:
-                        alert_box.error("❌ 구글 시트 저장 실패")
-                else:
-                    alert_box.error("❌ 명단에서 계정을 찾을 수 없습니다.")
+            if st.session_state["logged_teacher_id"] == "admin":
+                st.warning("⚠️ 최고관리자(admin) 계정은 구글 시트 연동 없이 고정된 마스터 계정입니다.")
+            else:
+                df_tc = load_sheet_to_df("teacher_accounts")
+                if not df_tc.empty and "교사_ID" in df_tc.columns:
+                    idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
+                    if len(idx) > 0:
+                        df_tc.loc[idx[0], "비밀번호"] = new_pw
+                        if save_df_to_sheet("teacher_accounts", df_tc):
+                            st.success("🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.")
+                            st.session_state["logged_teacher_pw"] = new_pw
+                        else: st.error("❌ 구글 시트 저장 실패")
+                    else: st.error("❌ 시트에서 계정을 찾을 수 없습니다.")
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
@@ -434,7 +412,7 @@ elif st.session_state["admin_logged_in"]:
         
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # 🔐 자물쇠 버튼 클릭 시 업그레이드된 검증 팝업 호출!
+        # 🔐 [완벽 복원] 스크린샷 그대로 자물쇠 버튼과 문 모양 버튼 2개 나란히 배치!
         if st.button("🔐 비밀번호 변경", type="secondary", use_container_width=True, key="open_profile_popup_btn"):
             show_profile_popup_dialog()
             
