@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import os
 from datetime import datetime
@@ -214,31 +215,41 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-# 🔐 [선생님 기획 100% 반영] Enter 자동 진행 & 입력창 아래 작은 빨간 글씨 경고 팝업
+# 🔐 [선생님 기획 100% 반영] Enter 자동 포커스 이동 & 닫기 클릭 시 100% 파괴 종료 팝업
 @st.dialog("🔐 내 계정 비밀번호 변경")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님 계정의 비밀번호를 수정합니다.</div><br>", unsafe_allow_html=True)
     
-    # 1. 현재 비밀번호 입력 (Enter를 누르면 즉시 변수 curr_pw에 담기며 리렌더링됨)
-    curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 비밀번호 입력 후 엔터(Enter)")
+    # 1. 현재 비밀번호 입력
+    curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 비밀번호 입력 후 엔터(Enter)", key="curr_pw_input_field")
     
-    # 현재 비밀번호를 입력했을 때 검증 로직
     is_step1_ok = False
     if curr_pw:
         if st.session_state["logged_teacher_id"] == "admin":
             st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 최고관리자(admin) 계정은 변경할 수 없습니다.</p>", unsafe_allow_html=True)
         elif curr_pw != st.session_state.get("logged_teacher_pw", ""):
-            # 바탕색 없이 입력박스 바로 밑에 작은 붉은 글씨 출력!
             st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
         else:
             is_step1_ok = True
 
-    # 2. 현재 비밀번호가 맞았을 때만 아래에 새 비밀번호 입력창 스르륵 개방!
+    # 2. 현재 비밀번호 일치 시 새 비밀번호 창 개방 & JS로 커서 자동 이동!
     if is_step1_ok:
         st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
-        new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
-        new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
+        new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호", key="new_pw_input_field")
+        new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_input_field")
         
+        # 🚀 [핵심 엔진] 0.1초 뒤 두 번째 비밀번호 박스(새 비밀번호 입력)로 커서 자동 이동!
+        components.html("""
+            <script>
+                setTimeout(function() {
+                    const inputs = window.parent.document.querySelectorAll('input[type="password"]');
+                    if (inputs.length >= 2) {
+                        inputs[1].focus();
+                    }
+                }, 150);
+            </script>
+        """, height=0, width=0)
+
         msg_box = st.empty()
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -246,6 +257,7 @@ def show_profile_popup_dialog():
         with col1:
             save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True, key="save_pw_unique_btn")
         with col2:
+            # 🚨 닫기 클릭 시 무조건 창 100% 닫기
             if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_unique_btn"):
                 st.rerun()
                 
@@ -268,7 +280,7 @@ def show_profile_popup_dialog():
                     else:
                         msg_box.error("❌ 명단에서 계정을 찾을 수 없습니다.")
     else:
-        # 현재 비번 입력 전이거나 틀렸을 때 하단 닫기 버튼 배치
+        # 1단계 틀렸거나 입력 전 닫기 클릭 시 100% 창 파괴 종료
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn_unique"):
             st.rerun()
@@ -565,7 +577,7 @@ elif st.session_state["admin_logged_in"]:
             for i in range(item_count):
                 with cols_items[i]:
                     t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가_{i+1}", key=f"pure_item_title_{i}_unique")
-                    item_titles.append(t_in.strip)
+                    item_titles.append(t_in.strip())
             if st.button("🚀 기본 설정 파티션 저장 개설", type="primary", use_container_width=True, key="make_partition_btn_unique"):
                 if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
                     st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
