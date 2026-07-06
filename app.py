@@ -220,7 +220,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 🔴 [선생님 피드백 반영] 예전 오리지널 순서대로 [교사, 학생] 전격 원상복구 완료!
+            # 오리지널 순서 [교사, 학생] 유지
             login_mode = st.radio("접속 모드", ["교사", "학생"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
             
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="pure_user_id_field")
@@ -231,7 +231,6 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 submit_active = st.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
-                # 🔴 순서 원상복구에 맞춰 백엔드 매칭 회선도 정확하게 재정렬 완료
                 if login_mode == "교사":
                     auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
                     if auth_result["success"]:
@@ -334,7 +333,8 @@ elif st.session_state["admin_logged_in"]:
                 cfg_df = load_sheet_to_df(cf_id)
                 with col_class:
                     class_options = ["전체 학급 보기"]
-                    if not db_df.empty navigate and "반" in db_df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                    # 🔴 [오타 완벽 수술] 문법 에러를 유발하던 영단어 'navigate' 완벽 박멸
+                    if not db_df.empty and "반" in db_df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class = st.selectbox("🎯 필터링할 학급 선택", options=class_options, key="t_class_select_1_unique")
                 if not db_df.empty:
                     render_df = db_df.copy()
