@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import os
 from datetime import datetime
@@ -13,11 +12,10 @@ import csv
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [방탄 CSS] 사이드바 메뉴 가독성 100% 관통 & 하얀색 로그인 폼 고정
+# 🔄 [방탄 CSS] 사이드바 모든 텍스트 100% 하얀색 관통 & 폼 버튼 고정
 # =========================================================================
 st.markdown("""
     <style>
-        /* 기본 배경 격리 */
         .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { background-color: #f1f5f9 !important; }
         div[data-testid="stHeader"] { display: none !important; }
         [data-testid="stAppViewContainer"] { margin-left: 0px !important; }
@@ -30,45 +28,32 @@ st.markdown("""
             box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; 
         }
         
-        /* 사이드바 제목 (📋 교사 메뉴) */
-        .sidebar-title {
+        /* 🚨 [끝판왕 CSS] 사이드바 내부의 '모든' 일반 텍스트를 순백색으로 강제 관통 */
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] span,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] div[role="radiogroup"] * {
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
-            font-size: 24px !important;
-            font-weight: 800 !important;
-            margin-bottom: 5px !important;
-            display: block;
-        }
-        
-        /* 접속 교사 안내 텍스트 */
-        .user-info {
-            color: #38bdf8 !important;
-            -webkit-text-fill-color: #38bdf8 !important;
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            margin-bottom: 25px !important;
+            opacity: 1 !important;
         }
 
-        /* 🚨 [사이드바 메뉴 가독성 끝판왕] 브라우저 강제 관통 순백색 고정 */
-        [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] label *,
-        [data-testid="stSidebar"] div[role="radiogroup"] *,
-        [data-testid="stSidebar"] div[role="radiogroup"] label *,
-        [data-testid="stSidebar"] div[role="radiogroup"] p,
-        [data-testid="stSidebar"] div[role="radiogroup"] span {
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
+        /* 라디오 버튼 메뉴 폰트 크기 및 높이 조정 */
+        [data-testid="stSidebar"] div[role="radiogroup"] p {
             font-size: 16px !important;
             font-weight: 700 !important;
             line-height: 2.2 !important;
-            opacity: 1 !important;
         }
         [data-testid="stSidebar"] div[role="radiogroup"] label:hover * {
             color: #60a5fa !important;
             -webkit-text-fill-color: #60a5fa !important;
         }
+        
+        /* 사이드바 최상단 특수 텍스트 예외 처리 */
+        .sidebar-title { font-size: 24px !important; font-weight: 800 !important; margin-bottom: 5px !important; display: block; }
+        .user-info { color: #38bdf8 !important; -webkit-text-fill-color: #38bdf8 !important; font-size: 14px !important; font-weight: 600 !important; margin-bottom: 25px !important; }
 
-        /* 🚨 [사이드바 하단 버튼 방탄 고정] 흰색 배경 박스 + 어두운 남색 글자 고정 */
+        /* 🚨 [사이드바 버튼 예외 처리] 버튼 안의 글자는 어둡게 유지 */
         [data-testid="stSidebar"] button[kind="secondary"] { 
             background-color: #ffffff !important; 
             border: 1px solid #cbd5e1 !important; 
@@ -79,78 +64,26 @@ st.markdown("""
             box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
             margin-bottom: 8px !important;
         }
-        [data-testid="stSidebar"] button[kind="secondary"],
         [data-testid="stSidebar"] button[kind="secondary"] *,
-        [data-testid="stSidebar"] button[kind="secondary"] p,
-        [data-testid="stSidebar"] button[kind="secondary"] span {
+        [data-testid="stSidebar"] button[kind="secondary"] p {
             color: #0f172a !important;
             -webkit-text-fill-color: #0f172a !important;
             font-size: 15px !important;
             font-weight: 700 !important;
         }
-        [data-testid="stSidebar"] button[kind="secondary"]:hover {
-            background-color: #f8fafc !important;
-            border-color: #3b82f6 !important;
-        }
+        [data-testid="stSidebar"] button[kind="secondary"]:hover { background-color: #f8fafc !important; border-color: #3b82f6 !important; }
 
-        /* 팝업 다이얼로그 버튼 */
-        [data-testid="stDialog"] button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
+        /* 팝업 폼 내부 다이얼로그 버튼 디자인 */
+        [data-testid="stFormSubmitButton"] button { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
         [data-testid="stDialog"] button[kind="secondary"] { background-color: #64748b !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
 
-        /* 하얀색 로그인 박스 외형 정의 */
-        div[data-testid="stForm"] {
-            background-color: #ffffff !important; 
-            border: 1px solid #cbd5e1 !important;
-            padding: 45px 40px 45px 40px !important; 
-            border-radius: 24px !important;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; 
-            max-width: 440px !important; 
-            margin: 70px auto 0 auto !important; 
-        }
-        
-        div[data-testid="stForm"] h2 {
-            font-size: 26px !important; 
-            white-space: nowrap !important; 
-            text-align: center !important; 
-            margin: 0 auto 20px auto !important;
-            font-weight: 800 !important;
-            color: #0f172a !important;
-        }
-
-        div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 95px !important; 
-            margin-bottom: 25px !important;
-            width: 100% !important;
-        }
-        
-        div[data-testid="stForm"] div[role="radiogroup"] {
-            display: flex !important;
-            gap: 35px !important; 
-            align-items: center !important;
-        }
-
-        div[data-testid="stTextInput"] div[data-baseweb="input"] { 
-            background-color: #f8fafc !important; 
-            border: 2px solid #e2e8f0 !important; 
-            border-radius: 8px !important; 
-            overflow: hidden !important;
-        }
-        div[data-testid="stTextInput"] div[data-baseweb="base-input"], 
-        div[data-testid="stTextInput"] input { background-color: transparent !important; }
-        div[data-testid="stTextInput"] div[data-styled-inner-component="true"] { background-color: transparent !important; }
-        div[data-testid="stTextInput"] button { background-color: transparent !important; border: none !important; box-shadow: none !important; color: #64748b !important; }
-
-        div[data-testid="stFormSubmitButton"] button {
-            background-color: #4a69bd !important;
-            color: #ffffff !important;
-            font-weight: bold !important;
-            border: none !important;
-            padding: 0.75rem 0 !important;
-            border-radius: 8px !important;
-            font-size: 16px !important;
-            box-shadow: 0 4px 12px rgba(74, 105, 189, 0.2) !important;
-        }
-        
+        /* 로그인 박스 및 기타 설정 */
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
+        div[data-testid="stForm"] h2 { font-size: 26px !important; white-space: nowrap !important; text-align: center !important; margin: 0 auto 20px auto !important; font-weight: 800 !important; color: #0f172a !important; }
+        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
+        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
+        div[data-testid="stTextInput"] div[data-baseweb="input"] { background-color: #f8fafc !important; border: 2px solid #e2e8f0 !important; border-radius: 8px !important; overflow: hidden !important; }
+        div[data-testid="stTextInput"] div[data-baseweb="base-input"], div[data-testid="stTextInput"] input { background-color: transparent !important; }
         .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
         .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
@@ -220,7 +153,7 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-# 👤 [디자인 완성본] 내 정보 수정 (메시지 크기 13px 통일)
+# 👤 [폼 캡슐화 완료] Press Enter 버그를 차단하는 st.form 적용!
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -237,6 +170,7 @@ def show_profile_popup_dialog():
 
         is_unlocked = st.session_state["pw_step_unlocked"]
 
+        # 1단계
         curr_pw = st.text_input(
             "현재 비밀번호", 
             type="password", 
@@ -263,48 +197,42 @@ def show_profile_popup_dialog():
                 st.session_state["pw_step_unlocked"] = True
                 is_unlocked = True
 
+        # 2단계 (Form 적용으로 Press Enter 에러 원천 차단)
         if is_unlocked:
             st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다. 변경할 새 비밀번호를 입력하세요.</p>", unsafe_allow_html=True)
-            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호", key="new_pw_input_field")
-            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_input_field")
             
-            components.html("""
-                <script>
-                    setTimeout(function() {
-                        const inputs = window.parent.document.querySelectorAll('input[type="password"]:not([disabled])');
-                        if (inputs.length > 0) { inputs[0].focus(); }
-                    }, 150);
-                </script>
-            """, height=0, width=0)
-
-            msg_box = st.empty()
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True, key="save_pw_unique_btn")
-            with col2:
-                if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step2_btn"):
-                    st.session_state["pw_step_unlocked"] = False
-                    st.rerun()
+            # 입력값 증발을 막기 위해 form으로 묶음
+            with st.form("pw_change_form", border=False):
+                new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
+                new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
+                
+                msg_box = st.empty()
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # Form 내부에서는 form_submit_button만 사용 가능
+                save_btn = st.form_submit_button("💾 비밀번호 저장", use_container_width=True)
                     
-            if save_btn:
-                if not new_pw or new_pw != new_pw_confirm:
-                    msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다.</p>", unsafe_allow_html=True)
-                elif new_pw == st.session_state.get("logged_teacher_pw", ""):
-                    msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 현재 사용 중인 비밀번호와 동일합니다.</p>", unsafe_allow_html=True)
-                else:
-                    df_tc = load_sheet_to_df("teacher_accounts")
-                    if not df_tc.empty and "교사_ID" in df_tc.columns:
-                        idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
-                        if len(idx) > 0:
-                            df_tc.loc[idx[0], "비밀번호"] = new_pw
-                            if save_df_to_sheet("teacher_accounts", df_tc):
-                                # 🚨 상단 안내 멘트와 동일한 13px 크기로 변경!
-                                msg_box.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.</p>", unsafe_allow_html=True)
-                                st.session_state["logged_teacher_pw"] = new_pw
-                            else: msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 구글 시트 저장에 실패했습니다.</p>", unsafe_allow_html=True)
-                        else: msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 명단에서 계정을 찾을 수 없습니다.</p>", unsafe_allow_html=True)
+                if save_btn:
+                    if not new_pw or new_pw != new_pw_confirm:
+                        msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다.</p>", unsafe_allow_html=True)
+                    elif new_pw == st.session_state.get("logged_teacher_pw", ""):
+                        msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 현재 사용 중인 비밀번호와 동일합니다.</p>", unsafe_allow_html=True)
+                    else:
+                        df_tc = load_sheet_to_df("teacher_accounts")
+                        if not df_tc.empty and "교사_ID" in df_tc.columns:
+                            idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
+                            if len(idx) > 0:
+                                df_tc.loc[idx[0], "비밀번호"] = new_pw
+                                if save_df_to_sheet("teacher_accounts", df_tc):
+                                    msg_box.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.</p>", unsafe_allow_html=True)
+                                    st.session_state["logged_teacher_pw"] = new_pw
+                                else: msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 구글 시트 저장에 실패했습니다.</p>", unsafe_allow_html=True)
+                            else: msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 명단에서 계정을 찾을 수 없습니다.</p>", unsafe_allow_html=True)
+            
+            # Form 외부의 닫기 버튼
+            if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step2_btn"):
+                st.session_state["pw_step_unlocked"] = False
+                st.rerun()
         else:
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn"):
@@ -312,7 +240,7 @@ def show_profile_popup_dialog():
                 st.rerun()
 
     # ==========================================
-    # 2. 📚 담당과목 변경 루틴
+    # 2. 📚 담당과목 변경 루틴 (Form 적용)
     # ==========================================
     elif edit_mode == "📚 담당과목 변경":
         if st.session_state["logged_teacher_id"] == "admin":
@@ -321,33 +249,31 @@ def show_profile_popup_dialog():
                 st.rerun()
         else:
             curr_subs_str = ", ".join(st.session_state.get("allowed_subjects", []))
-            new_subs_str = st.text_input("담당 과목 변경 (여러 과목은 콤마[,]로 분리)", value=curr_subs_str, placeholder="예: 정보, 수학")
             
-            msg_box_sub = st.empty()
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                save_sub_btn = st.button("💾 과목 저장하기", type="primary", use_container_width=True, key="save_sub_unique_btn")
-            with col2:
-                if st.button("닫기", type="secondary", use_container_width=True, key="close_sub_unique_btn"):
-                    st.rerun()
+            with st.form("sub_change_form", border=False):
+                new_subs_str = st.text_input("담당 과목 변경 (여러 과목은 콤마[,]로 분리)", value=curr_subs_str, placeholder="예: 정보, 수학")
+                msg_box_sub = st.empty()
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                save_sub_btn = st.form_submit_button("💾 과목 저장하기", use_container_width=True)
                     
-            if save_sub_btn:
-                if not new_subs_str.strip():
-                    msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
-                else:
-                    df_tc = load_sheet_to_df("teacher_accounts")
-                    if not df_tc.empty and "교사_ID" in df_tc.columns:
-                        idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
-                        if len(idx) > 0:
-                            df_tc.loc[idx[0], "담당_과목"] = new_subs_str.strip()
-                            if save_df_to_sheet("teacher_accounts", df_tc):
-                                st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
-                                # 🚨 과목 저장 성공 안내문도 13px 일체감 적용!
-                                msg_box_sub.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 담당 과목이 성공적으로 수정되었습니다! (즉시 반영됨)</p>", unsafe_allow_html=True)
-                            else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 구글 시트 저장 실패</p>", unsafe_allow_html=True)
-                        else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 명단에서 계정을 찾을 수 없습니다.</p>", unsafe_allow_html=True)
+                if save_sub_btn:
+                    if not new_subs_str.strip():
+                        msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
+                    else:
+                        df_tc = load_sheet_to_df("teacher_accounts")
+                        if not df_tc.empty and "교사_ID" in df_tc.columns:
+                            idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
+                            if len(idx) > 0:
+                                df_tc.loc[idx[0], "담당_과목"] = new_subs_str.strip()
+                                if save_df_to_sheet("teacher_accounts", df_tc):
+                                    st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
+                                    msg_box_sub.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 담당 과목이 성공적으로 수정되었습니다! (즉시 반영됨)</p>", unsafe_allow_html=True)
+                                else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 구글 시트 저장 실패</p>", unsafe_allow_html=True)
+                            else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 명단에서 계정을 찾을 수 없습니다.</p>", unsafe_allow_html=True)
+            
+            if st.button("닫기", type="secondary", use_container_width=True, key="close_sub_unique_btn"):
+                st.rerun()
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
