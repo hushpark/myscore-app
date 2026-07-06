@@ -53,20 +53,20 @@ st.markdown("""
         }
 
         /* -------------------------------------------------------------------------------- */
-        /* 💡 [선생님 전용 수동 밸브] 라디오 버튼 좌측 여백 제어용 CSS 조절 장치
-           - 버튼들을 더 우측(오른쪽)으로 밀어내고 싶다면: 130px 값을 더 크게 고치세요 (예: 140px, 150px)
-           - 버튼들을 더 좌측(왼쪽)으로 당겨오고 싶다면: 130px 값을 더 작게 고치세요 (예: 110px, 100px)
+        /* 💡 [라디오 버튼 위치 조절 밸브] 
+           - 버튼 그룹 전체를 더 오른쪽으로 밀고 싶다면: 130px를 더 크게 (예: 140px, 150px)
+           - 버튼 그룹 전체를 더 왼쪽으로 당기고 싶다면: 130px를 더 작게 (예: 120px, 110px)
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 95px !important; 
+            padding-left: 130px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
         
-        /* 원형 버튼과 글자 수평 일직선 고정 */
+        /* 🔴 [선생님 피드백 반영] 학생 모드와 교사 모드 사이의 간격을 35px로 조절 */
         div[data-testid="stForm"] div[role="radiogroup"] {
             display: flex !important;
-            gap: 50px !important; 
+            gap: 35px !important; 
             align-items: center !important;
         }
         div[data-testid="stForm"] div[role="radiogroup"] label {
@@ -74,8 +74,9 @@ st.markdown("""
             align-items: center !important; 
             margin: 0 !important;
         }
+        /* 🔴 [선생님 피드백 반영] 원형 라디오 동그라미와 글자 사이의 여백을 4px로 좁혀 밀착 고정 */
         div[data-testid="stForm"] div[role="radiogroup"] label p {
-            margin: 0 0 0 8px !important; 
+            margin: 0 0 0 4px !important; 
             font-size: 16px !important;
             font-weight: 700 !important;
             color: #334155 !important;
@@ -151,7 +152,7 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
     st.markdown(f"<div><b>{student_name}</b> 학생의 성적 내역입니다.</div>", unsafe_allow_html=True)
     st.table(pd.DataFrame(scores_dict))
     if "has_counted" not in st.session_state:
-        try: current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조ation 횟수"]) else 0
+        try: current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조회 횟수"]) else 0
         except: current_count = 0
         current_df.loc[student_row_idx, "성적조회 횟수"] = current_count + 1
         current_df.loc[student_row_idx, "최종 확인일시"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -237,14 +238,14 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 학생, 교사 라디오 버튼 (안심 순정 구조 원복)
+            # 학생, 교사 라디오 버튼 
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
-            # 🔴 [선생님 피드백 반영] 누구든 상관없이 깔끔하게 "아이디를 입력하세요" 단일 고정!
-            user_id_input = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="live_user_id_field")
+            # 누구든 상관없이 깔끔하게 "ID를 입력하세요" 단일 고정 예시
+            user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="live_user_id_field")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
-            # 로그인 버튼 가로 분할 정렬
+            # 로그인 버튼 정렬
             b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
             with b_col2:
                 submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
