@@ -65,7 +65,7 @@ st.markdown("""
            - 버튼 뭉치를 더 '왼쪽'으로 보내고 싶다면: padding-left의 숫자(95px)를 줄이세요. (예: 80px, 70px)
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stRadio"] {
-            padding-left: 95px !important; 
+            padding-left: 110px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
@@ -254,7 +254,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         
         b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
         with b_col2:
-            submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
+            submit_active = st.form_submit_button("로그인", use_container_width=True)
         
         if submit_active:
             if login_mode == "교사":
