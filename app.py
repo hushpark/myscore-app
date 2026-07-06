@@ -30,51 +30,58 @@ st.markdown("""
         [data-testid="stDialog"] button[kind="primary"] { background-color: #ef4444 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
 
         /* -------------------------------------------------------------------------------- */
-        /* 🚨 2. 하얀색 로그인 박스 외형 정의 */
+        /* 🚨 2. 하얀색 로그인 박스 외형 정의 및 정중앙 정렬 정의 */
         /* -------------------------------------------------------------------------------- */
-        div[data-testid="stForm"] {
-            background-color: #ffffff !important; 
+        .login-wrapper {
+            max-width: 440px !important;
+            margin: 70px auto 0 auto !important;
+            background-color: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
-            padding: 45px 40px 45px 40px !important; 
+            padding: 45px 40px 45px 40px !important;
             border-radius: 24px !important;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; 
-            max-width: 440px !important; 
-            margin: 70px auto 0 auto !important; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important;
         }
         
-        /* 제목 정중앙 정렬 */
-        div[data-testid="stForm"] h2 {
+        div[data-testid="stForm"] {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0px !important;
+            box-shadow: none !important;
+            margin: 0px !important;
+        }
+        
+        .login-title {
             font-size: 26px !important; 
             white-space: nowrap !important; 
             text-align: center !important; 
-            margin: 0 auto 20px auto !important;
+            margin: 0 auto 25px auto !important;
             font-weight: 800 !important;
             color: #0f172a !important;
         }
 
-        /* 🚨 [선생님 피드백 반영] 라디오 버튼 좌측 여백을 40px로 줄여 하얀 박스 기준 완벽한 정중앙 정렬 박제 */
-        div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 40px !important; 
+        /* -------------------------------------------------------------------------------- */
+        /* 💡 [수동 조절 구역] 라디오 버튼 여백 제어 코드가 바로 여기입니다! 
+           - 버튼 뭉치를 더 '오른쪽'으로 보내고 싶다면: padding-left의 숫자(95px)를 늘리세요. (예: 110px, 120px)
+           - 버튼 뭉치를 더 '왼쪽'으로 보내고 싶다면: padding-left의 숫자(95px)를 줄이세요. (예: 80px, 70px)
+        /* -------------------------------------------------------------------------------- */
+        div[data-testid="stRadio"] {
+            padding-left: 95px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
         }
         
-        /* 원형 버튼과 글자가 삐뚤어지지 않도록 완벽하게 수평 정렬 일직선 고정 */
-        div[data-testid="stForm"] div[role="radiogroup"] {
+        /* 원형 버튼과 글자 수평 정렬 고정 */
+        div[role="radiogroup"] {
             display: flex !important;
-            gap: 50px !important; /* 학생과 교사 간격 */
+            gap: 50px !important; 
             align-items: center !important;
-            justify-content: center !important;
-            width: 100% !important;
         }
-        div[data-testid="stForm"] div[role="radiogroup"] label {
+        div[role="radiogroup"] label {
             display: flex !important;
             align-items: center !important; 
             margin: 0 !important;
         }
-        div[data-testid="stForm"] div[role="radiogroup"] label p {
+        div[role="radiogroup"] label p {
             margin: 0 0 0 8px !important; 
             font-size: 16px !important;
             font-weight: 700 !important;
@@ -82,7 +89,7 @@ st.markdown("""
             line-height: 1 !important; 
         }
 
-        /* 🚨 3. 입력 필드 및 비밀번호 보기 버튼 뒷배경 흰색 잔상 완전 소멸 */
+        /* 🚨 3. 입력 필드 스타일 */
         div[data-testid="stTextInput"] div[data-baseweb="input"] { 
             background-color: #f8fafc !important; 
             border: 2px solid #e2e8f0 !important; 
@@ -230,52 +237,44 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 학생 우선순위 배치)
+# 🔓 [1단계] 클린 통합 로그인 시스템
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     
-    # 🚨 실시간 상태 추적을 위해 폼 '외부'에 라디오 버튼을 먼저 독립 배치합니다.
-    # 이렇게 해야 '학생/교사' 클릭 시 하단 입력창 placeholder가 즉시 변경됩니다!
-    with st.container():
-        # 하얀 상자 안의 레이아웃 균형을 맞추기 위한 컨테이너 폼 선언
-        with st.form("master_unified_form"):
-            st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-            
-            # 🔴 [선생님 피드백 반영] 학생, 교사 우선배치 라디오 버튼 고정
-            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
-            
-            # 🔴 [선생님 피드백 반영] 선택된 모드에 따라 입력 가이드 텍스트를 칼같이 제어
-            if login_mode == "학생":
-                placeholder_text = "학생 ID(이메일)를 입력하세요"
-            else:
-                placeholder_text = "ID를 입력하세요"
-                
-            user_id_input = st.text_input("ID", placeholder=placeholder_text, label_visibility="collapsed", key="live_user_id_field")
-            user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
-            
-            # 순정 컬럼 분할로 로그인 버튼 가로 너비 180px 박스 정중앙 배치 박제
-            b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
-            with b_col2:
-                submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
-            
-            if submit_active:
-                if login_mode == "교사":
-                    auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
-                    if auth_result["success"]:
-                        st.session_state["admin_logged_in"] = True
-                        st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
-                        st.session_state["teacher_name"] = auth_result["teacher_name"]
-                        st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
-                        st.rerun()
-                    else: st.error("❌ 교사 ID 또는 비밀번호 오류")
-                elif login_mode == "학생":
-                    if user_id_input and user_pw_input:
-                        st.session_state["student_logged_in"] = True
-                        st.session_state["logged_student_id"] = user_id_input.strip()
-                        st.session_state["logged_student_pw"] = user_pw_input.strip()
-                        st.rerun()
-                    else: st.error("❌ 학생 ID와 비밀번호를 모두 입력하세요.")
+    st.markdown('<div class="login-wrapper">', unsafe_allow_html=True)
+    st.markdown('<div class="login-title">수행평가 점수 확인 시스템</div>', unsafe_allow_html=True)
+    
+    # 안전한 렌더링을 위해 라디오 버튼도 다시 박스 안쪽 구조로 완전 통일합니다.
+    login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+    
+    with st.form("master_unified_form"):
+        # 🔴 [선생님 요청사항] 학생/교사 구분 없이 항상 "ID를 입력하세요"로 고정 예시 제공
+        user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed")
+        user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
+        
+        b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
+        with b_col2:
+            submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
+        
+        if submit_active:
+            if login_mode == "교사":
+                auth_result = verify_teacher_credentials(user_id_input, user_pw_input)
+                if auth_result["success"]:
+                    st.session_state["admin_logged_in"] = True
+                    st.session_state["logged_teacher_id"] = auth_result["teacher_id"]
+                    st.session_state["teacher_name"] = auth_result["teacher_name"]
+                    st.session_state["allowed_subjects"] = auth_result["authorized_subjects"]
+                    st.rerun()
+                else: st.error("❌ 교사 ID 또는 비밀번호 오류")
+            elif login_mode == "학생":
+                if user_id_input and user_pw_input:
+                    st.session_state["student_logged_in"] = True
+                    st.session_state["logged_student_id"] = user_id_input.strip()
+                    st.session_state["logged_student_pw"] = user_pw_input.strip()
+                    st.rerun()
+                else: st.error("❌ 학생 ID와 비밀번호를 모두 입력하세요.")
 
+    st.markdown('</div>', unsafe_allow_html=True)
     st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & AI Creator</div></div>", unsafe_allow_html=True)
 
 # =========================================================================
