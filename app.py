@@ -220,7 +220,7 @@ def get_sheet_names_id(subject, grade, semester_str):
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
     return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
 
-# 👤 [무중단 스마트 검증 팝업] rerun 없이 부드럽게 2단계로 개방!
+# 👤 [디자인 완성본] 내 정보 수정 (메시지 크기 13px 통일)
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -229,7 +229,7 @@ def show_profile_popup_dialog():
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
     # ==========================================
-    # 1. 🔐 비밀번호 변경 루틴 (무중단 2단계 연결)
+    # 1. 🔐 비밀번호 변경 루틴
     # ==========================================
     if edit_mode == "🔐 비밀번호 변경":
         if "pw_step_unlocked" not in st.session_state:
@@ -237,7 +237,6 @@ def show_profile_popup_dialog():
 
         is_unlocked = st.session_state["pw_step_unlocked"]
 
-        # 현재 비밀번호 입력칸 (검증 완료 시 수정 불가로 예쁘게 고정)
         curr_pw = st.text_input(
             "현재 비밀번호", 
             type="password", 
@@ -247,7 +246,6 @@ def show_profile_popup_dialog():
         )
         
         if not is_unlocked and curr_pw:
-            # 안전하게 비밀번호 검증 (세션 비번 누락 시 시트에서 직접 조회)
             actual_pw = st.session_state.get("logged_teacher_pw", "")
             if not actual_pw and st.session_state.get("logged_teacher_id"):
                 df_tc = load_sheet_to_df("teacher_accounts")
@@ -262,17 +260,14 @@ def show_profile_popup_dialog():
             elif curr_pw != actual_pw:
                 st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
             else:
-                # 🚨 st.rerun() 없이 즉시 변수 상태를 True로 변경하여 아래 2단계를 바로 보여줌!
                 st.session_state["pw_step_unlocked"] = True
                 is_unlocked = True
 
-        # 2단계: 새 비밀번호 설정 창 (현재 비번 일치 시 스르륵 열림)
         if is_unlocked:
             st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다. 변경할 새 비밀번호를 입력하세요.</p>", unsafe_allow_html=True)
             new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호", key="new_pw_input_field")
             new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_input_field")
             
-            # 🚀 활성화된 두 번째 비밀번호 칸으로 커서 자동 이동
             components.html("""
                 <script>
                     setTimeout(function() {
@@ -305,10 +300,11 @@ def show_profile_popup_dialog():
                         if len(idx) > 0:
                             df_tc.loc[idx[0], "비밀번호"] = new_pw
                             if save_df_to_sheet("teacher_accounts", df_tc):
-                                msg_box.success("🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.")
+                                # 🚨 상단 안내 멘트와 동일한 13px 크기로 변경!
+                                msg_box.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 비밀번호가 변경되었습니다! 다음 접속 시 새 비밀번호를 사용하세요.</p>", unsafe_allow_html=True)
                                 st.session_state["logged_teacher_pw"] = new_pw
-                            else: msg_box.error("❌ 구글 시트 저장에 실패했습니다.")
-                        else: msg_box.error("❌ 명단에서 계정을 찾을 수 없습니다.")
+                            else: msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 구글 시트 저장에 실패했습니다.</p>", unsafe_allow_html=True)
+                        else: msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 명단에서 계정을 찾을 수 없습니다.</p>", unsafe_allow_html=True)
         else:
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("닫기", type="secondary", use_container_width=True, key="close_pw_step1_btn"):
@@ -348,9 +344,10 @@ def show_profile_popup_dialog():
                             df_tc.loc[idx[0], "담당_과목"] = new_subs_str.strip()
                             if save_df_to_sheet("teacher_accounts", df_tc):
                                 st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
-                                msg_box_sub.success("🎉 담당 과목이 성공적으로 수정되었습니다! (즉시 반영됨)")
-                            else: msg_box_sub.error("❌ 구글 시트 저장 실패")
-                        else: msg_box_sub.error("❌ 명단에서 계정을 찾을 수 없습니다.")
+                                # 🚨 과목 저장 성공 안내문도 13px 일체감 적용!
+                                msg_box_sub.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 담당 과목이 성공적으로 수정되었습니다! (즉시 반영됨)</p>", unsafe_allow_html=True)
+                            else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 구글 시트 저장 실패</p>", unsafe_allow_html=True)
+                        else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 명단에서 계정을 찾을 수 없습니다.</p>", unsafe_allow_html=True)
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
