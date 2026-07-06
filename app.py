@@ -52,18 +52,14 @@ st.markdown("""
             color: #0f172a !important;
         }
 
-        /* -------------------------------------------------------------------------------- */
-        /* 💡 [라디오 버튼 위치 조절 밸브] 
-           - 버튼 그룹 전체를 더 오른쪽으로 밀고 싶다면: 130px를 더 크게 (예: 140px, 150px)
-           - 버튼 그룹 전체를 더 왼쪽으로 당기고 싶다면: 130px를 더 작게 (예: 120px, 110px)
-        /* -------------------------------------------------------------------------------- */
+        /* 🔴 [선생님 피드백 반영] 라디오 버튼 여백 95px로 정밀 타격 반영 완료 */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
             padding-left: 95px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
         
-        /* 🔴 [선생님 피드백 반영] 학생 모드와 교사 모드 사이의 간격을 35px로 조절 */
+        /* 원형 버튼과 글자 수평 일직선 고정 */
         div[data-testid="stForm"] div[role="radiogroup"] {
             display: flex !important;
             gap: 35px !important; 
@@ -74,7 +70,7 @@ st.markdown("""
             align-items: center !important; 
             margin: 0 !important;
         }
-        /* 🔴 [선생님 피드백 반영] 원형 라디오 동그라미와 글자 사이의 여백을 4px로 좁혀 밀착 고정 */
+        /* 원형 라디오 동그라미와 글자 여백 4px 밀착 적용 */
         div[data-testid="stForm"] div[role="radiogroup"] label p {
             margin: 0 0 0 4px !important; 
             font-size: 16px !important;
@@ -207,7 +203,7 @@ def get_active_databases():
     except: pass
     return active_list
 
-# 세션 상태 초기화
+# 🔴 [중복 충돌 원인 제거] 세션 상태 초기화 및 중복 간섭 완전 분리
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "student_logged_in" not in st.session_state: st.session_state["student_logged_in"] = False
 if "logged_student_id" not in st.session_state: st.session_state["logged_student_id"] = ""
@@ -218,12 +214,11 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 
 SUBJECT_MAP = load_master_subjects()
 
+# 🔴 [에러 핵심 도려내기] 사이드바 로그아웃 시 강제 중복 생성 현상 차단
 def sidebar_logout_callback():
+    st.session_state.clear()
     st.session_state["admin_logged_in"] = False
     st.session_state["student_logged_in"] = False
-    st.session_state["logged_teacher_id"] = ""
-    st.session_state["teacher_name"] = ""
-    st.session_state["allowed_subjects"] = []
 
 if "open_profile_popup" not in st.session_state: st.session_state["open_profile_popup"] = False
 if st.session_state["open_profile_popup"]:
@@ -231,24 +226,25 @@ if st.session_state["open_profile_popup"]:
     launch_isolated_profile_dialog()
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (동적 텍스트 및 학생 우선순위 배치)
+# 🔓 [1단계] 클린 통합 로그인 시스템
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 폼 내부 단일 라디오 버튼 선언 (Unique Key 할당으로 중복 ID 완벽 격리)
-            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="system_login_role_selector")
+            # 폼 내부 안전 정지 모드 탑재 (Unique ID 부여로 무결성 충족)
+            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="integrated_main_role_radio")
             
-            # 누구든 상관없이 깔끔하게 "ID를 입력하세요" 단일 고정 예시
+            # 누구든 상관없이 깔끔하게 "ID를 입력하세요" 단일 고정!
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="live_user_id_field")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
-            # 로그인 버튼 정렬
+            # 로그인 버튼 가로 분할 정렬
             b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
             with b_col2:
-                submit_active = st.form_submit_button("시스템 로그인", use_container_width=True)
+                # 🔴 [선생님 피드백 반영] '시스템 로그인' 문구를 깔끔하게 '로그인'으로 전격 수정
+                submit_active = st.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
                 if login_mode == "교사":
@@ -276,7 +272,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
 elif st.session_state["student_logged_in"]:
     st.markdown(f"<h2>수행평가 점수 확인 시스템 <span style='font-size:16px; color:#3b82f6;'>(학생 모드)</span></h2>", unsafe_allow_html=True)
     if st.button("🚪 안전 로그아웃"):
-        st.session_state["student_logged_in"] = False
+        st.session_state.clear()
         st.rerun()
     st.write(f"👤 접속 이메일: **{st.session_state['logged_student_id']}**")
     st.markdown("---")
