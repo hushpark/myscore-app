@@ -220,7 +220,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 🔴 [선생님 지시사항 반영] 라디오 버튼 순서를 완전히 ["학생", "교사"]로 고정!
+            # 🔴 순서 고정: [학생, 교사]
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
             
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="pure_user_id_field")
@@ -231,7 +231,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 submit_active = st.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
-                # 🔴 [선생님 지시사항 반영] 나머지 백엔드 로직도 분기문을 ["학생", "교사"] 순서로 완전히 맞춤 설계!
+                # 🔴 [연동 영점 재조정] 화면 순서인 [학생, 교사]에 맞게 백엔드 분기문 매칭 완료!
                 if login_mode == "학생":
                     if user_id_input and user_pw_input:
                         if verify_student_credentials(user_id_input, user_pw_input):
