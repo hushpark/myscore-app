@@ -51,14 +51,14 @@ st.markdown("""
             color: #0f172a !important;
         }
 
-        /* 🔴 [선생님 지정값] 라디오 버튼 여백 95px 깔끔하게 고정 */
+        /* 🔴 [선생님 지정값] 라디오 버튼 여백 95px 고정 */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
             padding-left: 95px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
         
-        /* 원형 버튼과 글자 수평 일직선 구조만 안전하게 유지 */
+        /* 원형 버튼과 글자 수평 일직선 구조 고정 */
         div[data-testid="stForm"] div[role="radiogroup"] {
             display: flex !important;
             gap: 35px !important; 
@@ -96,48 +96,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 백엔드 데이터 연동 함수 정의 ---
-def load_master_subjects():
-    default_structure = {"인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"], "수리·과학군": ["수학", "과학", "기술·가정", "정보"], "예체능군": ["음악", "미술", "체육"]}
-    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
-    if not df.empty:
-        for _, row in df.iterrows():
-            group = str(row['교과군']).strip()
-            sub = str(row['과목명']).strip()
-            if group in default_structure and sub not in default_structure[group]: default_structure[group].append(sub)
-    return default_structure
-
-def verify_teacher_credentials(input_id, input_pw):
-    df = load_sheet_to_df("teacher_accounts", ["교사_ID", "비밀번호", "교사_성명", "담당_과목"])
-    if not df.empty:
-        df['교사_ID'] = df['교사_ID'].astype(str).str.strip()
-        df['비밀번호'] = df['비밀번호'].astype(str).str.strip()
-        match = df[(df['교사_ID'] == str(input_id).strip()) & (df['비밀번호'] == str(input_pw).strip())]
-        if not match.empty:
-            row = match.iloc[0]
-            return {"success": True, "teacher_id": str(row['교사_ID']).strip(), "teacher_name": str(row['교사_성명']).strip(), "authorized_subjects": [s.strip() for s in str(row['담당_과목']).split(",") if s.strip()]}
-    if input_id.strip() == "admin" and input_pw.strip() == "1234": return {"success": True, "teacher_id": "admin", "teacher_name": "최고관리자", "authorized_subjects": ["마스터"]}
-    return {"success": False, "teacher_name": "", "authorized_subjects": []}
-
-def get_sheet_names_id(subject, grade, semester_str):
-    safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
-    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
-
-@st.dialog("🎉 성적 조회 결과")
-def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
-    st.markdown(f"<div><b>{student_name}</b> 학생의 성적 내역입니다.</div>", unsafe_allow_html=True)
-    st.table(pd.DataFrame(scores_dict))
-    if "has_counted" not in st.session_state:
-        try: current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조회 횟수"]) else 0
-        except: current_count = 0
-        current_df.loc[student_row_idx, "성적조회 횟수"] = current_count + 1
-        current_df.loc[student_row_idx, "최종 확인일시"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        save_df_to_sheet(sf_id, current_df)
-        st.session_state["has_counted"] = True
-    if st.button("닫기", type="secondary", use_container_width=True, key="dialog_close_button_unique"):
-        if "has_counted" in st.session_state: del st.session_state["has_counted"]
-        st.session_state.clear()
-        st.rerun()
-
 def init_google_sheet_client():
     try: return gspread.authorize(Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]))
     except: return None
@@ -170,6 +128,49 @@ def load_sheet_to_df(sheet_name, default_cols=None):
         return pd.DataFrame(records) if records else pd.DataFrame(columns=default_cols if default_cols else [])
     except: return pd.DataFrame(columns=default_cols if default_cols else [])
 
+def load_master_subjects():
+    default_structure = {"인문·사회군": ["국어", "영어", "사회", "역사", "도덕", "한문", "중국어"], "수리·과학군": ["수학", "과학", "기술·가정", "정보"], "예체능군": ["음악", "미술", "체육"]}
+    df = load_sheet_to_df("master_subjects", ["교과군", "과목명"])
+    if not df.empty:
+        for _, row in df.iterrows():
+            group = str(row['교과군']).strip()
+            sub = str(row['과목명']).strip()
+            if group in default_structure and sub not in default_structure[group]: default_structure[group].append(sub)
+    return default_structure
+
+# 🔴 [연동 복구 완료] 구글 시트 교사 계정 조회 로직 정상 동기화
+def verify_teacher_credentials(input_id, input_pw):
+    df = load_sheet_to_df("teacher_accounts", ["교사_ID", "비밀번호", "교사_성명", "담당_과목"])
+    if not df.empty:
+        df['교사_ID'] = df['교사_ID'].astype(str).str.strip()
+        df['비밀번호'] = df['비밀번호'].astype(str).str.strip()
+        match = df[(df['교사_ID'] == str(input_id).strip()) & (df['비밀번호'] == str(input_pw).strip())]
+        if not match.empty:
+            row = match.iloc[0]
+            return {"success": True, "teacher_id": str(row['교사_ID']).strip(), "teacher_name": str(row['교사_성명']).strip(), "authorized_subjects": [s.strip() for s in str(row['담당_과목']).split(",") if s.strip()]}
+    if input_id.strip() == "admin" and input_pw.strip() == "1234": return {"success": True, "teacher_id": "admin", "teacher_name": "최고관리자", "authorized_subjects": ["마스터"]}
+    return {"success": False, "teacher_name": "", "authorized_subjects": []}
+
+def get_sheet_names_id(subject, grade, semester_str):
+    safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
+    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
+
+@st.dialog("🎉 성적 조회 결과")
+def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, current_df):
+    st.markdown(f"<div><b>{student_name}</b> 학생의 성적 내역입니다.</div>", unsafe_allow_html=True)
+    st.table(pd.DataFrame(scores_dict))
+    if "has_counted" not in st.session_state:
+        try: current_count = int(current_df.loc[student_row_idx, "성적조회 횟수"]) if "성적조회 횟수" in current_df.columns and not pd.isna(current_df.loc[student_row_idx, "성적조회 횟수"]) else 0
+        except: current_count = 0
+        current_df.loc[student_row_idx, "성적조회 횟수"] = current_count + 1
+        current_df.loc[student_row_idx, "최종 확인일시"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        save_df_to_sheet(sf_id, current_df)
+        st.session_state["has_counted"] = True
+    if st.button("닫기", type="secondary", use_container_width=True, key="dialog_close_button_unique"):
+        if "has_counted" in st.session_state: del st.session_state["has_counted"]
+        st.session_state.clear()
+        st.rerun()
+
 def get_active_databases():
     active_list = []
     if gc is None: return active_list
@@ -201,14 +202,11 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 단일 라디오 버튼 
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
             
-            # 누구든 상관없이 깔끔하게 "ID를 입력하세요" 단일 고정 예시
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="pure_user_id_field")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed", key="pure_user_pw_field")
             
-            # 로그인 버튼 정렬
             b_col1, b_col2, b_col3 = st.columns([1.0, 1.8, 1.0])
             with b_col2:
                 submit_active = st.form_submit_button("로그인", use_container_width=True)
@@ -285,7 +283,6 @@ elif st.session_state["admin_logged_in"]:
         st.markdown("<h4>📋 교사 메뉴</h4>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:12px; color:#94a3b8; margin-bottom:15px;'>👤 {st.session_state['teacher_name']} 선생님 접속 중</div>", unsafe_allow_html=True)
         st.markdown("---")
-        # 🔴 [안전 교정] 사이드바 메뉴 라디오 버튼에 중복되지 않는 완전 고유 고유 Key 부여
         menu_selection = st.radio("메뉴 선택", ["▶ 학생 조회 현황 모니터링", "▶ 개인별 성적 입력", "▶ 평가 대상 과목 구성", "▶ 성적 전체 일괄 업로드(CSV)"], label_visibility="collapsed", key="teacher_sidebar_unique_menu_selector_2026")
         st.markdown("---")
         
@@ -367,7 +364,6 @@ elif st.session_state["admin_logged_in"]:
                     else:
                         filtered_idx = db_df.index
                         edit_target_df = db_df[valid_cols]
-                    # 🔴 [안전 교정] 데이터 에디터에 고유 Key값을 명확히 선언하여 충돌 방지
                     edited_df = st.data_editor(edit_target_df, use_container_width=True, num_rows="dynamic", disabled=["반", "번호", "이름"], hide_index=True, key="teacher_data_editor_grid_system")
                     st.markdown("<br>", unsafe_allow_html=True)
                     bc1, bc2 = st.columns([5, 1])
