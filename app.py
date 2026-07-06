@@ -58,7 +58,7 @@ st.markdown("""
            - 버튼들을 더 좌측(왼쪽)으로 당겨오고 싶다면: 130px 값을 더 작게 고치세요 (예: 110px, 100px)
         /* -------------------------------------------------------------------------------- */
         div[data-testid="stForm"] div[data-testid="stRadio"] {
-            padding-left: 110px !important; 
+            padding-left: 100px !important; 
             margin-bottom: 25px !important;
             width: 100% !important;
         }
@@ -240,8 +240,8 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
             # 학생, 교사 라디오 버튼 (안심 순정 구조 원복)
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
-            # 🔴 [선생님 피드백 반영] 누구든 상관없이 깔끔하게 "ID를 입력하세요" 단일 고정!
-            user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="live_user_id_field")
+            # 🔴 [선생님 피드백 반영] 누구든 상관없이 깔끔하게 "아이디를 입력하세요" 단일 고정!
+            user_id_input = st.text_input("ID", placeholder="아이디를 입력하세요", label_visibility="collapsed", key="live_user_id_field")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
             # 로그인 버튼 가로 분할 정렬
