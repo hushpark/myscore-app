@@ -138,7 +138,7 @@ def load_master_subjects():
             if group in default_structure and sub not in default_structure[group]: default_structure[group].append(sub)
     return default_structure
 
-# 👥 구글 시트 교사 계정 조회 로직
+# 👥 [연동 영점 조절] 구글 시트 캡처본에 적힌 그대로 명칭 매칭 완료!
 def verify_teacher_credentials(input_id, input_pw):
     df = load_sheet_to_df("teacher_accounts", ["교사_ID", "비밀번호", "교사_성명", "담당_과목"])
     if not df.empty:
@@ -148,10 +148,9 @@ def verify_teacher_credentials(input_id, input_pw):
         if not match.empty:
             row = match.iloc[0]
             return {"success": True, "teacher_id": str(row['교사_ID']).strip(), "teacher_name": str(row['교사_성명']).strip(), "authorized_subjects": [s.strip() for s in str(row['담당_과목']).split(",") if s.strip()]}
-    if input_id.strip() == "admin" and input_pw.strip() == "1234": return {"success": True, "teacher_id": "admin", "teacher_name": "최고관리자", "authorized_subjects": ["마스터"]}
     return {"success": False, "teacher_name": "", "authorized_subjects": []}
 
-# 🎓 구글 시트 학생 계정 존재 여부 실시간 매칭 검증 로직
+# 🎓 구글 시트 학생 계정 실시간 매칭 검증 로직
 def verify_student_credentials(input_id, input_pw):
     active_dbs = get_active_databases()
     if not active_dbs: return False
@@ -220,7 +219,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             
-            # 🔴 순서 고정: [학생, 교사]
+            # 순서 고정: [학생, 교사]
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
             
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed", key="pure_user_id_field")
@@ -231,7 +230,6 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 submit_active = st.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
-                # 🔴 [연동 영점 재조정] 화면 순서인 [학생, 교사]에 맞게 백엔드 분기문 매칭 완료!
                 if login_mode == "학생":
                     if user_id_input and user_pw_input:
                         if verify_student_credentials(user_id_input, user_pw_input):
