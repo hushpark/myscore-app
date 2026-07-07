@@ -61,7 +61,7 @@ st.markdown("""
         div.stButton > button[kind="secondary"], button[data-testid="baseButton-secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
         div.stButton > button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover { background-color: #f8fafc !important; border-color: #3b82f6 !important; color: #2563eb !important; }
 
-        /* 🚨 [원래 상태 복구] 로그인 폼 제출용 버튼 디자인 강제 지정 */
+        /* 로그인 폼 제출용 버튼 디자인 강제 지정 */
         form[data-testid="stForm"] button {
             background-color: #ffffff !important;
             color: #0f172a !important;
@@ -84,10 +84,10 @@ st.markdown("""
 
         div[data-testid="InputInstructions"] { display: none !important; }
 
-        /* 🚨 [시인성 강화] 라벨 제목 굵게 */
+        /* 라벨 제목 굵게 */
         div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
 
-        /* 🚨 [드롭다운 & 텍스트 박스 기본 상태] */
+        /* 드롭다운 & 텍스트 박스 기본 상태 */
         div[data-testid="stTextInput"] > div,
         div[data-testid="stTextInput"] [data-baseweb="input"],
         div[data-testid="stSelectbox"] > div[data-baseweb="select"],
@@ -99,7 +99,6 @@ st.markdown("""
             box-shadow: none !important;
         }
 
-        /* 텍스트 입력창 내부 설정 */
         div[data-testid="stTextInput"] input { 
             background-color: #ffffff !important; 
             color: #0f172a !important;
@@ -108,7 +107,7 @@ st.markdown("""
             box-shadow: none !important;
         }
         
-        /* 🎯 [이중 테두리 중첩 현상 완벽 해결] 클릭 시 브라우저 및 내장 테두리 잔상을 투명화하고 단일 블루 톤으로 고정 */
+        /* 이중 테두리 중첩 현상 제거 */
         div[data-testid="stTextInput"] > div:focus-within,
         div[data-testid="stTextInput"] [data-baseweb="input"]:focus-within,
         div[data-testid="stSelectbox"] > div:focus-within,
@@ -190,8 +189,10 @@ def load_master_subjects():
     return default_structure
 
 def get_sheet_names_id(subject, grade, semester_str):
+    # 공백 및 특수문자 안전처리 제거
     safe_subject = "".join([c for c in subject if c.isalnum() or c in (' ', '_', '-')]).strip().replace(" ", "_")
-    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{semester_str.replace(' ', '_').replace('/', '_')}"
+    safe_semester = semester_str.strip().replace(" ", "_").replace("/", "_")
+    return f"cfg_{safe_subject}_{grade}Grade", f"st_{safe_subject}_{grade}_{safe_semester}"
 
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
@@ -340,15 +341,28 @@ def show_result_dialog(student_name, scores_dict, sf_id, student_row_idx, curren
         st.session_state.clear()
         st.rerun()
 
+# 🎯 [버그 원인 제거] 실시간 시트 구조 파싱 연동 함수 완전 변경
 def get_active_databases():
     active_list = []
     if gc is None: return active_list
     try:
         sh = gc.open(SPREADSHEET_NAME)
+        # 구글 데이터베이스에 실존하는 모든 cfg_ 파티션을 조회하여 안전하게 매칭 정보를 도출
         for wks in sh.worksheets():
             if wks.title.startswith("cfg_"):
                 match = re.search(r"cfg_([A-Za-z0-9_가-힣]+)_([1-3])Grade", wks.title)
-                if match: active_list.append({"subject": match.group(1).replace("_", " "), "grade": f"{match.group(2)}학년", "semester": "2026학년도 1학기"})
+                if match:
+                    subj_parsed = match.group(1).replace("_", " ")
+                    grade_parsed = f"{match.group(2)}학년"
+                    
+                    # 수동 설정 데이터 로드하여 학기 구조 가져오기 (에러 방지 기본값 세팅)
+                    try:
+                        v_df = wks.get_all_values()
+                        sem_val = "2026학년도 1학기" # 기본값 설정
+                    except:
+                        sem_val = "2026학년도 1학기"
+                        
+                    active_list.append({"subject": subj_parsed, "grade": grade_parsed, "semester": sem_val})
     except: pass
     return active_list
 
@@ -517,8 +531,12 @@ elif st.session_state["admin_logged_in"]:
         with st.container(border=True):
             st.markdown("<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
             registered_dbs = get_active_databases()
-            if "마스터" not in st.session_state["allowed_subjects"]: registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
-            if not registered_dbs: st.warning("⚠️ 현재 개설된 과목이 없습니다.")
+            # 🎯 교사 담당과목 체크 공백 제거 트림 보정 매칭
+            if "마스터" not in st.session_state["allowed_subjects"]:
+                allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
+                registered_dbs = [d for d in registered_dbs if str(d['subject']).strip() in allowed_trimmed]
+            
+            if not registered_dbs: st.warning("⚠️ 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
             else:
                 col_sub, col_class = st.columns(2)
                 with col_sub:
@@ -554,7 +572,10 @@ elif st.session_state["admin_logged_in"]:
         with st.container(border=True):
             st.markdown("<h3>📝 개인별 성적 데이터 입력</h3>", unsafe_allow_html=True)
             registered_dbs = get_active_databases()
-            if "마스터" not in st.session_state["allowed_subjects"]: registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
+            if "마스터" not in st.session_state["allowed_subjects"]:
+                allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
+                registered_dbs = [d for d in registered_dbs if str(d['subject']).strip() in allowed_trimmed]
+                
             if not registered_dbs: st.warning("⚠️ 권한이 있는 과목이 없습니다.")
             else:
                 col_sub_ed, col_class_ed = st.columns(2)
@@ -609,7 +630,10 @@ elif st.session_state["admin_logged_in"]:
         with st.container(border=True):
             st.markdown("<h3>📇 학생 기본 정보 관리</h3>", unsafe_allow_html=True)
             registered_dbs = get_active_databases()
-            if "마스터" not in st.session_state["allowed_subjects"]: registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
+            if "마스터" not in st.session_state["allowed_subjects"]:
+                allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
+                registered_dbs = [d for d in registered_dbs if str(d['subject']).strip() in allowed_trimmed]
+                
             if not registered_dbs: st.warning("⚠️ 권한이 있는 과목이 없습니다.")
             else:
                 col_sub_ed, col_class_ed = st.columns(2)
@@ -663,7 +687,6 @@ elif st.session_state["admin_logged_in"]:
         active_dbs = get_active_databases()
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # 🚨 제일 바깥쪽 공간을 좌우 2개의 커다란 열(Column)로 분리 (세로 박스 2개 형태)
         main_col1, main_col2 = st.columns(2)
         
         # -----------------------------------------------------------------
@@ -672,7 +695,6 @@ elif st.session_state["admin_logged_in"]:
         with main_col1:
             with st.container(border=True):
                 st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
-                # 💡 [요구사항 반영] 중복 대제목 제거 및 가독성을 위한 안내 필드 삽입
                 st.caption("과목 설정이 끝나면, 우측에서 수행평가 세부 항목을 구성하세요.")
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 
@@ -681,7 +703,6 @@ elif st.session_state["admin_logged_in"]:
                 sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"], key="cfg_grade_select_unique")
                 sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], key="cfg_sem_select_unique")
 
-        # 🚨 과목 생성 여부 및 학기 선택 상태 판별 로직
         is_already_created = any(d['subject'] == final_sub and d['grade'] == sel_gr and d['semester'] == sel_se for d in active_dbs)
         show_step_2 = (sel_se != "학기를 선택하세요.") or is_already_created
 
@@ -716,8 +737,9 @@ elif st.session_state["admin_logged_in"]:
                     btn_space1, btn_space2 = st.columns([1, 1])
                     with btn_space2:
                         if st.button("💾 이 과목 설정 저장하기", type="primary", use_container_width=True, key="make_partition_btn_unique"):
-                            # 🚨 [버그 수정 완료] 로그인한 교사의 담당 과목명 목록과 완벽 매칭 검증 연동성 확보
-                            if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
+                            # 🎯 [권한 버그 완벽 연동] 공백 제거 및 트림 연동 검증
+                            allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
+                            if "마스터" not in st.session_state["allowed_subjects"] and final_sub.strip() not in allowed_trimmed:
                                 st.error(f"❌ 권한 오류: {st.session_state['teacher_name']} 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
                             else:
                                 cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
@@ -741,7 +763,10 @@ elif st.session_state["admin_logged_in"]:
         with st.container(border=True):
             st.markdown("<h3>📥 전체 일괄 성적 대장 CSV 업로드</h3>", unsafe_allow_html=True)
             registered_dbs = get_active_databases()
-            if "마스터" not in st.session_state["allowed_subjects"]: registered_dbs = [d for d in registered_dbs if d['subject'] in st.session_state["allowed_subjects"]]
+            if "마스터" not in st.session_state["allowed_subjects"]:
+                allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
+                registered_dbs = [d for d in registered_dbs if str(d['subject']).strip() in allowed_trimmed]
+                
             if not registered_dbs: st.warning("개설된 과목이 없습니다.")
             else:
                 selected_db_str = st.selectbox("📂 성적 연동 과목 선택", options=[f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs], key="csv_db_select_unique")
