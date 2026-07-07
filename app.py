@@ -13,7 +13,7 @@ import csv
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [방탄 CSS] 드롭다운 & 텍스트 박스 완벽 테두리 동기화 및 시인성 개선
+# 🔄 [방탄 CSS] 드롭다운, 텍스트 박스, 로그인 버튼 디자인 및 이중 테두리 완벽 제거
 # =========================================================================
 st.markdown("""
     <style>
@@ -55,11 +55,28 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         [data-testid="stSidebar"] button[kind="secondary"]:hover { background-color: #f8fafc !important; border-color: #3b82f6 !important; }
 
-        /* 메인 화면 버튼 디자인 */
-        div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2) !important; }
-        div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
-        div.stButton > button[kind="secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
-        div.stButton > button[kind="secondary"]:hover { background-color: #f8fafc !important; border-color: #3b82f6 !important; color: #2563eb !important; }
+        /* 메인 화면 및 폼 일반 버튼 디자인 */
+        div.stButton > button[kind="primary"], button[data-testid="baseButton-primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2) !important; }
+        div.stButton > button[kind="primary"]:hover, button[data-testid="baseButton-primary"]:hover { background-color: #2563eb !important; }
+        div.stButton > button[kind="secondary"], button[data-testid="baseButton-secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
+        div.stButton > button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover { background-color: #f8fafc !important; border-color: #3b82f6 !important; color: #2563eb !important; }
+
+        /* 🚨 [원래 상태 복구] 로그인 폼 제출용 버튼 디자인 강제 지정 */
+        form[data-testid="stForm"] button {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            width: 100% !important;
+            padding: 10px 0 !important;
+            box-shadow: none !important;
+        }
+        form[data-testid="stForm"] button:hover {
+            background-color: #f8fafc !important;
+            border-color: #3b82f6 !important;
+            color: #2563eb !important;
+        }
 
         /* 팝업 다이얼로그 전용 버튼 */
         [data-testid="stDialog"] button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 800 !important; border: none !important; border-radius: 6px !important; padding: 12px 0 !important; font-size: 15px !important; width: 100% !important; }
@@ -91,7 +108,7 @@ st.markdown("""
             box-shadow: none !important;
         }
         
-        /* 🎯 [색상 중첩 버그 완벽 해결] 클릭(포커스) 시 기본 테두리 잔상과 outline을 완전히 차단 */
+        /* 🎯 [이중 테두리 중첩 현상 완벽 해결] 클릭 시 브라우저 및 내장 테두리 잔상을 투명화하고 단일 블루 톤으로 고정 */
         div[data-testid="stTextInput"] > div:focus-within,
         div[data-testid="stTextInput"] [data-baseweb="input"]:focus-within,
         div[data-testid="stSelectbox"] > div:focus-within,
@@ -99,7 +116,7 @@ st.markdown("""
         div[data-testid="stTextInput"] input:focus {
             border: 2px solid #3b82f6 !important;
             outline: none !important;
-            box-shadow: 0 0 stage 0 rgba(0,0,0,0), 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
             -webkit-box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
         }
 
@@ -644,9 +661,6 @@ elif st.session_state["admin_logged_in"]:
     # 4. 평가 대상 과목 구성
     elif menu_selection == "▶ 평가 대상 과목 구성":
         active_dbs = get_active_databases()
-        
-        st.markdown("<h2>⚙️ 평가 과정 개설 및 항목 구성</h2>", unsafe_allow_html=True)
-        st.caption("좌측에서 과목을 지정하고, 우측에서 수행평가 세부 항목을 구성하세요.")
         st.markdown("<br>", unsafe_allow_html=True)
 
         # 🚨 제일 바깥쪽 공간을 좌우 2개의 커다란 열(Column)로 분리 (세로 박스 2개 형태)
@@ -658,13 +672,13 @@ elif st.session_state["admin_logged_in"]:
         with main_col1:
             with st.container(border=True):
                 st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
+                # 💡 [요구사항 반영] 중복 대제목 제거 및 가독성을 위한 안내 필드 삽입
+                st.caption("과목 설정이 끝나면, 우측에서 수행평가 세부 항목을 구성하세요.")
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 
                 sel_g = st.selectbox("교과군 선택", options=["인문·사회군", "수리·과학군", "예체능군"], key="cfg_group_select_unique")
                 final_sub = st.selectbox("세부 과목", options=SUBJECT_MAP.get(sel_g, ["국어"]), key="cfg_sub_select_unique")
                 sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"], key="cfg_grade_select_unique")
-                
-                # 학기 선택의 초기 상태를 분기점으로 삼기 위해 "학기를 선택하세요." 추가
                 sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], key="cfg_sem_select_unique")
 
         # 🚨 과목 생성 여부 및 학기 선택 상태 판별 로직
@@ -680,7 +694,6 @@ elif st.session_state["admin_logged_in"]:
                     st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
                     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                     
-                    # 드롭다운이 길어지지 않게 박스 안에서 한 번 더 좁게 쪼갭니다.
                     col_cnt, col_empty = st.columns([1.2, 1])
                     with col_cnt:
                         item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2, key="cfg_item_cnt_select_unique")
@@ -688,7 +701,6 @@ elif st.session_state["admin_logged_in"]:
                     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                     st.write("📝 **각 항목의 제목을 입력하세요:**")
                     
-                    # 항목 개수에 따라 입력창이 2열 구조로 배치되도록 구성
                     item_titles = []
                     for i in range(item_count):
                         if i % 2 == 0:
@@ -704,8 +716,9 @@ elif st.session_state["admin_logged_in"]:
                     btn_space1, btn_space2 = st.columns([1, 1])
                     with btn_space2:
                         if st.button("💾 이 과목 설정 저장하기", type="primary", use_container_width=True, key="make_partition_btn_unique"):
+                            # 🚨 [버그 수정 완료] 로그인한 교사의 담당 과목명 목록과 완벽 매칭 검증 연동성 확보
                             if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
-                                st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
+                                st.error(f"❌ 권한 오류: {st.session_state['teacher_name']} 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
                             else:
                                 cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
                                 config_df = pd.DataFrame([{"선택된반 목록": "1,2,3", "항목개수": item_count, **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}}])
