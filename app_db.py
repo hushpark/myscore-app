@@ -36,8 +36,9 @@ st.markdown("""
 # =========================================================================
 # 🔑 [Supabase 백엔드 도킹]
 # =========================================================================
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+# 🔑 [치트키] Secrets 거치지 않고 진짜 주소와 열쇠 직접 주입하기
+SUPABASE_URL = "https://jwkvojfmhorndnnhscwl.supabase.co"
+SUPABASE_KEY = "sb_publishable_6--SHGogHaHSEV07g3rNjQ_FOHO-XlN"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # 🚨 [안전장치] 확실한 테이블명 강제 지정 (앞뒤 공백 제거)
