@@ -604,7 +604,7 @@ elif st.session_state["admin_logged_in"]:
                 db_df = load_sheet_to_df(sf_id)
                 with col_class_ed:
                     class_options_ed = ["전체"]
-                    if not db_df.empty Image and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                    if not db_df.empty and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class_ed = st.selectbox("👥 학반 필터링", options=class_options_ed, key="t_class_select_info_unique")
                 
                 if not db_df.empty:
