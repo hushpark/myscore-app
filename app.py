@@ -641,7 +641,7 @@ elif st.session_state["admin_logged_in"]:
                                 for col in edited_df.columns: db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
                             if save_df_to_sheet(sf_id, db_df): st.success("🎉 학생 기본 정보가 수정되었습니다!"); st.rerun()
 
-    # 4. 평가 대상 과목 구성
+   # 4. 평가 대상 과목 구성
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
@@ -658,7 +658,11 @@ elif st.session_state["admin_logged_in"]:
             st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 25px 0;'>", unsafe_allow_html=True)
             
             st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
-            item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2, key="cfg_item_cnt_select_unique")
+            
+            # 💡 이 부분을 분할 레이아웃으로 수정하여 드롭다운 길이를 축소했습니다!
+            col_cnt, col_empty = st.columns([1, 2])
+            with col_cnt:
+                item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2, key="cfg_item_cnt_select_unique")
             
             item_titles = []
             cols_items = st.columns(item_count)
