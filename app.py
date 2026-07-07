@@ -641,47 +641,87 @@ elif st.session_state["admin_logged_in"]:
                                 for col in edited_df.columns: db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
                             if save_df_to_sheet(sf_id, db_df): st.success("🎉 학생 기본 정보가 수정되었습니다!"); st.rerun()
 
-   # 4. 평가 대상 과목 구성
+    # 4. 평가 대상 과목 구성
     elif menu_selection == "▶ 평가 대상 과목 구성":
-        with st.container(border=True):
-            st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
-            st.caption("평가 대상 과목과 학기를 연동하세요.")
-            
-            r1, r2 = st.columns(2)
-            with r1: sel_g = st.selectbox("교과군 선택", options=["인문·사회군", "수리·과학군", "예체능군"], key="cfg_group_select_unique")
-            with r2: sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"], key="cfg_grade_select_unique")
-            
-            r3, r4 = st.columns(2)
-            with r3: final_sub = st.selectbox("세부 과목", options=SUBJECT_MAP.get(sel_g, ["국어"]), key="cfg_sub_select_unique")
-            with r4: sel_se = st.selectbox("학기 선택", options=["2026학년도 1학기", "2026학년도 2학기"], key="cfg_sem_select_unique")
-            
-            st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 25px 0;'>", unsafe_allow_html=True)
-            
-            st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
-            
-            # 💡 이 부분을 분할 레이아웃으로 수정하여 드롭다운 길이를 축소했습니다!
-            col_cnt, col_empty = st.columns([1, 2])
-            with col_cnt:
-                item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2, key="cfg_item_cnt_select_unique")
-            
-            item_titles = []
-            cols_items = st.columns(item_count)
-            for i in range(item_count):
-                with cols_items[i]:
-                    t_in = st.text_input(f"수행평가 항목 {i+1} 제목", value=f"수행평가_{i+1}", key=f"pure_item_title_{i}_unique")
-                    item_titles.append(t_in.strip())
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            bc1, bc2 = st.columns([4.2, 1.2]) 
-            with bc2:
-                if st.button("💾 기본 설정 저장", type="primary", use_container_width=True, key="make_partition_btn_unique"):
-                    if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
-                        st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
-                    else:
-                        cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
-                        config_df = pd.DataFrame([{"선택된반 목록": "1,2,3", "항목개수": item_count, **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}}])
-                        if save_df_to_sheet(cf_id, config_df): st.success("✅ 기본 설정 저장 완료!")
+        active_dbs = get_active_databases()
+        
+        st.markdown("<h2>⚙️ 평가 과정 개설 및 항목 구성</h2>", unsafe_allow_html=True)
+        st.caption("좌측에서 과목을 지정하고, 우측에서 수행평가 세부 항목을 구성하세요.")
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # 🚨 제일 바깥쪽 공간을 좌우 2개의 커다란 열(Column)로 분리 (세로 박스 2개 형태)
+        main_col1, main_col2 = st.columns(2)
+        
+        # -----------------------------------------------------------------
+        # ⬅️ 왼쪽 첫 번째 세로 박스: 1. 평가 과목 설정
+        # -----------------------------------------------------------------
+        with main_col1:
+            with st.container(border=True):
+                st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                
+                sel_g = st.selectbox("교과군 선택", options=["인문·사회군", "수리·과학군", "예체능군"], key="cfg_group_select_unique")
+                final_sub = st.selectbox("세부 과목", options=SUBJECT_MAP.get(sel_g, ["국어"]), key="cfg_sub_select_unique")
+                sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"], key="cfg_grade_select_unique")
+                
+                # 학기 선택의 초기 상태를 분기점으로 삼기 위해 "학기를 선택하세요." 추가
+                sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], key="cfg_sem_select_unique")
+
+        # 🚨 과목 생성 여부 및 학기 선택 상태 판별 로직
+        is_already_created = any(d['subject'] == final_sub and d['grade'] == sel_gr and d['semester'] == sel_se for d in active_dbs)
+        show_step_2 = (sel_se != "학기를 선택하세요.") or is_already_created
+
+        # -----------------------------------------------------------------
+        # ➡️ 오른쪽 두 번째 세로 박스: 2. 수행평가 항목 구성
+        # -----------------------------------------------------------------
+        with main_col2:
+            if show_step_2:
+                with st.container(border=True):
+                    st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
+                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                    
+                    # 드롭다운이 길어지지 않게 박스 안에서 한 번 더 좁게 쪼갭니다.
+                    col_cnt, col_empty = st.columns([1.2, 1])
+                    with col_cnt:
+                        item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=2, key="cfg_item_cnt_select_unique")
+                    
+                    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                    st.write("📝 **각 항목의 제목을 입력하세요:**")
+                    
+                    # 항목 개수에 따라 입력창이 2열 구조로 배치되도록 구성
+                    item_titles = []
+                    for i in range(item_count):
+                        if i % 2 == 0:
+                            sub_c1, sub_c2 = st.columns(2)
+                        
+                        target_col = sub_c1 if i % 2 == 0 else sub_c2
+                        with target_col:
+                            t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가_{i+1}", key=f"pure_item_title_{i}_unique")
+                            item_titles.append(t_in.strip())
+                    
+                    st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 20px 0;'>", unsafe_allow_html=True)
+                    
+                    btn_space1, btn_space2 = st.columns([1, 1])
+                    with btn_space2:
+                        if st.button("💾 이 과목 설정 저장하기", type="primary", use_container_width=True, key="make_partition_btn_unique"):
+                            if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
+                                st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
+                            else:
+                                cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
+                                config_df = pd.DataFrame([{"선택된반 목록": "1,2,3", "항목개수": item_count, **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}}])
+                                if save_df_to_sheet(cf_id, config_df): 
+                                    st.success("🎉 성적 대장 및 항목 구성이 클라우드에 복제되었습니다!")
+                                    st.rerun()
+            else:
+                st.markdown(
+                    """
+                    <div style='border: 2px dashed #cbd5e1; border-radius: 12px; padding: 60px 20px; text-align: center; color: #94a3b8; margin-top: 5px;'>
+                        ⬅️ 왼쪽에서 <b>[교과 과목 및 학기]</b>를 선택하시면<br>
+                        이 자리에 수행평가 항목을 설정하는 박스가 나타납니다.
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
 
     # 5. 성적 전체 일괄 업로드(CSV)
     elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV)":
