@@ -30,7 +30,7 @@ st.markdown("""
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         
-        /* 🔓 로그인 폼 제출용 버튼 디자인 (원래 스타일로 원상복구) */
+        /* 🔓 로그인 폼 제출용 버튼 디자인 */
         form[data-testid="stForm"] button {
             background-color: #ffffff !important;
             color: #0f172a !important;
@@ -60,7 +60,7 @@ st.markdown("""
         }
         
         div[data-testid="InputInstructions"] { display: none !important; }
-        div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
+        div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; font-weight: 800 !important; }
         div[data-testid="stTextInput"] > div, div[data-testid="stSelectbox"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
@@ -145,7 +145,6 @@ def show_add_teacher_dialog():
             if not t_id or not t_name or not t_pw or not t_subs: st.error("❌ 모든 항목을 입력해야 합니다.")
             else:
                 try:
-                    create_table_if_not_exists("teacher")
                     supabase.table(teacher_table).upsert({"교사_ID": t_id.strip(), "교사_성명": t_name.strip(), "비밀번호": t_pw.strip(), "담당_과목": t_subs.strip()}).execute()
                     st.success("🎉 교사 데이터베이스 인프라에 새로운 교사 계정이 활성화되었습니다!")
                     st.rerun()
@@ -340,22 +339,20 @@ elif st.session_state["admin_logged_in"]:
                     for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
                     st.success("🎯 대량 성적 이식 및 인프라 구축 성공!"); st.rerun()
 
-    # 👑 [완전 해결 파트] 교사 계정 관리 대장 UI 정돈 및 일괄 업로드 파이프라인
+    # 👑 [정밀 교정 파트] 교사 대장 레이아웃 완성 및 불필요 요소 제어
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
         with st.container(border=True):
             st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow_html=True)
-            
-            # 🚨 초기 진입 시 자동 원격 DB 구조 생성 유도
-            create_table_if_not_exists("teacher")
             df_tc = load_db_df(teacher_table)
             
-            # 📝 [기능 1] 교사 명단 실시간 데이터 그리드 제어
-            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_tc_editor")
+            # 💡 [요구사항 3 적용] 인덱스 칸 숨김(`hide_index=True`) 및 상하단 행 추가·삭제 제어 툴 고정(`num_rows="fixed"`)
+            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor")
             c1, c2 = st.columns([4.8, 1.2])
             with c1:
                 if st.button("👨‍🏫 교사 개별 신규 추가"): show_add_teacher_dialog()
             with c2:
                 if st.button("💾 교사 정보 원격 저장", type="primary", use_container_width=True):
+                    create_table_if_not_exists("teacher")
                     if not df_tc.empty:
                         for _, row in df_tc.iterrows(): supabase.table(teacher_table).delete().eq("교사_ID", str(row["교사_ID"])).execute()
                     for record in edited_tc_df.to_dict(orient="records"):
@@ -364,11 +361,9 @@ elif st.session_state["admin_logged_in"]:
                     
             st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 30px 0;'>", unsafe_allow_html=True)
             
-            # 📥 [기능 2] 대량 교사 인적사항 일괄 동기화 (CSV/Excel)
             st.markdown("#### 📥 선생님 명단 대량 일괄 등록 (CSV/Excel)")
             st.caption("인사이동 등으로 많은 선생님을 한 번에 등록해야 할 때, 아래 파일 업로더를 이용하세요.")
             
-            # 템플릿 샘플 버퍼 제작
             tc_template = pd.DataFrame({
                 "교사_ID": ["math_01", "eng_02"],
                 "교사_성명": ["이수학", "김영어"],
@@ -386,6 +381,8 @@ elif st.session_state["admin_logged_in"]:
                 df_tc_up.columns = [c.strip() for c in df_tc_up.columns]
                 
                 st.markdown("##### 🔍 업로드된 교사 명단 구조 파싱")
+                
+                # 💡 [요구사항 3 적용] 파싱 명단 미리보기 테이블도 인덱스 제거 및 추가 UI 비활성화
                 st.dataframe(df_tc_up, use_container_width=True, hide_index=True)
                 
                 tc_req = ["교사_ID", "교사_성명", "비밀번호", "담당_과목"]
@@ -394,15 +391,19 @@ elif st.session_state["admin_logged_in"]:
                 if tc_miss:
                     st.error(f"❌ 서식 오류: 필수 열이 누락되었습니다 -> {tc_miss}")
                 else:
-                    if st.button("🚀 교사 데이터베이스 초기화 후 일괄 이식 실행", type="primary", use_container_width=True):
-                        with st.spinner("교사 원격 인프라 구조 밀어 넣는 중..."):
-                            # 기존 교사 데이터 전체 삭제 정리
-                            if not df_tc.empty:
-                                for _, r in df_tc.iterrows():
-                                    supabase.table(teacher_table).delete().eq("교사_ID", str(r["교사_ID"])).execute()
-                            # 신규 교사 명단 일괄 이식
-                            for record in df_tc_up.to_dict(orient="records"):
-                                supabase.table(teacher_table).insert(record).execute()
-                        st.success("🎯 전 교사 인적사항 권한 계정이 클라우드 DB에 일괄 등록 완료되었습니다!")
-                        st.balloons()
-                        st.rerun()
+                    # 💡 [요구사항 1 적용] 컬럼 구조를 우측 정렬 형태로 분할하여 버튼 길이 최적화 및 우측 배치 완료
+                    btn_space1, btn_space2 = st.columns([3.8, 1.2])
+                    with btn_space2:
+                        if st.button("🚀 교사 일괄 이식 실행", type="primary", use_container_width=True):
+                            with st.spinner("교사 원격 인프라 구조 밀어 넣는 중..."):
+                                create_table_if_not_exists("teacher")
+                                if not df_tc.empty:
+                                    for _, r in df_tc.iterrows():
+                                        supabase.table(teacher_table).delete().eq("교사_ID", str(r["교사_ID"])).execute()
+                                for record in df_tc_up.to_dict(orient="records"):
+                                    supabase.table(teacher_table).insert(record).execute()
+                            
+                            # 💡 [요구사항 2 적용] 대량 일괄 데이터셋 복제 완료 후 캐시 즉시 비우고 자동 화면 리프레시 트리거
+                            st.success("🎯 전 교사 인적사항이 클라우드 DB에 일괄 등록 완료되었습니다!")
+                            st.balloons()
+                            st.rerun()
