@@ -527,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                     display_cols.extend(["성적조회 횟수", "최종 확인일시"])
                     st.dataframe(render_df[[c for c in display_cols if c in render_df.columns]].fillna("-"), use_container_width=True, hide_index=True)
 
-    # 2. 개인별 성적 입력 (학생 추가 버튼 신설 & 점수 열 복구 완료)
+    # 2. 개인별 성적 입력
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
             st.markdown("<h3>📝 개인별 성적 데이터 편집</h3>", unsafe_allow_html=True)
@@ -554,11 +554,10 @@ elif st.session_state["admin_logged_in"]:
                         score_headers = [cfg_dict.get(f'항목{k+1}_이름', f'수행{k+1}') for k in range(cnt)]
                     else: score_headers = []
                     
-                    # 🚨 잃어버렸던 성적 데이터 열 복구 완료!!
                     display_cols = ["반", "번호", "이름"]
                     if "school_email" in db_df.columns: display_cols.append("school_email")
                     if "비밀번호" in db_df.columns: display_cols.append("비밀번호")
-                    display_cols.extend(score_headers) # 핵심 복구 구문
+                    display_cols.extend(score_headers) 
                     
                     valid_cols = [c for c in display_cols if c in db_df.columns]
                     if selected_class_ed != "전체" and "반" in db_df.columns:
@@ -568,7 +567,6 @@ elif st.session_state["admin_logged_in"]:
                         filtered_idx = db_df.index
                         edit_target_df = db_df[valid_cols]
                         
-                    # 🚨 disabled 해제로 표 전체 100% 수정 가능하게 변경!
                     edited_df = st.data_editor(
                         edit_target_df, 
                         use_container_width=True, 
@@ -580,7 +578,8 @@ elif st.session_state["admin_logged_in"]:
                     
                     bc1, bc2, bc3 = st.columns([3.6, 1.2, 1.2])
                     with bc2:
-                        if st.button("➕ 학생 개별 추가", use_container_width=True, kind="secondary", key="add_student_dialog_btn"):
+                        # 🚨 오류 원인이었던 kind="secondary"를 type="secondary"로 수정 완료!
+                        if st.button("➕ 학생 개별 추가", use_container_width=True, type="secondary", key="add_student_dialog_btn"):
                             show_add_student_dialog(sf_id, db_df)
                     with bc3:
                         if st.button("💾 수정 사항 저장", use_container_width=True, type="primary", key="save_edit_btn_unique"):
