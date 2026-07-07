@@ -30,7 +30,7 @@ st.markdown("""
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         
-        /* 🔓 로그인 폼 제출용 버튼 디자인 (원래 스타일로 원상복구) */
+        /* 🔓 로그인 폼 제출용 버튼 디자인 */
         form[data-testid="stForm"] button {
             background-color: #ffffff !important;
             color: #0f172a !important;
@@ -68,7 +68,7 @@ st.markdown("""
         /* 로그인 박스 */
         div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; white-space: nowrap !important; text-align: center !important; margin: 0 auto 20px auto !important; font-weight: 800 !important; color: #0f172a !important; }
-        .footer-container { width: 100%; display: flex; center; margin-top: 25px; }
+        .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
         .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
     </style>
@@ -83,68 +83,32 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 student_table = "st_info_2_2026_1"
 teacher_table = "teacher_accounts"
-config_table = "subject_configs"  # 💡 과목별 수행평가 항목 설정을 저장할 신규 테이블 정의
+config_table = "subject_configs"
 
-# =========================================================================
-# 🚀 원격 테이블 자동 생성 엔진 (과목 설정 테이블 생성 규격 추가)
-# =========================================================================
-def create_table_if_not_exists(table_type):
-    try:
-        if table_type == "teacher":
-            supabase.rpc("exec_sql", {"query": f"""
-                CREATE TABLE IF NOT EXISTS public.{teacher_table} (
-                    "교사_ID" text PRIMARY KEY,
-                    "교사_성명" text,
-                    "비밀번호" text,
-                    "담당_과목" text
-                );
-                ALTER TABLE public.{teacher_table} DISABLE ROW LEVEL SECURITY;
-            """}).execute()
-        elif table_type == "student":
-            supabase.rpc("exec_sql", {"query": f"""
-                CREATE TABLE IF NOT EXISTS public.{student_table} (
-                    "반" int8,
-                    "번호" int8,
-                    "이름" text,
-                    "학교 이메일" text,
-                    "비밀번호" int8,
-                    "수행평가1" int8 DEFAULT 0,
-                    "수행평가2" int8 DEFAULT 0,
-                    "수행평가3" int8 DEFAULT 0,
-                    "성적조회 횟수" int8 DEFAULT 0,
-                    "최종 확인일시" text DEFAULT '-',
-                    PRIMARY KEY ("반", "번호")
-                );
-                ALTER TABLE public.{student_table} DISABLE ROW LEVEL SECURITY;
-            """}).execute()
-        elif table_type == "config":
-            # 💡 과목별 수행평가 세부 구성 정보를 기억할 유연한 키-밸류 테이블 생성
-            supabase.rpc("exec_sql", {"query": f"""
-                CREATE TABLE IF NOT EXISTS public.{config_table} (
-                    "subject_key" text PRIMARY KEY,
-                    "item_count" int8 DEFAULT 3,
-                    "item1_name" text DEFAULT '수행평가1',
-                    "item2_name" text DEFAULT '수행평가2',
-                    "item3_name" text DEFAULT '수행평가3'
-                );
-                ALTER TABLE public.{config_table} DISABLE ROW LEVEL SECURITY;
-            """}).execute()
-    except Exception:
-        pass
-
-create_table_if_not_exists("teacher")
-create_table_if_not_exists("student")
-create_table_if_not_exists("config")
-
+# 🚨 [PGRST202 에러 완벽 해결] RPC 호출 제거하고, 기본 API 통신으로 예외 우회 처리하도록 간소화
 def load_db_df(table_name):
     try:
         response = supabase.table(table_name).select("*").execute()
         return pd.DataFrame(response.data)
-    except:
+    except Exception as e:
         return pd.DataFrame()
 
 # =========================================================================
-# ➕ [다이얼로그 팝업창] 
+# ➕ [조회/매칭 과목 구성 정보 가져오기용 헬퍼 함수]
+# =========================================================================
+def get_subject_item_names(subject_key):
+    cfg_df = load_db_df(config_table)
+    if not cfg_df.empty and "subject_key" in cfg_df.columns:
+        match = cfg_df[cfg_df["subject_key"] == subject_key]
+        if not match.empty:
+            row = match.iloc[0]
+            count = int(row.get("item_count", 3))
+            titles = [row.get("item1_name", "수행평가1"), row.get("item2_name", "수행평가2"), row.get("item3_name", "수행평가3")]
+            return count, titles
+    return 3, ["수행평가1", "수행평가2", "수행평가3"]
+
+# =========================================================================
+# ➕ [다이얼로그 팝업창 모듈]
 # =========================================================================
 @st.dialog("➕ 담당 교사 개별 추가")
 def show_add_teacher_dialog():
@@ -160,7 +124,7 @@ def show_add_teacher_dialog():
             else:
                 try:
                     supabase.table(teacher_table).upsert({"교사_ID": t_id.strip(), "교사_성명": t_name.strip(), "비밀번호": t_pw.strip(), "담당_과목": t_subs.strip()}).execute()
-                    st.success("🎉 교사 데이터베이스 인프라에 새로운 교사 계정이 활성화되었습니다!")
+                    st.success("🎉 교사 계정이 활성화되었습니다!")
                     st.rerun()
                 except: st.error("❌ 등록 실패")
 
@@ -181,7 +145,7 @@ def show_add_student_dialog():
             else:
                 try:
                     supabase.table(student_table).upsert({"반": int(new_ban), "번호": int(new_num), "이름": new_name.strip(), "학교 이메일": new_email.strip(), "비밀번호": int(new_pw), "수행평가1": 0, "수행평가2": 0, "수행평가3": 0, "성적조회 횟수": 0, "최종 확인일시": "-"}).execute()
-                    st.success("🎉 학생 데이터가 원격 DB에 주입되었습니다!")
+                    st.success("🎉 학생 데이터가 주입되었습니다!")
                     st.rerun()
                 except: st.error("❌ 학생 추가 실패")
 
@@ -189,9 +153,9 @@ def show_add_student_dialog():
 def show_result_dialog(student_data):
     st.markdown(f"<div><b>{student_data['이름']}</b> 학생의 실시간 성적 내역입니다.</div>", unsafe_allow_html=True)
     sc1, sc2, sc3 = st.columns(3)
-    sc1.metric("📝 수행평가 1차", f"{int(student_data['수행평가1'])} 점")
-    sc2.metric("📝 수행평가 2차", f"{int(student_data['수행평가2'])} 점")
-    sc3.metric("📝 수행평가 3차", f"{int(student_data['수행평가3'])} 점")
+    sc1.metric("📝 수행평가 1차", f"{int(student_data.get('수행평가1', 0))} 점")
+    sc2.metric("📝 수행평가 2차", f"{int(student_data.get('수행평가2', 0))} 점")
+    sc3.metric("📝 수행평가 3차", f"{int(student_data.get('수행평가3', 0))} 점")
     if "has_counted" not in st.session_state:
         new_count = int(student_data.get("성적조회 횟수", 0)) + 1
         supabase.table(student_table).upsert({"반": int(student_data["반"]), "번호": int(student_data["번호"]), "성적조회 횟수": new_count, "최종 확인일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}).execute()
@@ -365,27 +329,83 @@ elif st.session_state["admin_logged_in"]:
 
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
+    # 📊 [그림 2 요구사항 완벽 반영] 학생 조회 현황 모니터링에 과목 필터 선택기 장착 및 동적 연동
     if menu_selection == "▶ 학생 조회 현황 모니터링":
+        with st.container(border=True):
+            st.markdown("<h3>🔍 조회 관측할 대상 교과 선택</h3>", unsafe_allow_html=True)
+            fl1, fl2, fl3, fl4 = st.columns(4)
+            with fl1: f_group = st.selectbox("교과군 선택", ["수리·과학군", "인문·사회군", "예체능군"], key="mon_g")
+            with fl2: f_sub = st.selectbox("세부 과목", ["정보", "국어", "수학", "영어"], key="mon_s")
+            with fl3: f_grade = st.selectbox("학년 지정", ["2학년", "1학년", "3학년"], key="mon_gr")
+            with fl4: f_term = st.selectbox("학기 선택", ["2026학년도 1학기", "2026학년도 2학기"], key="mon_t")
+            
+            # 동적 과목 키 결합 및 수행평가 커스텀 헤더 제목 불러오기 연동
+            subject_key = f"{f_sub}_{f_grade}_{f_term}".replace(" ", "_")
+            item_count, item_titles = get_subject_item_names(subject_key)
+
         with st.container(border=True):
             if df.empty: st.info("📢 현재 데이터베이스가 비어있습니다.")
             else:
                 sel_c = st.selectbox("🎯 학급 선택", options=["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())])
                 r_df = df.copy()
                 if sel_c != "전체 학급 보기": r_df = r_df[r_df['반'].astype(int) == int(sel_c.replace("반",""))]
-                st.dataframe(r_df[["반", "번호", "이름", "학교 이메일", "수행평가1", "수행평가2", "수행평가3", "성적조회 횟수", "최종 확인일시"]].fillna("-"), use_container_width=True, hide_index=True)
+                
+                # 💡 DB의 수행평가1,2,3을 교사 설정을 토대로 화면 표시 열 이름으로 매핑 변경
+                display_cols = ["반", "번호", "이름", "학교 이메일"]
+                rename_map = {}
+                for idx in range(item_count):
+                    db_col = f"수행평가{idx+1}"
+                    view_title = item_titles[idx]
+                    if db_col in r_df.columns:
+                        display_cols.append(db_col)
+                        rename_map[db_col] = view_title
+                display_cols += ["성적조회 횟수", "최종 확인일시"]
+                
+                final_view_df = r_df[display_cols].rename(columns=rename_map)
+                st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True)
 
+    # 📝 [그림 2 요구사항 완벽 반영] 개인별 성적 입력에 과목 필터 선택기 장착 및 동적 열 수정 에디터 연동
     elif menu_selection == "▶ 개인별 성적 입력":
+        with st.container(border=True):
+            st.markdown("<h3>🔍 성적을 입력할 대상 교과 선택</h3>", unsafe_allow_html=True)
+            fl1, fl2, fl3, fl4 = st.columns(4)
+            with fl1: f_group = st.selectbox("교과군 선택", ["수리·과학군", "인문·사회군", "예체능군"], key="edt_g")
+            with fl2: f_sub = st.selectbox("세부 과목", ["정보", "국어", "수학", "영어"], key="edt_s")
+            with fl3: f_grade = st.selectbox("학년 지정", ["2학년", "1학년", "3학년"], key="edt_gr")
+            with fl4: f_term = st.selectbox("학기 선택", ["2026학년도 1학기", "2026학년도 2학기"], key="edt_t")
+            
+            subject_key = f"{f_sub}_{f_grade}_{f_term}".replace(" ", "_")
+            item_count, item_titles = get_subject_item_names(subject_key)
+
         with st.container(border=True):
             if df.empty: st.info("등록된 학생 데이터가 없습니다.")
             else:
                 sel_c = st.selectbox("👥 학반 필터링", options=["전체"] + [f"{x}반" for x in sorted(df['반'].unique())])
                 f_idx = df[df["반"].astype(int) == int(sel_c.replace("반", ""))].index if sel_c != "전체" else df.index
-                edited_df = st.data_editor(df.loc[f_idx, ["반", "번호", "이름", "수행평가1", "수행평가2", "수행평가3"]], use_container_width=True, disabled=["반", "번호", "이름"], hide_index=True)
+                
+                # 에디터에 표시할 기본 인적사항 및 다이내믹 수행 점수 컬럼 정의
+                target_cols = ["반", "번호", "이름"]
+                rename_map = {}
+                db_cols_ordered = []
+                for idx in range(item_count):
+                    db_col = f"수행평가{idx+1}"
+                    db_cols_ordered.append(db_col)
+                    target_cols.append(db_col)
+                    rename_map[db_col] = item_titles[idx]
+                
+                sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
+                disabled_list = ["반", "번호", "이름"]
+                
+                edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_list, hide_index=True)
+                
                 if st.button("💾 성적 저장하기", type="primary", use_container_width=True):
                     for idx_pos, r_idx in enumerate(f_idx):
-                        for col in edited_df.columns: df.loc[r_idx, col] = edited_df.iloc[idx_pos][col]
+                        # 에디터에서 한글 커스텀 명칭으로 수정된 행의 값을 추출해 원래 DB 필드명으로 백스왑 역이식
+                        for idx_c, db_col in enumerate(db_cols_ordered):
+                            view_title = item_titles[idx_c]
+                            df.loc[r_idx, db_col] = edited_df.iloc[idx_pos][view_title]
                         supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
-                    st.success("🎉 변경된 수행 점수가 실시간 저장되었습니다!"); st.rerun()
+                    st.success("🎉 변경된 수행 점수가 원격 데이터베이스에 안전하게 실시간 저장되었습니다!"); st.rerun()
 
     elif menu_selection == "▶ 학생 정보 관리":
         with st.container(border=True):
@@ -406,7 +426,6 @@ elif st.session_state["admin_logged_in"]:
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
                         st.success("🎉 인적사항이 동기화되었습니다!"); st.rerun()
 
-    # 👑 [완전 복구 및 동적 연동 완료 파트] 평가 대상 과목 및 수행평가 세부 구성 엔진
     elif menu_selection == "▶ 평가 대상 과목 구성":
         st.markdown("<h2>🎯 평가 대상 과목 및 항목 관리 (자동 실시간 연동 중)</h2>", unsafe_allow_html=True)
         main_col1, main_col2 = st.columns(2)
@@ -419,14 +438,11 @@ elif st.session_state["admin_logged_in"]:
                 sel_gr = st.selectbox("학년 지정", options=["2학년", "1학년", "3학년"])
                 sel_se = st.selectbox("학기 선택", options=["2026학년도 1학기", "2026학년도 2학기"])
                 
-                # 원격 수파베이스 매칭용 유니크 식별 키 결합 도출
                 subject_key = f"{final_sub}_{sel_gr}_{sel_se}".replace(" ", "_")
 
-        # 🔍 수파베이스 config 테이블에서 이 과목의 과거 세부 항목 설정 내역 호출
         cfg_df = load_db_df(config_table)
         db_match = cfg_df[cfg_df["subject_key"] == subject_key] if not cfg_df.empty else pd.DataFrame()
         
-        # 과거 기록이 존재하면 불러오고, 없으면 기본값(3개 항목) 로드
         if not db_match.empty:
             saved_info = db_match.iloc[0]
             init_count = int(saved_info.get("item_count", 3))
@@ -440,9 +456,8 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 
-                # 항목 개수 조절 에디터
                 item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3], index=(init_count - 1))
-                st.write("📝 **각 항목의 제목을 입력하세요 (수정 후 저장 시 즉시 DB 반영):**")
+                st.write("📝 **각 항목의 제목을 입력하세요:**")
                 
                 item_titles = []
                 for i in range(item_count):
@@ -452,11 +467,9 @@ elif st.session_state["admin_logged_in"]:
                 
                 st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 20px 0;'>", unsafe_allow_html=True)
                 
-                # 우측 하단 콤팩트 버튼 배치 레이아웃 가공
                 b_space1, b_space2 = st.columns([3.8, 1.2])
                 with b_space2:
                     if st.button("💾 이 과목 설정 저장하기", type="primary", use_container_width=True):
-                        # 수파베이스용 데이터셋 패킹
                         config_record = {
                             "subject_key": subject_key,
                             "item_count": item_count,
@@ -464,9 +477,8 @@ elif st.session_state["admin_logged_in"]:
                             "item2_name": item_titles[1] if item_count >= 2 else "-",
                             "item3_name": item_titles[2] if item_count >= 3 else "-"
                         }
-                        # 원격 Supabase DB 초기화 동기화 업서트 진행
                         supabase.table(config_table).upsert(config_record).execute()
-                        st.success("🎉 수행평가 항목 구성이 클라우드 DB 인프라에 안전하게 세이브되었습니다!")
+                        st.success("🎉 수행평가 항목 구성이 클라우드 DB에 안전하게 세이브되었습니다!")
                         st.rerun()
 
     elif menu_selection == "▶ 성적 일괄 업로드 (CSV / Excel)":
@@ -491,7 +503,6 @@ elif st.session_state["admin_logged_in"]:
                 btn_space1, btn_space2 = st.columns([3.8, 1.2])
                 with btn_space2:
                     if st.button("🚀 학생 명단 일괄 이식 실행", type="primary", use_container_width=True):
-                        create_table_if_not_exists("student")
                         if not df.empty:
                             for _, r in df.iterrows(): supabase.table(student_table).delete().eq("반", int(r["반"])).eq("번호", int(r["번호"])).execute()
                         for c in ["수행평가1", "수행평가2", "수행평가3", "성적조회 횟수"]:
@@ -502,4 +513,56 @@ elif st.session_state["admin_logged_in"]:
 
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
         with st.container(border=True):
-            st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow
+            st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow_html=True)
+            df_tc = load_db_df(teacher_table)
+            
+            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor")
+            c1, c2 = st.columns([4.8, 1.2])
+            with c1:
+                if st.button("👨‍🏫 교사 개별 신규 추가"): show_add_teacher_dialog()
+            with c2:
+                if st.button("💾 교사 정보 원격 저장", type="primary", use_container_width=True):
+                    if not df_tc.empty:
+                        for _, row in df_tc.iterrows(): supabase.table(teacher_table).delete().eq("교사_ID", str(row["교사_ID"])).execute()
+                    for record in edited_tc_df.to_dict(orient="records"):
+                        if record.get("교사_ID"): supabase.table(teacher_table).upsert(record).execute()
+                    st.success("🎉 교사 권한 정보 세이브 완료!"); st.rerun()
+                    
+            st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 30px 0;'>", unsafe_allow_html=True)
+            
+            st.markdown("#### 📥 선생님 명단 대량 일괄 등록 (CSV/Excel)")
+            st.caption("인사이동 등으로 많은 선생님을 한 번에 등록해야 할 때, 아래 파일 업로더를 이용하세요.")
+            
+            tc_template = pd.DataFrame({
+                "교사_ID": ["math_01", "eng_02"], "교사_성명": ["이수학", "김영어"],
+                "비밀번호": ["1234", "1234"], "담당_과목": ["수학", "영어, 한문"]
+            })
+            tc_csv = tc_template.to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 교사 일괄 등록용 서식 샘플(.CSV) 다운로드", data=tc_csv, file_name="교사일괄등록_양식.csv", mime="text/csv")
+            
+            tc_file = st.file_uploader("선생님 명단 파일 업로드", type=["csv", "xlsx"], key="teacher_file_uploader_master")
+            
+            if tc_file:
+                df_tc_up = pd.read_csv(tc_file) if tc_file.name.endswith(".csv") else pd.read_excel(tc_file)
+                df_tc_up.columns = [c.strip() for c in df_tc_up.columns]
+                
+                st.markdown("##### 🔍 업로드된 교사 명단 구조 파싱")
+                st.dataframe(df_tc_up, use_container_width=True, hide_index=True)
+                
+                tc_req = ["교사_ID", "교사_성명", "비밀번호", "담당_과목"]
+                tc_miss = [c for c in tc_req if c not in df_tc_up.columns]
+                
+                if tc_miss:
+                    st.error(f"❌ 서식 오류: 필수 열이 누락되었습니다 -> {tc_miss}")
+                else:
+                    btn_space1, btn_space2 = st.columns([3.8, 1.2])
+                    with btn_space2:
+                        if st.button("🚀 교사 일괄 이식 실행", type="primary", use_container_width=True, key="master_tc_upload_trigger_btn"):
+                            if not df_tc.empty:
+                                for _, r in df_tc.iterrows():
+                                    supabase.table(teacher_table).delete().eq("교사_ID", str(r["교사_ID"])).execute()
+                            for record in df_tc_up.to_dict(orient="records"):
+                                supabase.table(teacher_table).insert(record).execute()
+                            st.success("🎯 전 교사 인적사항 권한 계정이 일괄 등록 완료되었습니다!")
+                            st.balloons()
+                            st.rerun()
