@@ -32,7 +32,7 @@ st.markdown("""
         
         /* 🔓 로그인 폼 제출용 버튼 디자인 */
         form[data-testid="stForm"] button {
-            background-color: #ffffff !important;
+            background-color: #333333 !important;
             color: #0f172a !important;
             font-weight: 700 !important;
             border: 1px solid #cbd5e1 !important;
@@ -49,7 +49,7 @@ st.markdown("""
         
         /* ✨ [수정 완료] 라디오 버튼 박스 정중앙 정렬 */
         div[data-testid="stForm"] div[data-testid="stRadio"] { 
-            margin-bottom: 25px !important; 
+            margin-bottom: 95px !important; 
             width: 100% !important; 
             display: flex !important;
             justify-content: center !important;
