@@ -10,7 +10,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="수행평가 점수 확인 시스템 (Supabase)", layout="wide")
 
 # =========================================================================
-# 🎨 [디자인 가시성 패치] 디자인 통합 및 로그인 버튼 파란색 원상복구
+# 🎨 [디자인 가시성 패치] 디자인 통합 및 로그인 버튼 원래 기본 스타일 복구
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,20 +30,21 @@ st.markdown("""
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         
-        /* 🔥 로그인 폼 버튼 선명한 파란색 강제 지정 */
-        form[data-testid="stForm"] button { 
-            background-color: #3b82f6 !important; 
-            color: #ffffff !important; 
-            font-weight: 800 !important; 
-            border: none !important; 
-            border-radius: 6px !important; 
-            width: 100% !important; 
-            padding: 12px 0 !important; 
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2) !important;
+        /* 🔓 로그인 폼 제출용 버튼 디자인 (원래 스타일로 원상복구) */
+        form[data-testid="stForm"] button {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            width: 100% !important;
+            padding: 10px 0 !important;
+            box-shadow: none !important;
         }
-        form[data-testid="stForm"] button:hover { 
-            background-color: #2563eb !important; 
-            color: #ffffff !important;
+        form[data-testid="stForm"] button:hover {
+            background-color: #f8fafc !important;
+            border-color: #3b82f6 !important;
+            color: #2563eb !important;
         }
         
         div[data-testid="InputInstructions"] { display: none !important; }
@@ -187,7 +188,7 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (오타 및 디자인 패치 완료)
+# 🔓 [1단계] 클린 통합 로그인 시스템 (오타 제거 및 원래 버튼 스타일 적용)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -198,7 +199,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
             b_col2 = st.columns([1.0, 1.8, 1.0])[1]
-            # ⭐ st_submit_button 오타를 form_submit_button 으로 완벽 수정!
+            # 폼 제출 규격 오류 정밀 수정 완료
             submit_active = b_col2.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
