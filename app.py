@@ -67,20 +67,28 @@ st.markdown("""
 
         div[data-testid="InputInstructions"] { display: none !important; }
 
-        /* 🚨 [시인성 강화] 드롭다운 및 텍스트 입력창 라벨 굵고 뚜렷하게 */
-        div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
+        /* 🚨 [시인성 강화] 드롭다운 및 텍스트 입력창 제목(라벨) 굵고 뚜렷하게 */
+        div[data-testid="stSelectbox"] label p, 
+        div[data-testid="stTextInput"] label p { 
+            font-weight: 800 !important; 
+            color: #1e293b !important; 
+            font-size: 15px !important; 
+        }
 
-        /* 🚨 [핵심 수정: 평상시 테두리 진한 회색으로 강제] 드롭다운 & 텍스트 박스 */
+        /* 🚨 [핵심 수정: Streamlit 방어막 관통] 평상시 뚜렷한 진회색 테두리 */
         div[data-testid="stTextInput"] div[data-baseweb="input"],
+        div[data-testid="stSelectbox"] div[data-baseweb="select"],
         div[data-testid="stSelectbox"] div[data-baseweb="select"] > div { 
             background-color: #ffffff !important; 
-            border: 1px solid #94a3b8 !important; /* 드롭다운 자식태그까지 진회색 완벽 적용 */
+            border: 1px solid #94a3b8 !important; /* Base Web을 뚫고 무조건 진회색 표출 */
             border-radius: 6px !important; 
             transition: all 0.2s ease-in-out !important; 
+            box-shadow: none !important; /* 기본 방어막 그림자 제거 */
         }
         
-        /* 클릭 시 파란색 애니메이션 */
+        /* 🎯 [클릭 시 파란색 애니메이션] */
         div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
+        div[data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within,
         div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
             border: 2px solid #3b82f6 !important;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
