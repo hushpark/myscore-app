@@ -30,7 +30,7 @@ st.markdown("""
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         
-       /* 로그인 폼 제출용 버튼 디자인 강제 지정 */
+        /* 로그인 폼 제출용 버튼 디자인 강제 지정 */
         form[data-testid="stForm"] button {
             background-color: #ffffff !important;
             color: #0f172a !important;
@@ -47,7 +47,7 @@ st.markdown("""
             color: #2563eb !important;
         }
         
-        /* ✨ [수정 완료] 라디오 버튼 박스 정중앙 정렬 */
+        /* ✨ 라디오 버튼 박스 정중앙 정렬 */
         div[data-testid="stForm"] div[data-testid="stRadio"] { 
             margin-bottom: 25px !important; 
             width: 100% !important; 
@@ -70,8 +70,6 @@ st.markdown("""
         /* 로그인 박스 */
         div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; white-space: nowrap !important; text-align: center !important; margin: 0 auto 20px auto !important; font-weight: 800 !important; color: #0f172a !important; }
-        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
-        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
         .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
         .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
@@ -343,10 +341,13 @@ elif st.session_state["admin_logged_in"]:
                     for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
                     st.success("🎯 대량 성적 이식 및 인프라 구축 성공!"); st.rerun()
 
+    # 👑 이 부분의 st.markdown 타이틀 렌더링 형식을 HTML 관통 코드로 수정 완료!
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
         with st.container(border=True):
-            st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>")
+            st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow_html=True)
             df_tc = load_db_df(teacher_table)
+            
+            # 안전한 테이블 로드 및 명단 동기화
             edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_tc_editor")
             c1, c2 = st.columns([4.8, 1.2])
             with c1:
