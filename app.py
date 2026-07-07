@@ -67,36 +67,30 @@ st.markdown("""
 
         div[data-testid="InputInstructions"] { display: none !important; }
 
-        /* 🚨 [시인성 강화] 드롭다운 및 텍스트 입력창 제목(라벨) 굵고 뚜렷하게 */
-        div[data-testid="stSelectbox"] label p, 
-        div[data-testid="stTextInput"] label p { 
-            font-weight: 800 !important; 
-            color: #1e293b !important; 
-            font-size: 15px !important; 
-        }
+        /* 🚨 [시인성 강화] 라벨 제목 굵게 */
+        div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
 
-        /* 🚨 [핵심 수정: Streamlit 방어막 관통] 평상시 뚜렷한 진회색 테두리 */
+        /* 🚨 [드롭다운 & 입력창 테두리 강제 부여] */
         div[data-testid="stTextInput"] div[data-baseweb="input"],
-        div[data-testid="stSelectbox"] div[data-baseweb="select"],
-        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div { 
+        div[data-testid="stSelectbox"] > div[data-baseweb="select"],
+        div[data-testid="stSelectbox"] > div { 
             background-color: #ffffff !important; 
-            border: 1px solid #94a3b8 !important; /* Base Web을 뚫고 무조건 진회색 표출 */
+            border: 1px solid #94a3b8 !important; /* 드롭다운 최상단에 테두리 박음 */
             border-radius: 6px !important; 
             transition: all 0.2s ease-in-out !important; 
-            box-shadow: none !important; /* 기본 방어막 그림자 제거 */
+            box-shadow: none !important;
         }
         
-        /* 🎯 [클릭 시 파란색 애니메이션] */
+        /* 🎯 클릭 시 파란색 애니메이션 */
         div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
-        div[data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within,
-        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
+        div[data-testid="stSelectbox"] > div:focus-within {
             border: 2px solid #3b82f6 !important;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
         }
 
         div[data-testid="stTextInput"] div[data-baseweb="base-input"], div[data-testid="stTextInput"] input { background-color: transparent !important; }
 
-        /* 로그인 박스 및 기타 설정 */
+        /* 로그인 박스 */
         div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; white-space: nowrap !important; text-align: center !important; margin: 0 auto 20px auto !important; font-weight: 800 !important; color: #0f172a !important; }
         div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
@@ -107,8 +101,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 백엔드 구글 시트 연동 함수 ---
+# =========================================================================
+# 🚀 [속도 최적화] 구글 로그인 정보 영구 기억 (캐싱)
+# =========================================================================
+@st.cache_resource
 def init_google_sheet_client():
+    """구글 로그인 작업을 한 번만 수행하고 서버에 저장하여 엄청난 렉을 없앱니다!"""
     try: return gspread.authorize(Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]))
     except: return None
 
@@ -461,7 +459,6 @@ elif st.session_state["admin_logged_in"]:
         st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 선생님 접속 중</div>', unsafe_allow_html=True)
         st.markdown("---")
         
-        # 🚨 [순서 변경] 개인별 성적 입력 ➡️ 학생 정보 관리 순으로 메뉴 재배치!
         menu_selection = st.radio("메뉴 선택", [
             "▶ 학생 조회 현황 모니터링", 
             "▶ 개인별 성적 입력", 
@@ -516,7 +513,6 @@ elif st.session_state["admin_logged_in"]:
                     else: score_headers = []
                     
                     display_cols = ["반", "번호", "이름"]
-                    # 이메일 유연한 탐색
                     for col in ["학교 이메일", "school_email", "이메일"]:
                         if col in render_df.columns: display_cols.append(col); break
                         
@@ -524,7 +520,7 @@ elif st.session_state["admin_logged_in"]:
                     display_cols.extend(["성적조회 횟수", "최종 확인일시"])
                     st.dataframe(render_df[[c for c in display_cols if c in render_df.columns]].fillna("-"), use_container_width=True, hide_index=True)
 
-    # 🚨 2. 개인별 성적 입력 (학생 기본정보 잠금, 오직 성적만 수정)
+    # 2. 개인별 성적 입력
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
             st.markdown("<h3>📝 개인별 성적 데이터 입력</h3>", unsafe_allow_html=True)
@@ -562,7 +558,6 @@ elif st.session_state["admin_logged_in"]:
                         filtered_idx = db_df.index
                         edit_target_df = db_df[valid_cols]
                         
-                    # 🚨 성적 입력 모드: 반, 번호, 이름은 잠금 처리하여 보호
                     edited_df = st.data_editor(
                         edit_target_df, 
                         use_container_width=True, 
@@ -580,7 +575,7 @@ elif st.session_state["admin_logged_in"]:
                                 for col in edited_df.columns: db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
                             if save_df_to_sheet(sf_id, db_df): st.success("🎉 성적이 완벽하게 저장되었습니다!"); st.rerun()
 
-    # 🚨 3. 학생 정보 관리 (성적 제외, 학생 추가 및 기본 정보만 수정)
+    # 3. 학생 정보 관리
     elif menu_selection == "▶ 학생 정보 관리":
         with st.container(border=True):
             st.markdown("<h3>📇 학생 기본 정보 관리</h3>", unsafe_allow_html=True)
@@ -602,7 +597,6 @@ elif st.session_state["admin_logged_in"]:
                 
                 if not db_df.empty:
                     display_cols = ["반", "번호", "이름"]
-                    # 이메일, 비밀번호 이름 유연하게 찾기
                     for col in ["학교 이메일", "school_email", "이메일"]:
                         if col in db_df.columns: display_cols.append(col); break
                     for col in ["비밀번호", "비번"]:
@@ -616,7 +610,6 @@ elif st.session_state["admin_logged_in"]:
                         filtered_idx = db_df.index
                         edit_target_df = db_df[valid_cols]
                         
-                    # 학생 정보 관리는 잠금장치(disabled) 없이 자유롭게 수정 가능!
                     edited_df = st.data_editor(
                         edit_target_df, 
                         use_container_width=True, 
