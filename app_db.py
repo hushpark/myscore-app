@@ -10,7 +10,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="수행평가 점수 확인 시스템 (Supabase)", layout="wide")
 
 # =========================================================================
-# 🎨 [디자인 가시성 패치] 디자인 통합 및 접속 모드 라디오 버튼 정중앙 정렬
+# 🎨 [디자인 가시성 패치] 디자인 통합 및 로그인 버튼 원래 기본 스타일 복구
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,7 +30,7 @@ st.markdown("""
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         
-        /* 로그인 폼 제출용 버튼 디자인 강제 지정 */
+        /* 🔓 로그인 폼 제출용 버튼 디자인 (원래 스타일로 원상복구) */
         form[data-testid="stForm"] button {
             background-color: #ffffff !important;
             color: #0f172a !important;
@@ -47,29 +47,15 @@ st.markdown("""
             color: #2563eb !important;
         }
         
-        /* ✨ 라디오 버튼 박스 정중앙 정렬 */
-        div[data-testid="stForm"] div[data-testid="stRadio"] { 
-            margin-bottom: 25px !important; 
-            width: 100% !important; 
-            display: flex !important;
-            justify-content: center !important;
-        }
-        div[data-testid="stForm"] div[role="radiogroup"] { 
-            display: flex !important; 
-            gap: 35px !important; 
-            align-items: center !important; 
-            justify-content: center !important;
-        }
-        
         div[data-testid="InputInstructions"] { display: none !important; }
         div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
         div[data-testid="stTextInput"] > div, div[data-testid="stSelectbox"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
         
-        /* 로그인 박스 */
-        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
-        div[data-testid="stForm"] h2 { font-size: 26px !important; white-space: nowrap !important; text-align: center !important; margin: 0 auto 20px auto !important; font-weight: 800 !important; color: #0f172a !important; }
+        /* 로그인 상자 외곽 레이아웃 */
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
+        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
         .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
         .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
@@ -202,7 +188,7 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 (중앙 정렬 완료)
+# 🔓 [1단계] 클린 통합 로그인 시스템 (오타 제거 및 원래 버튼 스타일 적용)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -341,13 +327,13 @@ elif st.session_state["admin_logged_in"]:
                     for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
                     st.success("🎯 대량 성적 이식 및 인프라 구축 성공!"); st.rerun()
 
-    # 👑 이 부분의 st.markdown 타이틀 렌더링 형식을 HTML 관통 코드로 수정 완료!
+    # 👑 [수정 파트] 교사 계정 관리 대장 기능 완전 이식 및 서식 깨짐 교정 완료!
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
         with st.container(border=True):
             st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow_html=True)
             df_tc = load_db_df(teacher_table)
             
-            # 안전한 테이블 로드 및 명단 동기화
+            # 📝 [기능 1] 교사 명단 실시간 데이터 그리드 제어
             edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_tc_editor")
             c1, c2 = st.columns([4.8, 1.2])
             with c1:
@@ -360,3 +346,48 @@ elif st.session_state["admin_logged_in"]:
                     for record in edited_tc_df.to_dict(orient="records"):
                         if record.get("교사_ID"): supabase.table(teacher_table).upsert(record).execute()
                     st.success("🎉 교사 권한 정보 세이브 완료!"); st.rerun()
+                    
+            st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 30px 0;'>", unsafe_allow_html=True)
+            
+            # 📥 [기능 2] 대량 교사 인적사항 일괄 동기화 (CSV/Excel)
+            st.markdown("#### 📥 선생님 명단 대량 일괄 등록 (CSV/Excel)")
+            st.caption("인사이동 등으로 많은 선생님을 한 번에 등록해야 할 때, 아래 파일 업로더를 이용하세요.")
+            
+            # 서식 다운로드용 기본 샘플 템플릿 생성
+            tc_template = pd.DataFrame({
+                "교사_ID": ["math_01", "eng_02"],
+                "교사_성명": ["이수학", "김영어"],
+                "비밀번호": ["1234", "1234"],
+                "담당_과목": ["수학", "영어, 한문"]
+            })
+            tc_csv = tc_template.to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 교사 일괄 등록용 서식 샘플(.CSV) 다운로드", data=tc_csv, file_name="교사일괄등록_양식.csv", mime="text/csv")
+            
+            tc_file = st.file_uploader("선생님 명단 파일 업로드", type=["csv", "xlsx"], key="teacher_file_uploader_master")
+            
+            if tc_file:
+                df_tc_up = pd.read_csv(tc_file) if tc_file.name.endswith(".csv") else pd.read_excel(tc_file)
+                df_tc_up.columns = [c.strip() for c in df_tc_up.columns]
+                
+                st.markdown("##### 🔍 업로드된 교사 명단 구조 파싱")
+                st.dataframe(df_tc_up, use_container_width=True, hide_index=True)
+                
+                tc_req = ["교사_ID", "교사_성명", "비밀번호", "담당_과목"]
+                tc_miss = [c for c in tc_req if c not in df_tc_up.columns]
+                
+                if tc_miss:
+                    st.error(f"❌ 서식 오류: 필수 열이 누락되었습니다 -> {tc_miss}")
+                else:
+                    if st.button("🚀 교사 데이터베이스 초기화 후 일괄 이식 실행", type="primary", use_container_width=True):
+                        with st.spinner("교사 원격 인프라 구조 밀어 넣는 중..."):
+                            create_table_if_not_exists("teacher")
+                            # 기존 교사 데이터 정리
+                            if not df_tc.empty:
+                                for _, r in df_tc.iterrows():
+                                    supabase.table(teacher_table).delete().eq("교사_ID", str(r["교사_ID"])).execute()
+                            # 신규 교사 명단 일괄 이식
+                            for record in df_tc_up.to_dict(orient="records"):
+                                supabase.table(teacher_table).insert(record).execute()
+                        st.success("🎯 전 교사 인적사항 권한 계정이 0.01초 만에 클라우드 DB에 일괄 등록 완료되었습니다!")
+                        st.balloons()
+                        st.rerun()
