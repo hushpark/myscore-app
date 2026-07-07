@@ -10,7 +10,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="수행평가 점수 확인 시스템 (Supabase)", layout="wide")
 
 # =========================================================================
-# 🎨 [디자인 가시성 패치] 디자인 통합 및 이중 테두리 완벽 제거
+# 🎨 [디자인 가시성 패치] 디자인 통합 및 로그인 버튼 파란색 원상복구
 # =========================================================================
 st.markdown("""
     <style>
@@ -25,15 +25,34 @@ st.markdown("""
         .user-info { color: #38bdf8 !important; -webkit-text-fill-color: #38bdf8 !important; font-size: 14px !important; font-weight: 600 !important; margin-bottom: 25px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
+        
+        /* 일반 화면 primary 버튼 */
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
-        form[data-testid="stForm"] button { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; width: 100% !important; padding: 10px 0 !important; }
-        form[data-testid="stForm"] button:hover { background-color: #f8fafc !important; border-color: #3b82f6 !important; color: #2563eb !important; }
+        
+        /* 🔥 로그인 폼 버튼 선명한 파란색 강제 지정 */
+        form[data-testid="stForm"] button { 
+            background-color: #3b82f6 !important; 
+            color: #ffffff !important; 
+            font-weight: 800 !important; 
+            border: none !important; 
+            border-radius: 6px !important; 
+            width: 100% !important; 
+            padding: 12px 0 !important; 
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2) !important;
+        }
+        form[data-testid="stForm"] button:hover { 
+            background-color: #2563eb !important; 
+            color: #ffffff !important;
+        }
+        
         div[data-testid="InputInstructions"] { display: none !important; }
         div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
         div[data-testid="stTextInput"] > div, div[data-testid="stSelectbox"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
+        
+        /* 로그인 상자 외곽 레이아웃 */
         div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
         .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
@@ -49,18 +68,15 @@ SUPABASE_URL = "https://jwkvojfmhorndnnhscwl.supabase.co"
 SUPABASE_KEY = "sb_publishable_6--SHGogHaHSEVO7g3rNjQ_FOHO-XlN"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# 테이블 상수 지정
 student_table = "st_info_2_2026_1"
 teacher_table = "teacher_accounts"
 
 # =========================================================================
-# 🚀 [핵심 마법] 원격 테이블 자동 생성 엔진 (SQL API 가동)
+# 🚀 원격 테이블 자동 생성 엔진
 # =========================================================================
 def create_table_if_not_exists(table_type):
-    """테이블이 없을 경우 파이썬 코드가 수파베이스에 명령하여 자동으로 표를 생성합니다."""
     try:
         if table_type == "teacher":
-            # 교사 테이블 생성 쿼리 전송 (RPC 함수가 연동되지 않은 기본 티어 대비 세이프티 트라이 처리)
             supabase.rpc("exec_sql", {"query": f"""
                 CREATE TABLE IF NOT EXISTS public.{teacher_table} (
                     "교사_ID" text PRIMARY KEY,
@@ -71,7 +87,6 @@ def create_table_if_not_exists(table_type):
                 ALTER TABLE public.{teacher_table} DISABLE ROW LEVEL SECURITY;
             """}).execute()
         elif table_type == "student":
-            # 과목별 학생 성적 테이블 생성 쿼리 전송
             supabase.rpc("exec_sql", {"query": f"""
                 CREATE TABLE IF NOT EXISTS public.{student_table} (
                     "반" int8,
@@ -89,14 +104,11 @@ def create_table_if_not_exists(table_type):
                 ALTER TABLE public.{student_table} DISABLE ROW LEVEL SECURITY;
             """}).execute()
     except Exception:
-        # RPC 미개설 시 최초 1회 수동 생성 유도 알림 우회용 블록
         pass
 
-# 진입 시점에 테이블 존재 여부 체크 및 자동 생성 무조건 가동
 create_table_if_not_exists("teacher")
 create_table_if_not_exists("student")
 
-# 데이터 로드 헬퍼 함수
 def load_db_df(table_name):
     try:
         response = supabase.table(table_name).select("*").execute()
@@ -105,7 +117,7 @@ def load_db_df(table_name):
         return pd.DataFrame()
 
 # =========================================================================
-# ➕ [다이얼로그 팝업창] 교사 및 학생 추가 팝업 기능
+# ➕ [다이얼로그 팝업창] 
 # =========================================================================
 @st.dialog("➕ 담당 교사 개별 추가")
 def show_add_teacher_dialog():
@@ -123,7 +135,7 @@ def show_add_teacher_dialog():
                     supabase.table(teacher_table).upsert({"교사_ID": t_id.strip(), "교사_성명": t_name.strip(), "비밀번호": t_pw.strip(), "담당_과목": t_subs.strip()}).execute()
                     st.success("🎉 교사 데이터베이스 인프라에 새로운 교사 계정이 활성화되었습니다!")
                     st.rerun()
-                except: st.error("❌ 교사 테이블이 아직 생성되지 않았습니다. 관리자 기능을 가동하세요.")
+                except: st.error("❌ 등록 실패")
 
 @st.dialog("➕ 전학생 / 개별 학생 추가")
 def show_add_student_dialog():
@@ -175,7 +187,7 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템 
+# 🔓 [1단계] 클린 통합 로그인 시스템 (오타 및 디자인 패치 완료)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -184,8 +196,10 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             user_id_input = st.text_input("ID", placeholder="ID를 입력하세요", label_visibility="collapsed")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
+            
             b_col2 = st.columns([1.0, 1.8, 1.0])[1]
-            submit_active = b_col2.st_submit_button("로그인", use_container_width=True)
+            # ⭐ st_submit_button 오타를 form_submit_button 으로 완벽 수정!
+            submit_active = b_col2.form_submit_button("로그인", use_container_width=True)
             
             if submit_active:
                 clean_id = str(user_id_input).strip()
@@ -197,7 +211,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         id_match = df[df[id_col] == clean_id]
                         if id_match.empty: st.error("❌ 등록되지 않은 학생 정보입니다.")
                         else:
-                            if id_match.iloc[0]["비밀번호"].astype(str) == clean_pw:
+                            if str(id_match.iloc[0]["비밀번호"]) == clean_pw:
                                 st.session_state["student_logged_in"] = True
                                 st.session_state["logged_student_id"] = clean_id
                                 st.session_state["logged_student_pw"] = clean_pw
@@ -216,7 +230,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         if df_tc.empty: st.error("❌ 일반 교사 계정이 비어있습니다. 최고관리자 계정으로 먼저 등록하세요.")
                         else:
                             id_match = df_tc[df_tc['교사_ID'] == clean_id]
-                            if not id_match.empty and id_match.iloc[0]['비밀번호'].astype(str) == clean_pw:
+                            if not id_match.empty and str(id_match.iloc[0]['비밀번호']) == clean_pw:
                                 row = id_match.iloc[0]
                                 st.session_state["admin_logged_in"] = True
                                 st.session_state["logged_teacher_id"] = clean_id
@@ -225,6 +239,8 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                                 st.session_state["allowed_subjects"] = [s.strip() for s in str(row['담당_과목']).split(",") if s.strip()]
                                 st.rerun()
                             else: st.error("❌ 교사 로그인 실패")
+
+    st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & Supabase Backend Engine</div></div>", unsafe_allow_html=True)
 
 # =========================================================================
 # 🎓 [2단계-A] 학생 화면
@@ -238,12 +254,12 @@ elif st.session_state["student_logged_in"]:
         if not res.empty: show_result_dialog(res.iloc[0].to_dict())
 
 # =========================================================================
-# 🔒 [2단계-B] 교사 화면 (완벽 인프라 자동 빌더 모듈)
+# 🔒 [2단계-B] 교사 화면
 # =========================================================================
 elif st.session_state["admin_logged_in"]:
     with st.sidebar:
         st.markdown('<span class="sidebar-title">📋 교사 메뉴</span>', unsafe_allow_html=True)
-        st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 관리자 접속 중</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 접속 중</div>', unsafe_allow_html=True)
         st.markdown("---")
         menus = ["▶ 학생 조회 현황 모니터링", "▶ 개인별 성적 입력", "▶ 학생 정보 관리", "▶ 성적 전체 일괄 업로드(CSV/Excel)"]
         if st.session_state["logged_teacher_id"] == "admin": menus.append("👑 교사 계정 관리 대장")
@@ -252,10 +268,9 @@ elif st.session_state["admin_logged_in"]:
 
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
-    # 메뉴별 화면 스위칭
     if menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
-            if df.empty: st.info("📢 현재 데이터베이스가 비어있습니다. 성적을 업로드하면 테이블 구조가 자동 빌드됩니다.")
+            if df.empty: st.info("📢 현재 데이터베이스가 비어있습니다.")
             else:
                 sel_c = st.selectbox("🎯 학급 선택", options=["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())])
                 r_df = df.copy()
@@ -273,13 +288,12 @@ elif st.session_state["admin_logged_in"]:
                     for idx_pos, r_idx in enumerate(f_idx):
                         for col in edited_df.columns: df.loc[r_idx, col] = edited_df.iloc[idx_pos][col]
                         supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
-                    st.success("🎉 변경된 수행 점수가 원격 클라우드 DB에 실시간 저장되었습니다!"); st.rerun()
+                    st.success("🎉 변경된 수행 점수가 실시간 저장되었습니다!"); st.rerun()
 
     elif menu_selection == "▶ 학생 정보 관리":
         with st.container(border=True):
             if df.empty:
-                # 🚨 데이터가 아예 없을 때도 '학생 개별 추가' 버튼을 노출시켜 테이블 수동 가동 가능하게 패치
-                st.info("현재 등록된 학생이 없습니다. 아래 버튼을 눌러 첫 학생을 수동 추가해 보세요.")
+                st.info("현재 등록된 학생이 없습니다.")
                 if st.button("➕ 첫 학생 개별 추가", type="primary"): show_add_student_dialog()
             else:
                 sel_c = st.selectbox("👥 학반 필터링", options=["전체"] + [f"{x}반" for x in sorted(df['반'].unique())])
@@ -293,7 +307,7 @@ elif st.session_state["admin_logged_in"]:
                         for idx_pos, r_idx in enumerate(f_idx):
                             for col in edited_df.columns: df.loc[r_idx, col] = edited_df.iloc[idx_pos][col]
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
-                        st.success("🎉 학생 신상정보가 동기화되었습니다!"); st.rerun()
+                        st.success("🎉 인적사항이 동기화되었습니다!"); st.rerun()
 
     elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV/Excel)":
         with st.container(border=True):
@@ -304,7 +318,6 @@ elif st.session_state["admin_logged_in"]:
                 df_up.columns = [c.strip() for c in df_up.columns]
                 st.dataframe(df_up.head(3), use_container_width=True, hide_index=True)
                 if st.button("🚀 클라우드 DB 원격 초기화 및 새 명단 이식 실행", type="primary", use_container_width=True):
-                    # 💥 [자동 생성 엔진 연동] 안전하게 원격 학생 테이블 자동 빌드 지시
                     create_table_if_not_exists("student")
                     if not df.empty:
                         for _, r in df.iterrows(): supabase.table(student_table).delete().eq("반", int(r["반"])).eq("번호", int(r["번호"])).execute()
@@ -312,24 +325,21 @@ elif st.session_state["admin_logged_in"]:
                         if c not in df_up.columns: df_up[c] = 0
                     df_up["최종 확인일시"] = "-"
                     for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
-                    st.success("🎯 원격 수파베이스 엔진에 대량 성적 이식 및 초기화 완료!"); st.rerun()
+                    st.success("🎯 대량 성적 이식 및 인프라 구축 성공!"); st.rerun()
 
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
         with st.container(border=True):
             st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>")
             df_tc = load_db_df(teacher_table)
-            
-            # 교사 관리 그리드
             edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_tc_editor")
             c1, c2 = st.columns([4.8, 1.2])
             with c1:
                 if st.button("👨‍🏫 교사 개별 신규 추가"): show_add_teacher_dialog()
             with c2:
                 if st.button("💾 교사 정보 원격 저장", type="primary", use_container_width=True):
-                    # 💥 [자동 생성 엔진 연동] 교사 테이블 유무 판단 후 원격 자동 생성 지시
                     create_table_if_not_exists("teacher")
                     if not df_tc.empty:
                         for _, row in df_tc.iterrows(): supabase.table(teacher_table).delete().eq("교사_ID", str(row["교사_ID"])).execute()
                     for record in edited_tc_df.to_dict(orient="records"):
                         if record.get("교사_ID"): supabase.table(teacher_table).upsert(record).execute()
-                    st.success("🎉 전교 교사 명단 및 담당 교과 권한 구조 세이브 완료!"); st.rerun()
+                    st.success("🎉 교사 권한 정보 세이브 완료!"); st.rerun()
