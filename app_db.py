@@ -30,9 +30,9 @@ st.markdown("""
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         
-        /* 🔓 로그인 폼 제출용 버튼 디자인 */
+       /* 로그인 폼 제출용 버튼 디자인 강제 지정 */
         form[data-testid="stForm"] button {
-            background-color: #333333 !important;
+            background-color: #ffffff !important;
             color: #0f172a !important;
             font-weight: 700 !important;
             border: 1px solid #cbd5e1 !important;
@@ -49,7 +49,7 @@ st.markdown("""
         
         /* ✨ [수정 완료] 라디오 버튼 박스 정중앙 정렬 */
         div[data-testid="stForm"] div[data-testid="stRadio"] { 
-            margin-bottom: 95px !important; 
+            margin-bottom: 25px !important; 
             width: 100% !important; 
             display: flex !important;
             justify-content: center !important;
@@ -67,9 +67,11 @@ st.markdown("""
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
         
-        /* 로그인 상자 외곽 레이아웃 */
-        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
-        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
+        /* 로그인 박스 */
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
+        div[data-testid="stForm"] h2 { font-size: 26px !important; white-space: nowrap !important; text-align: center !important; margin: 0 auto 20px auto !important; font-weight: 800 !important; color: #0f172a !important; }
+        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
+        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
         .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
         .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
