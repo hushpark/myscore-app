@@ -38,7 +38,7 @@ st.markdown("""
 # =========================================================================
 # 🔑 [치트키] Secrets 거치지 않고 진짜 주소와 열쇠 직접 주입하기
 SUPABASE_URL = "https://jwkvojfmhorndnnhscwl.supabase.co"
-SUPABASE_KEY = "sb_publishable_6--SHGogHaHSEV07g3rNjQ_FOHO-XlN"
+SUPABASE_KEY = "sb_publishable_EkKCzBzzTuM3vbRQCLs6fQ_mfrjKpg9"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # 🚨 [안전장치] 확실한 테이블명 강제 지정 (앞뒤 공백 제거)
