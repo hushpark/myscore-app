@@ -70,32 +70,37 @@ st.markdown("""
         /* 🚨 [시인성 강화] 라벨 제목 굵게 */
         div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
 
-        /* 🚨 [드롭다운 & 텍스트 박스 테두리/배경 강제 동기화] */
+        /* 🚨 [드롭다운 & 텍스트 박스 기본 상태] */
         div[data-testid="stTextInput"] > div,
         div[data-testid="stTextInput"] [data-baseweb="input"],
         div[data-testid="stSelectbox"] > div[data-baseweb="select"],
         div[data-testid="stSelectbox"] > div { 
             background-color: #ffffff !important; 
-            border: 1px solid #94a3b8 !important; /* 선명한 외곽선 부여 */
+            border: 1px solid #94a3b8 !important; 
             border-radius: 6px !important; 
             transition: all 0.2s ease-in-out !important; 
             box-shadow: none !important;
         }
 
-        /* 텍스트 입력창 내부 패딩 및 배경 투명화 안정화 */
+        /* 텍스트 입력창 내부 설정 */
         div[data-testid="stTextInput"] input { 
             background-color: #ffffff !important; 
             color: #0f172a !important;
             padding: 8px 12px !important;
             border-radius: 6px !important;
+            box-shadow: none !important;
         }
         
-        /* 🎯 포커스(클릭) 시 드롭다운과 동일한 파란색 애니메이션 효과 적용 */
+        /* 🎯 [색상 중첩 버그 완벽 해결] 클릭(포커스) 시 기본 테두리 잔상과 outline을 완전히 차단 */
         div[data-testid="stTextInput"] > div:focus-within,
         div[data-testid="stTextInput"] [data-baseweb="input"]:focus-within,
-        div[data-testid="stSelectbox"] > div:focus-within {
+        div[data-testid="stSelectbox"] > div:focus-within,
+        div[data-testid="stSelectbox"] [data-baseweb="select"]:focus-within,
+        div[data-testid="stTextInput"] input:focus {
             border: 2px solid #3b82f6 !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            outline: none !important;
+            box-shadow: 0 0 stage 0 rgba(0,0,0,0), 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            -webkit-box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
         }
 
         /* 로그인 박스 */
@@ -114,7 +119,6 @@ st.markdown("""
 # =========================================================================
 @st.cache_resource
 def init_google_sheet_client():
-    """구글 로그인 작업을 한 번만 수행하고 서버에 저장하여 엄청난 렉을 없앱니다!"""
     try: return gspread.authorize(Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]))
     except: return None
 
@@ -600,7 +604,7 @@ elif st.session_state["admin_logged_in"]:
                 db_df = load_sheet_to_df(sf_id)
                 with col_class_ed:
                     class_options_ed = ["전체"]
-                    if not db_df.empty and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
+                    if not db_df.empty Image and "반" in db_df.columns: class_options_ed = ["전체"] + [f"{x}반" for x in sorted(db_df['반'].unique())]
                     selected_class_ed = st.selectbox("👥 학반 필터링", options=class_options_ed, key="t_class_select_info_unique")
                 
                 if not db_df.empty:
