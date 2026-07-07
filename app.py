@@ -13,7 +13,7 @@ import csv
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [CSS] 선생님 원본 사이드바 유지 + 버튼/폼 디자인 적용
+# 🔄 [방탄 CSS] 사이드바 텍스트 절대 관통 & 하얀색 폼
 # =========================================================================
 st.markdown("""
     <style>
@@ -29,11 +29,17 @@ st.markdown("""
             box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; 
         }
         
-        /* [선생님 원본 사이드바 텍스트 CSS 유지] */
+        /* 🚨 [사이드바 메뉴 텍스트 순백색 관통 - 최종 방어막] */
+        [data-testid="stSidebar"] .stRadio label p,
+        [data-testid="stSidebar"] .stRadio label span,
+        [data-testid="stSidebar"] .stRadio label div,
         [data-testid="stSidebar"] p,
         [data-testid="stSidebar"] span,
         [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] div[role="radiogroup"] * {
+        [data-testid="stSidebar"] div[role="radiogroup"] *,
+        [data-testid="stSidebar"] div[role="radiogroup"] label *,
+        [data-testid="stSidebar"] div[role="radiogroup"] p,
+        [data-testid="stSidebar"] div[role="radiogroup"] span {
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
             opacity: 1 !important;
@@ -44,7 +50,7 @@ st.markdown("""
         .sidebar-title { font-size: 24px !important; font-weight: 800 !important; margin-bottom: 5px !important; display: block; }
         .user-info { color: #38bdf8 !important; -webkit-text-fill-color: #38bdf8 !important; font-size: 14px !important; font-weight: 600 !important; margin-bottom: 25px !important; }
 
-        /* [사이드바 하단 버튼] */
+        /* 🚨 [사이드바 버튼 예외 처리] 버튼 안의 글자는 어둡게 유지 */
         [data-testid="stSidebar"] button[kind="secondary"] { 
             background-color: #ffffff !important; 
             border: 1px solid #cbd5e1 !important; 
@@ -64,7 +70,7 @@ st.markdown("""
         }
         [data-testid="stSidebar"] button[kind="secondary"]:hover { background-color: #f8fafc !important; border-color: #3b82f6 !important; }
 
-        /* 메인 화면 버튼 디자인 (파란색 저장, 하얀색 추가 버튼) */
+        /* 메인 화면 버튼 디자인 */
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2) !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         div.stButton > button[kind="secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
@@ -165,7 +171,13 @@ def show_profile_popup_dialog():
 
         is_unlocked = st.session_state["pw_step_unlocked"]
 
-        curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="curr_pw_input_field", disabled=is_unlocked)
+        curr_pw = st.text_input(
+            "현재 비밀번호", 
+            type="password", 
+            placeholder="현재 사용 중인 비밀번호 입력", 
+            key="curr_pw_input_field",
+            disabled=is_unlocked
+        )
         
         if not is_unlocked and curr_pw:
             actual_pw = st.session_state.get("logged_teacher_pw", "")
@@ -191,13 +203,21 @@ def show_profile_popup_dialog():
             new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
             new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
             
-            components.html("""<script>setTimeout(function() { const inputs = window.parent.document.querySelectorAll('input[type="password"]:not([disabled])'); if (inputs.length > 0) { inputs[0].focus(); } }, 150);</script>""", height=0, width=0)
+            components.html("""
+                <script>
+                    setTimeout(function() {
+                        const inputs = window.parent.document.querySelectorAll('input[type="password"]:not([disabled])');
+                        if (inputs.length > 0) { inputs[0].focus(); }
+                    }, 150);
+                </script>
+            """, height=0, width=0)
 
             msg_box = st.empty()
             st.markdown("<br>", unsafe_allow_html=True)
             
             col1, col2 = st.columns(2)
-            with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
+            with col1:
+                save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
             with col2:
                 if st.button("닫기", type="secondary", use_container_width=True):
                     st.session_state["pw_step_unlocked"] = False
@@ -228,34 +248,36 @@ def show_profile_popup_dialog():
     elif edit_mode == "📚 담당과목 변경":
         if st.session_state["logged_teacher_id"] == "admin":
             st.warning("⚠️ 최고관리자(admin) 계정은 마스터 모든 과목 열람 권한이 고정되어 있습니다.")
-            if st.button("닫기", type="secondary", use_container_width=True): st.rerun()
+            if st.button("닫기", type="secondary", use_container_width=True):
+                st.rerun()
         else:
             curr_subs_str = ", ".join(st.session_state.get("allowed_subjects", []))
+            new_subs_str = st.text_input("담당 과목 변경 (여러 과목은 콤마[,]로 분리)", value=curr_subs_str, placeholder="예: 정보, 수학")
             
-            with st.form("sub_change_form", border=False):
-                new_subs_str = st.text_input("담당 과목 변경 (여러 과목은 콤마[,]로 분리)", value=curr_subs_str, placeholder="예: 정보, 수학")
-                msg_box_sub = st.empty()
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                save_sub_btn = st.form_submit_button("💾 과목 저장하기", use_container_width=True)
+            msg_box_sub = st.empty()
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                save_sub_btn = st.button("💾 과목 저장하기", type="primary", use_container_width=True)
+            with col2:
+                if st.button("닫기", type="secondary", use_container_width=True):
+                    st.rerun()
                     
-                if save_sub_btn:
-                    if not new_subs_str.strip():
-                        msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
-                    else:
-                        df_tc = load_sheet_to_df("teacher_accounts")
-                        if not df_tc.empty and "교사_ID" in df_tc.columns:
-                            idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
-                            if len(idx) > 0:
-                                df_tc.loc[idx[0], "담당_과목"] = new_subs_str.strip()
-                                if save_df_to_sheet("teacher_accounts", df_tc):
-                                    st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
-                                    msg_box_sub.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 담당 과목이 성공적으로 수정되었습니다! (즉시 반영됨)</p>", unsafe_allow_html=True)
-                                else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 구글 시트 저장 실패</p>", unsafe_allow_html=True)
-                            else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 명단에서 계정을 찾을 수 없습니다.</p>", unsafe_allow_html=True)
-            
-            if st.button("닫기", type="secondary", use_container_width=True, key="close_sub_unique_btn"):
-                st.rerun()
+            if save_sub_btn:
+                if not new_subs_str.strip():
+                    msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
+                else:
+                    df_tc = load_sheet_to_df("teacher_accounts")
+                    if not df_tc.empty and "교사_ID" in df_tc.columns:
+                        idx = df_tc[df_tc["교사_ID"] == st.session_state["logged_teacher_id"]].index
+                        if len(idx) > 0:
+                            df_tc.loc[idx[0], "담당_과목"] = new_subs_str.strip()
+                            if save_df_to_sheet("teacher_accounts", df_tc):
+                                st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
+                                msg_box_sub.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 담당 과목이 성공적으로 수정되었습니다! (즉시 반영됨)</p>", unsafe_allow_html=True)
+                            else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 구글 시트 저장 실패</p>", unsafe_allow_html=True)
+                        else: msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 명단에서 계정을 찾을 수 없습니다.</p>", unsafe_allow_html=True)
 
 @st.dialog("➕ 전학생 / 개별 학생 추가")
 def show_add_student_dialog(sf_id, current_df):
@@ -341,7 +363,7 @@ SUBJECT_MAP = load_master_subjects()
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
         with st.form("master_unified_form"):
-            st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align:center;'>수행평가 점 확인 시스템</h2>", unsafe_allow_html=True)
             
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed", key="pure_system_role_radio")
             
@@ -432,7 +454,7 @@ elif st.session_state["student_logged_in"]:
     
     active_dbs = get_active_databases()
     if not active_dbs:
-        st.warning("현재 평가 데이터베이스에 활성화된 과목이 존재하지 않습니다.")
+        st.warning("현재 평가 데이터베이스에 활성화된 과목 파티션이 존재하지 않습니다.")
     else:
         opts_s = ["과목 및 학기를 선택하세요."] + [f"📚 {d['subject']} ({d['grade']})" for d in active_dbs]
         sel_s = st.selectbox("조회할 교과과정 선택", opts_s, key="student_subject_select")
@@ -578,7 +600,6 @@ elif st.session_state["admin_logged_in"]:
                     
                     bc1, bc2, bc3 = st.columns([3.6, 1.2, 1.2])
                     with bc2:
-                        # 🚨 오류 원인이었던 kind="secondary"를 type="secondary"로 수정 완료!
                         if st.button("➕ 학생 개별 추가", use_container_width=True, type="secondary", key="add_student_dialog_btn"):
                             show_add_student_dialog(sf_id, db_df)
                     with bc3:
@@ -587,7 +608,7 @@ elif st.session_state["admin_logged_in"]:
                                 for col in edited_df.columns: db_df.loc[row_idx, col] = edited_df.iloc[idx_pos][col]
                             if save_df_to_sheet(sf_id, db_df): st.success("🎉 저장 동기화 완료!"); st.rerun()
 
-    # 3. 평가 대상 과목 구성
+    # 3. 평가 대상 과목 구성 (🚨 버튼 레이아웃 통일!)
     elif menu_selection == "▶ 평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown("<h3>⚙️ 수행평가 항목 구성 및 과목 개설</h3>", unsafe_allow_html=True)
@@ -604,13 +625,19 @@ elif st.session_state["admin_logged_in"]:
                 with cols_items[i]:
                     t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가_{i+1}", key=f"pure_item_title_{i}_unique")
                     item_titles.append(t_in.strip())
-            if st.button("🚀 기본 설정 저장", type="primary", use_container_width=True, key="make_partition_btn_unique"):
-                if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
-                    st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
-                else:
-                    cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
-                    config_df = pd.DataFrame([{"선택된반 목록": "1,2,3", "항목개수": item_count, **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}}])
-                    if save_df_to_sheet(cf_id, config_df): st.success("✅ 기본 설정 저장 완료!")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # 🚨 커다란 버튼을 개인별 성적 입력 메뉴처럼 우측 하단에 작게 배치!
+            bc1, bc2 = st.columns([4.2, 1.2]) 
+            with bc2:
+                if st.button("💾 기본 설정 저장", type="primary", use_container_width=True, key="make_partition_btn_unique"):
+                    if "마스터" not in st.session_state["allowed_subjects"] and final_sub not in st.session_state["allowed_subjects"]:
+                        st.error(f"❌ 권한 오류: 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
+                    else:
+                        cf_id, sf_id = get_sheet_names_id(final_sub, sel_gr.replace("학년",""), sel_se)
+                        config_df = pd.DataFrame([{"선택된반 목록": "1,2,3", "항목개수": item_count, **{f"항목{k+1}_이름": item_titles[k] for k in range(item_count)}}])
+                        if save_df_to_sheet(cf_id, config_df): st.success("✅ 기본 설정 저장 완료!")
 
     # 4. 성적 전체 일괄 업로드(CSV)
     elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV)":
