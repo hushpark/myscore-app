@@ -13,7 +13,7 @@ import csv
 st.set_page_config(page_title="수행평가 점수 확인 시스템", layout="wide")
 
 # =========================================================================
-# 🔄 [방탄 CSS] 입력창 라벨 굵게 & 테두리 반응형 애니메이션 적용
+# 🔄 [방탄 CSS] 입력창/드롭다운 평상시 테두리 강조 & 반응형 애니메이션
 # =========================================================================
 st.markdown("""
     <style>
@@ -90,16 +90,16 @@ st.markdown("""
             font-size: 15px !important;
         }
 
-        /* 🚨 [반응형 테두리] 입력창 & 셀렉트박스 클릭(포커스) 애니메이션 */
+        /* 🚨 [핵심 수정: 평상시 테두리 강조] 드롭다운 & 텍스트 박스 */
         div[data-testid="stTextInput"] div[data-baseweb="input"],
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { 
             background-color: #ffffff !important; 
-            border: 1px solid #e2e8f0 !important; /* 평소엔 연하고 얇게 */
+            border: 1px solid #94a3b8 !important; /* 평상시에 뚜렷한 진회색 테두리로 눈에 확 띄게 고정 */
             border-radius: 6px !important; 
-            transition: all 0.2s ease-in-out !important; /* 부드러운 전환 효과 */
+            transition: all 0.2s ease-in-out !important; 
         }
         
-        /* 클릭 시 뚜렷한 파란색 굵은 테두리로 변신 */
+        /* 클릭 시 뚜렷한 파란색 굵은 테두리로 애니메이션 */
         div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
         div[data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within {
             border: 2px solid #3b82f6 !important;
@@ -656,7 +656,7 @@ elif st.session_state["admin_logged_in"]:
             cols_items = st.columns(item_count)
             for i in range(item_count):
                 with cols_items[i]:
-                    t_in = st.text_input(f"수행평가 항목 {i+1} 제목", value=f"수행평가_{i+1}", key=f"pure_item_title_{i}_unique")
+                    t_in = st.text_input(f"수행평가 항목 {i+1} 입력", value=f"수행평가_{i+1}", key=f"pure_item_title_{i}_unique")
                     item_titles.append(t_in.strip())
             
             st.markdown("<br>", unsafe_allow_html=True)
