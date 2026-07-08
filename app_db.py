@@ -10,7 +10,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="수행평가 점수 확인 시스템 (Supabase)", layout="wide")
 
 # =========================================================================
-# 🎨 [디자인 관통 패치] 스타일 시트 반영 CSS (메뉴 타이틀 하단 라인 추가)
+# 🎨 [디자인 관통 패치] 테두리 가시성 및 참고 스냅샷 스타일 시트 반영 CSS
 # =========================================================================
 st.markdown("""
     <style>
@@ -26,12 +26,12 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 메인 화면 버튼 규격화 */
+        /* 메인 화면 primary 푸른색 계열 버튼 규격화 */
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; padding: 8px 16px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         div.stButton > button[kind="secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
         
-        /* 로그인 화면 */
+        /* 로그인 화면 수동 왼쪽 여백 제어 */
         div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
         div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
         
@@ -41,25 +41,22 @@ st.markdown("""
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
         
+        /* 로그인 박스 외곽 폼 */
         div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
         
-        /* 상단 타이틀 구조 */
+        /* 담백한 타이틀 영역 설계 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
-        .header-nav-sub { font-size: 15px !important; font-weight: 600 !important; color: #475569 !important; margin-bottom: 20px !important; }
+        .header-nav-sub { font-size: 15px !important; font-weight: 600 !important; color: #475569 !important; margin-bottom: 25px !important; }
 
-        /* ✨ [요청 반영] 각 메뉴 제목 밑 구분 라인 디자인 */
-        .menu-title-container { 
-            border-bottom: 2px solid #cbd5e1 !important; 
-            padding-bottom: 12px !important; 
-            margin-bottom: 25px !important; 
-        }
-        .menu-title-text { 
-            font-size: 20px !important; 
-            font-weight: 800 !important; 
-            color: #0f172a !important; 
-            margin: 0 !important;
-        }
+        /* 각 메뉴 제목 밑 구분 라인 디자인 */
+        .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
+        .menu-title-text { font-size: 20px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; }
+
+        /* ✨ [요청 반영] 좌측 메뉴 조작용 카드 박스 고정 높이 지정 및 하단 정렬용 컨테이너 서식 */
+        .magnet-left-container { display: flex; flex-direction: column; justify-content: space-between; height: 500px; }
+        .magnet-top-fields { flex-grow: 1; }
+        .magnet-bottom-buttons { margin-top: auto; }
 
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
     </style>
@@ -251,7 +248,7 @@ if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"
 if "student_logged_in" not in st.session_state: st.session_state["student_logged_in"] = False
 if "logged_student_id" not in st.session_state: st.session_state["logged_student_id"] = ""
 if "logged_student_pw" not in st.session_state: st.session_state["logged_student_pw"] = ""
-if "logged_teacher_id" not in st.session_state: st.session_state["logged_teacher_id"] = ""
+if "logged_teacher_id" not in st.session_state: st.session_state["logged_teacher_id"] = False
 if "logged_teacher_pw" not in st.session_state: st.session_state["logged_teacher_pw"] = ""
 if "teacher_name" not in st.session_state: st.session_state["teacher_name"] = ""
 if "allowed_subjects" not in st.session_state: st.session_state["allowed_subjects"] = []
@@ -318,7 +315,7 @@ elif st.session_state["student_logged_in"]:
     st.markdown(f"<h2>수행평가 점수 확인 시스템 (학생 모드)</h2>", unsafe_allow_html=True)
     if st.button("🚪 로그아웃"): st.session_state.clear(); st.rerun()
     if st.button("🚀 나의 수행평가 성적 실시간 검증", type="primary", use_container_width=True):
-        id_col = "학교 이메일" if "학교 इ메일" in df.columns else "school_email"
+        id_col = "학교 이메일" if "학교 이메일" in df.columns else "school_email"
         res = df[(df[id_col] == st.session_state["logged_student_id"]) & (df['비밀번호'].astype(str) == st.session_state["logged_student_pw"])]
         if not res.empty: show_result_dialog(res.iloc[0].to_dict())
 
@@ -355,7 +352,6 @@ elif st.session_state["admin_logged_in"]:
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         with st.container(border=True):
-            # 📌 [요청 반영] 하단 보더 라인 추가 구조 적용
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📊 학생별 조회 이력 및 성적 현황 모니터링</h4></div>', unsafe_allow_html=True)
             
             layout_left, layout_right = st.columns([2.5, 7.5])
@@ -364,7 +360,7 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("**📂 대상 교과 선택**")
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="mon_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
-                st.markdown("****🎯 필터링할 학급 선택**")
+                st.markdown("**🎯 필터링할 학급 선택**")
                 class_options = ["전체 학급 보기"]
                 if not df.empty and "반" in df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class = st.selectbox("학급 선택", options=class_options, label_visibility="collapsed", key="mon_class")
@@ -404,16 +400,17 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (🚨 저장 버튼 필터 아래로 이동)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (🚨 저장 버튼 왼쪽 최하단 밀착 정렬)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
-            # 📌 [요청 반영] 하단 보더 라인 추가 구조 적용
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 개인별 성적 데이터 입력</h4></div>', unsafe_allow_html=True)
             
             layout_left, layout_right = st.columns([2.5, 7.5])
             
             with layout_left:
+                # 💡 [2번 요건] 수직 바닥 밀착용 자석 컨테이너 도입
+                st.markdown('<div class="magnet-left-container"><div class="magnet-top-fields">', unsafe_allow_html=True)
                 st.markdown("**📂 관리할 교과 선택**")
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="edt_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -421,10 +418,12 @@ elif st.session_state["admin_logged_in"]:
                 class_options_ed = ["전체 학급 보기"]
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
+                st.markdown('</div>', unsafe_allow_html=True) # 탑 필드 마감
                 
-                # ✨ [요청 반영] 저장 버튼을 왼쪽 필터 아래 배치 (최상단 즉시 접근 가능)
-                st.markdown("<br>", unsafe_allow_html=True)
+                # 자석 컨테이너의 하단(바닥) 구역에 바짝 붙임
+                st.markdown('<div class="magnet-bottom-buttons">', unsafe_allow_html=True)
                 save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
+                st.markdown('</div></div>', unsafe_allow_html=True) # 바닥 및 전체 컨테이너 마감
                 
             with layout_right:
                 subject_key = "정보_2학년_2026학년도_1학기"
@@ -459,9 +458,8 @@ elif st.session_state["admin_logged_in"]:
                     sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                     disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                     
-                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=530)
+                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                     
-                    # 💡 상단 필터 아래 저장 단추 이벤트 헨들링 연결 완료
                     if save_trigger:
                         for idx_pos, r_idx in enumerate(f_idx):
                             for idx_c, db_col in enumerate(db_cols_ordered):
@@ -471,16 +469,16 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리 (🚨 저장/추가 버튼 필터 아래로 이동)
+    # 3번 메뉴: 학생 정보 관리 (🚨 추가 옆에 저장 배치 및 왼쪽 아래 밀착 정렬)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
-            # 📌 [요청 반영] 하단 보더 라인 추가 구조 적용
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📇 학생 기본 정보 관리</h4></div>', unsafe_allow_html=True)
             
             layout_left, layout_right = st.columns([2.5, 7.5])
             
             with layout_left:
+                st.markdown('<div class="magnet-left-container"><div class="magnet-top-fields">', unsafe_allow_html=True)
                 st.markdown("**📂 관리할 교과 선택**")
                 st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="inf_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -488,11 +486,16 @@ elif st.session_state["admin_logged_in"]:
                 class_opts = ["전체"]
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
-
-                # ✨ [요청 반영] 조작 버튼들을 왼쪽 필터 메뉴 바로 아래로 완벽 재배치
-                st.markdown("<br>", unsafe_allow_html=True)
-                save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
-                add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # 💡 [2번 요건] 가로 분할(1:1)을 통해 왼쪽 하단 바닥면에 [추가] 옆에 [저장] 나란히 배치
+                st.markdown('<div class="magnet-bottom-buttons">', unsafe_allow_html=True)
+                btn_split1, btn_split2 = st.columns(2)
+                with btn_split1:
+                    add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
+                with btn_split2:
+                    save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
+                st.markdown('</div></div>', unsafe_allow_html=True)
 
             with layout_right:
                 if df.empty:
@@ -510,9 +513,8 @@ elif st.session_state["admin_logged_in"]:
                         "비밀번호": st.column_config.NumberColumn(alignment="center", format="%d")
                     }
                     
-                    edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=530)
+                    edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=500)
                     
-                    # 💡 필터 하단부 액션 헨들러 연동 매핑
                     if add_std_trigger:
                         show_add_student_dialog()
                     if save_info_trigger:
@@ -526,7 +528,6 @@ elif st.session_state["admin_logged_in"]:
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         with st.container(border=True):
-            # 📌 [요청 반영] 하단 보더 라인 추가 구조 적용
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">🎯 평가 대상 과목 및 항목 관리</h4></div>', unsafe_allow_html=True)
             
             main_col1, main_col2 = st.columns(2)
@@ -622,43 +623,73 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드(CSV / Excel)
+    # 5번 메뉴: 성적 전체 일괄 업로드 (🚨 요청 기반 4:6 좌우 스플릿 완벽 가공)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
-            # 📌 [요청 반영] 하단 보더 라인 추가 구조 적용
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📥 전체 일괄 성적 대장 CSV 업로드</h4></div>', unsafe_allow_html=True)
             
-            st.markdown("**📂 성적 연동 과목 선택**")
-            st.selectbox("과목 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="csv_upl_sub")
+            # 💡 [1번 요건] 가로 폭을 왼쪽 4, 오른쪽 6 비율의 대칭 스플릿 구조로 세분화
+            upload_left, upload_right = st.columns([4.0, 6.0])
             
-            st.markdown("<br>💡 **양식을 다운로드하여 성적을 업로드하세요.**", unsafe_allow_html=True)
-            template_df = pd.DataFrame({
-                "반": [1, 1, 2], "번호": [1, 2, 1], "이름": ["홍길동", "이영희", "강백호"],
-                "학교 이메일": ["hgd@school.kr", "lyh@school.kr", "kbh@school.kr"], "비밀번호": [1234, 1234, 1234],
-                "수행평가1": [20, 19, 15], "수행평가2": [18, 20, 15], "수행평가3": [25, 22, 20]
-            })
-            csv_buffer = template_df.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📥 일괄 업로드용 성적 양식(.CSV) 다운로드", data=csv_buffer, file_name="성적일괄업로드_양식.csv", mime="text/csv")
-            
-            st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
-            up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
-            
-            if up_f:
-                df_up = pd.read_csv(up_f) if up_f.name.endswith(".csv") else pd.read_excel(up_f)
-                df_up.columns = [c.strip() for c in df_up.columns]
-                st.dataframe(df_up.head(3), use_container_width=True, hide_index=True)
+            with upload_left:
+                st.markdown('<div class="magnet-left-container"><div class="magnet-top-fields">', unsafe_allow_html=True)
+                st.markdown("**📂 성적 연동 과목 선택**")
+                st.selectbox("과목 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="csv_upl_sub")
                 
-                btn_space1, btn_space2 = st.columns([3.8, 1.2])
-                with btn_space2:
-                    if st.button("🚀 일괄 마이그레이션 실행", type="primary", use_container_width=True):
+                st.markdown("<br>💡 **양식을 다운로드하여 성적을 업로드하세요.**", unsafe_allow_html=True)
+                template_df = pd.DataFrame({
+                    "반": [1, 1, 2], "번호": [1, 2, 1], "이름": ["홍길동", "이영희", "강백호"],
+                    "학교 이메일": ["hgd@school.kr", "lyh@school.kr", "kbh@school.kr"], "비밀번호": [1234, 1234, 1234],
+                    "수행평가1": [20, 19, 15], "수행평가2": [18, 20, 15], "수행평가3": [25, 22, 20]
+                })
+                csv_buffer = template_df.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("📥 일괄 업로드용 성적 양식(.CSV) 다운로드", data=csv_buffer, file_name="성적일괄업로드_양식.csv", mime="text/csv")
+                
+                st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
+                up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # 💡 [1번 요건] 버튼 명칭을 '일괄 반영'으로 고치고 좌측 최하단 바닥에 정착
+                st.markdown('<div class="magnet-bottom-buttons">', unsafe_allow_html=True)
+                apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
+                st.markdown('</div></div>', unsafe_allow_html=True)
+                
+            with upload_right:
+                # 💡 [1번 요건] 파일 검증용 '업로드 데이터 미리보기' 영역을 우측 컴포넌트로 완벽 이주
+                st.markdown("<div style='font-size:15px; font-weight:800; color:#0f172a; padding-bottom:10px;'>📊 업로드 데이터 미리보기</div>", unsafe_allow_html=True)
+                if up_f:
+                    df_up = pd.read_csv(up_f) if up_f.name.endswith(".csv") else pd.read_excel(up_f)
+                    df_up.columns = [c.strip() for c in df_up.columns]
+                    
+                    # 미리보기용 정렬 설정 적용
+                    preview_align = {}
+                    for col_name in df_up.columns:
+                        if col_name in ["반", "번호", "비밀번호"] or "수행평가" in col_name:
+                            preview_align[col_name] = st.column_config.NumberColumn(alignment="center", format="%d")
+                        else:
+                            preview_align[col_name] = st.column_config.TextColumn(alignment="center")
+                            
+                    st.dataframe(df_up, use_container_width=True, hide_index=True, column_config=preview_align, height=450)
+                    
+                    if apply_trigger:
                         if not df.empty:
                             for _, r in df.iterrows(): supabase.table(student_table).delete().eq("반", int(r["반"])).eq("번호", int(r["번호"])).execute()
                         for c in ["수행평가1", "수행평가2", "수행평가3", "성적조회 횟수"]:
                             if c not in df_up.columns: df_up[c] = 0
                         df_up["최종 확인일시"] = "-"
                         for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
-                        st.success("🎯 대량 성적 명단 수파베이스 이식 완료!"); st.rerun()
+                        st.success("🎯 파일 성적 데이터셋이 실시간 일괄 반영(동기화)되었습니다!"); st.rerun()
+                else:
+                    st.markdown(
+                        """
+                        <div style='border: 2px dashed #cbd5e1; border-radius: 12px; padding: 150px 20px; text-align: center; color: #94a3b8;'>
+                            📂 왼쪽에 성적 마스터 파일을 드롭하시면<br>
+                            이 자리에 업로드 데이터 실시간 미리보기 표가 로드됩니다.
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
 
     # 교사 계정 관리 대장 (보안 관리자 전용)
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
