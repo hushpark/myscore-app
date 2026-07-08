@@ -10,7 +10,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="수행평가 점수 확인 시스템 (Supabase)", layout="wide")
 
 # =========================================================================
-# 🎨 [디자인 가시성 패치] 디자인 통합 및 접속 모드 라디오 버튼 수동 여백 복구
+# 🎨 [디자인 가시성 패치] 디자인 통합 및 콤팩트 50% 반토막 레이아웃 엔진 탑재
 # =========================================================================
 st.markdown("""
     <style>
@@ -30,7 +30,7 @@ st.markdown("""
         div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
         
-        /* 🔓 로그인 폼 제출용 버튼 디자인 */
+        /* 로그인 폼 제출용 버튼 디자인 */
         form[data-testid="stForm"] button {
             background-color: #ffffff !important;
             color: #0f172a !important;
@@ -47,7 +47,7 @@ st.markdown("""
             color: #2563eb !important;
         }
         
-        /* 📝 [수동 조절 칸] 왼쪽 밀기 여백 */
+        /* 📝 로그인 화면 수동 왼쪽 여백 조절 */
         div[data-testid="stForm"] div[data-testid="stRadio"] { 
             padding-left: 95px !important; 
             margin-bottom: 25px !important; 
@@ -71,6 +71,16 @@ st.markdown("""
         .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
         .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
+        
+        /* 🔥 과목 설정 드롭다운 및 박스 가로 폭 반토막(50%) 고정 CSS */
+        .compact-box div[data-testid="stSelectbox"], .compact-box div[data-testid="stTextInput"] {
+            max-width: 50% !important;
+        }
+        /* 버튼 자름 가시성 원천 제거 */
+        .stButton button {
+            white-space: nowrap !important;
+            word-break: keep-all !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -85,17 +95,13 @@ student_table = "st_info_2_2026_1"
 teacher_table = "teacher_accounts"
 config_table = "subject_configs"
 
-# 🚨 [PGRST202 에러 완벽 해결] RPC 호출 제거하고, 기본 API 통신으로 예외 우회 처리하도록 간소화
 def load_db_df(table_name):
     try:
         response = supabase.table(table_name).select("*").execute()
         return pd.DataFrame(response.data)
-    except Exception as e:
+    except Exception:
         return pd.DataFrame()
 
-# =========================================================================
-# ➕ [조회/매칭 과목 구성 정보 가져오기용 헬퍼 함수]
-# =========================================================================
 def get_subject_item_names(subject_key):
     cfg_df = load_db_df(config_table)
     if not cfg_df.empty and "subject_key" in cfg_df.columns:
@@ -103,9 +109,15 @@ def get_subject_item_names(subject_key):
         if not match.empty:
             row = match.iloc[0]
             count = int(row.get("item_count", 3))
-            titles = [row.get("item1_name", "수행평가1"), row.get("item2_name", "수행평가2"), row.get("item3_name", "수행평가3")]
+            titles = [
+                row.get("item1_name", "수행평가1"), 
+                row.get("item2_name", "수행평가2"), 
+                row.get("item3_name", "수행평가3"),
+                row.get("item4_name", "수행평가4"),
+                row.get("item5_name", "수행평가5")
+            ]
             return count, titles
-    return 3, ["수행평가1", "수행평가2", "수행평가3"]
+    return 3, ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행평가5"]
 
 # =========================================================================
 # ➕ [다이얼로그 팝업창 모듈]
@@ -329,17 +341,17 @@ elif st.session_state["admin_logged_in"]:
 
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
-    # 📊 [그림 2 요구사항 완벽 반영] 학생 조회 현황 모니터링에 과목 필터 선택기 장착 및 동적 연동
     if menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown("<h3>🔍 조회 관측할 대상 교과 선택</h3>", unsafe_allow_html=True)
-            fl1, fl2, fl3, fl4 = st.columns(4)
-            with fl1: f_group = st.selectbox("교과군 선택", ["수리·과학군", "인문·사회군", "예체능군"], key="mon_g")
-            with fl2: f_sub = st.selectbox("세부 과목", ["정보", "국어", "수학", "영어"], key="mon_s")
-            with fl3: f_grade = st.selectbox("학년 지정", ["2학년", "1학년", "3학년"], key="mon_gr")
-            with fl4: f_term = st.selectbox("학기 선택", ["2026학년도 1학기", "2026학년도 2학기"], key="mon_t")
+            # 💡 [반토막 레이아웃 가공] 상자 폭 조절을 위한 클래스 래핑 적용
+            st.markdown('<div class="compact-box">', unsafe_allow_html=True)
+            f_group = st.selectbox("교과군 선택", ["수리·과학군", "인문·사회군", "예체능군"], key="mon_g")
+            f_sub = st.selectbox("세부 과목", ["정보", "국어", "수학", "영어"], key="mon_s")
+            f_grade = st.selectbox("학년 지정", ["2학년", "1학년", "3학년"], key="mon_gr")
+            f_term = st.selectbox("학기 선택", ["2026학년도 1학기", "2026학년도 2학기"], key="mon_t")
+            st.markdown('</div>', unsafe_allow_html=True)
             
-            # 동적 과목 키 결합 및 수행평가 커스텀 헤더 제목 불러오기 연동
             subject_key = f"{f_sub}_{f_grade}_{f_term}".replace(" ", "_")
             item_count, item_titles = get_subject_item_names(subject_key)
 
@@ -350,7 +362,6 @@ elif st.session_state["admin_logged_in"]:
                 r_df = df.copy()
                 if sel_c != "전체 학급 보기": r_df = r_df[r_df['반'].astype(int) == int(sel_c.replace("반",""))]
                 
-                # 💡 DB의 수행평가1,2,3을 교사 설정을 토대로 화면 표시 열 이름으로 매핑 변경
                 display_cols = ["반", "번호", "이름", "학교 이메일"]
                 rename_map = {}
                 for idx in range(item_count):
@@ -364,15 +375,15 @@ elif st.session_state["admin_logged_in"]:
                 final_view_df = r_df[display_cols].rename(columns=rename_map)
                 st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True)
 
-    # 📝 [그림 2 요구사항 완벽 반영] 개인별 성적 입력에 과목 필터 선택기 장착 및 동적 열 수정 에디터 연동
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
             st.markdown("<h3>🔍 성적을 입력할 대상 교과 선택</h3>", unsafe_allow_html=True)
-            fl1, fl2, fl3, fl4 = st.columns(4)
-            with fl1: f_group = st.selectbox("교과군 선택", ["수리·과학군", "인문·사회군", "예체능군"], key="edt_g")
-            with fl2: f_sub = st.selectbox("세부 과목", ["정보", "국어", "수학", "영어"], key="edt_s")
-            with fl3: f_grade = st.selectbox("학년 지정", ["2학년", "1학년", "3학년"], key="edt_gr")
-            with fl4: f_term = st.selectbox("학기 선택", ["2026학년도 1학기", "2026학년도 2학기"], key="edt_t")
+            st.markdown('<div class="compact-box">', unsafe_allow_html=True)
+            f_group = st.selectbox("교과군 선택", ["수리·과학군", "인문·사회군", "예체능군"], key="edt_g")
+            f_sub = st.selectbox("세부 과목", ["정보", "국어", "수학", "영어"], key="edt_s")
+            f_grade = st.selectbox("학년 지정", ["2학년", "1학년", "3학년"], key="edt_gr")
+            f_term = st.selectbox("학기 선택", ["2026학년도 1학기", "2026학년도 2학기"], key="edt_t")
+            st.markdown('</div>', unsafe_allow_html=True)
             
             subject_key = f"{f_sub}_{f_grade}_{f_term}".replace(" ", "_")
             item_count, item_titles = get_subject_item_names(subject_key)
@@ -383,7 +394,6 @@ elif st.session_state["admin_logged_in"]:
                 sel_c = st.selectbox("👥 학반 필터링", options=["전체"] + [f"{x}반" for x in sorted(df['반'].unique())])
                 f_idx = df[df["반"].astype(int) == int(sel_c.replace("반", ""))].index if sel_c != "전체" else df.index
                 
-                # 에디터에 표시할 기본 인적사항 및 다이내믹 수행 점수 컬럼 정의
                 target_cols = ["반", "번호", "이름"]
                 rename_map = {}
                 db_cols_ordered = []
@@ -394,13 +404,10 @@ elif st.session_state["admin_logged_in"]:
                     rename_map[db_col] = item_titles[idx]
                 
                 sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
-                disabled_list = ["반", "번호", "이름"]
-                
-                edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_list, hide_index=True)
+                edited_df = st.data_editor(sub_df, use_container_width=True, disabled=["반", "번호", "이름"], hide_index=True)
                 
                 if st.button("💾 성적 저장하기", type="primary", use_container_width=True):
                     for idx_pos, r_idx in enumerate(f_idx):
-                        # 에디터에서 한글 커스텀 명칭으로 수정된 행의 값을 추출해 원래 DB 필드명으로 백스왑 역이식
                         for idx_c, db_col in enumerate(db_cols_ordered):
                             view_title = item_titles[idx_c]
                             df.loc[r_idx, db_col] = edited_df.iloc[idx_pos][view_title]
@@ -408,6 +415,15 @@ elif st.session_state["admin_logged_in"]:
                     st.success("🎉 변경된 수행 점수가 원격 데이터베이스에 안전하게 실시간 저장되었습니다!"); st.rerun()
 
     elif menu_selection == "▶ 학생 정보 관리":
+        with st.container(border=True):
+            st.markdown("<h3>🔍 학생 신적 정보를 필터링할 교과 선택</h3>", unsafe_allow_html=True)
+            st.markdown('<div class="compact-box">', unsafe_allow_html=True)
+            f_group = st.selectbox("교과군 선택", ["수리·과학군", "인문·사회군", "예체능군"], key="inf_g")
+            f_sub = st.selectbox("세부 과목", ["정보", "국어", "수학", "영어"], key="inf_s")
+            f_grade = st.selectbox("학년 지정", ["2학년", "1학년", "3학년"], key="inf_gr")
+            f_term = st.selectbox("학기 선택", ["2026학년도 1학기", "2026학년도 2학기"], key="inf_t")
+            st.markdown('</div>', unsafe_allow_html=True)
+
         with st.container(border=True):
             if df.empty:
                 st.info("현재 등록된 학생이 없습니다.")
@@ -426,48 +442,61 @@ elif st.session_state["admin_logged_in"]:
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
                         st.success("🎉 인적사항이 동기화되었습니다!"); st.rerun()
 
+    # 👑 [가시성 50% 축소 압축 및 마법사 단계별 로직 완성부]
     elif menu_selection == "▶ 평가 대상 과목 구성":
         st.markdown("<h2>🎯 평가 대상 과목 및 항목 관리 (자동 실시간 연동 중)</h2>", unsafe_allow_html=True)
-        main_col1, main_col2 = st.columns(2)
         
-        with main_col1:
-            with st.container(border=True):
-                st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
-                sel_g = st.selectbox("교과군 선택", options=["수리·과학군", "인문·사회군", "예체능군"])
-                final_sub = st.selectbox("세부 과목", options=["정보", "국어", "수학", "영어"])
-                sel_gr = st.selectbox("학년 지정", options=["2학년", "1학년", "3학년"])
-                sel_se = st.selectbox("학기 선택", options=["2026학년도 1학기", "2026학년도 2학기"])
-                
-                subject_key = f"{final_sub}_{sel_gr}_{sel_se}".replace(" ", "_")
+        with st.container(border=True):
+            st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
+            # 💡 [반토막 레이아웃 가공] 가로 폭을 깔끔하게 50% 스케일로 다운사이징 피팅
+            st.markdown('<div class="compact-box">', unsafe_allow_html=True)
+            sel_g = st.selectbox("교과군 선택", options=["수리·과학군", "인문·사회군", "예체능군"])
+            final_sub = st.selectbox("세부 과목", options=["정보", "국어", "수학", "영어"])
+            sel_gr = st.selectbox("학년 지정", options=["2학년", "1학년", "3학년"])
+            sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"])
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            subject_key = f"{final_sub}_{sel_gr}_{sel_se}".replace(" ", "_")
 
-        cfg_df = load_db_df(config_table)
-        db_match = cfg_df[cfg_df["subject_key"] == subject_key] if not cfg_df.empty else pd.DataFrame()
-        
-        if not db_match.empty:
-            saved_info = db_match.iloc[0]
-            init_count = int(saved_info.get("item_count", 3))
-            init_titles = [saved_info.get("item1_name", "수행평가1"), saved_info.get("item2_name", "수행평가2"), saved_info.get("item3_name", "수행평가3")]
-        else:
-            init_count = 3
-            init_titles = ["수행평가1", "수행평가2", "수행평가3"]
+        # 🚀 [인공지능 마법사 시나리오] 학기 선택까지 완벽하게 값이 채워졌을 때만 2단계 카드를 로드함!
+        if sel_se != "학기를 선택하세요.":
+            cfg_df = load_db_df(config_table)
+            db_match = cfg_df[cfg_df["subject_key"] == subject_key] if not cfg_df.empty else pd.DataFrame()
+            
+            if not db_match.empty:
+                saved_info = db_match.iloc[0]
+                init_count = int(saved_info.get("item_count", 3))
+                init_titles = [
+                    saved_info.get("item1_name", "수행평가1"), 
+                    saved_info.get("item2_name", "수행평가2"), 
+                    saved_info.get("item3_name", "수행평가3"),
+                    saved_info.get("item4_name", "수행평가4"),
+                    saved_info.get("item5_name", "수행평가5")
+                ]
+            else:
+                init_count = 3
+                init_titles = ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행평가5"]
 
-        with main_col2:
             with st.container(border=True):
                 st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 
-                item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3], index=(init_count - 1))
-                st.write("📝 **각 항목의 제목을 입력하세요:**")
+                st.markdown('<div class="compact-box">', unsafe_allow_html=True)
+                # 평가 반영 항목 최대 5개 확장 반영 문 가공
+                item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=(init_count - 1))
+                st.write("📝 **각 항목의 제목을 입력하세요 (절반 폭 콤팩트 가공):**")
                 
                 item_titles = []
                 for i in range(item_count):
                     default_val = init_titles[i] if i < len(init_titles) else f"수행평가_{i+1}"
                     t_in = st.text_input(f"항목 {i+1} 제목", value=default_val, key=f"pure_item_title_{i}_unique")
                     item_titles.append(t_in.strip())
+                st.markdown('</div>', unsafe_allow_html=True)
                 
                 st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 20px 0;'>", unsafe_allow_html=True)
                 
-                b_space1, b_space2 = st.columns([3.8, 1.2])
+                # 우측 하단 단정 배치 레이아웃
+                b_space1, b_space2 = st.columns([4.0, 1.0])
                 with b_space2:
                     if st.button("💾 이 과목 설정 저장하기", type="primary", use_container_width=True):
                         config_record = {
@@ -475,11 +504,16 @@ elif st.session_state["admin_logged_in"]:
                             "item_count": item_count,
                             "item1_name": item_titles[0] if item_count >= 1 else "-",
                             "item2_name": item_titles[1] if item_count >= 2 else "-",
-                            "item3_name": item_titles[2] if item_count >= 3 else "-"
+                            "item3_name": item_titles[2] if item_count >= 3 else "-",
+                            "item4_name": item_titles[3] if item_count >= 4 else "-",
+                            "item5_name": item_titles[4] if item_count >= 5 else "-"
                         }
                         supabase.table(config_table).upsert(config_record).execute()
-                        st.success("🎉 수행평가 항목 구성이 클라우드 DB에 안전하게 세이브되었습니다!")
+                        st.success("🎉 수행평가 구조 설정이 데이터베이스에 안전하게 통합 세이브되었습니다!")
                         st.rerun()
+        else:
+            # 학기 미선택 상태 가이드 고정
+            st.info("💡 위의 **[학기 선택]** 영역을 지정하시면, 하단에 상세 수행평가 반영 항목을 구성하는 관리 창이 마법처럼 생성됩니다.")
 
     elif menu_selection == "▶ 성적 일괄 업로드 (CSV / Excel)":
         with st.container(border=True):
