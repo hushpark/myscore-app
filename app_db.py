@@ -351,7 +351,7 @@ elif st.session_state["admin_logged_in"]:
     """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------------------
-    # 1번 메뉴: 학생 조회 현황 모니터링
+    # 1번 메뉴: 학생 조회 현황 모니터링 (3.5 : 6.5)
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         with st.container(border=True):
@@ -403,7 +403,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 피드백 반영: 버튼 위치 원래대로 피팅 + 하단 다이어트 크기)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 3.5 : 6.5 구조 및 드롭박스 아래 정렬 완성)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -420,7 +420,7 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
-                # 💡 [피드백 반영] 불필요하게 솟아오르거나 박스를 깨지 않고, 상단 컴포넌트 바로 직하단에 2분할 절반크기로 이식 완료
+                # 💡 [피드백 반영] 불필요한 공백/마진 없이 드롭박스 바로 아래 공간에 2분할 절반크기 규격으로 완벽 배치
                 st.markdown("<br>", unsafe_allow_html=True)
                 score_btn_col1, score_btn_col2 = st.columns(2)
                 with score_btn_col1:
@@ -470,7 +470,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리
+    # 3번 메뉴: 학생 정보 관리 (💡 3.5 : 6.5 구조 및 드롭박스 아래 정렬 완성)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
@@ -487,6 +487,7 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
+                # 💡 [피드백 반영] 불필요한 마진 없이 드롭박스 바로 직하단 공간에 추가/저장 단추 수평 결합
                 st.markdown("<br>", unsafe_allow_html=True)
                 btn_split1, btn_split2 = st.columns(2)
                 with btn_split1:
@@ -620,7 +621,7 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 피드백 반영: 반영 버튼 가로 절반 정렬)
+    # 5번 메뉴: 성적 전체 일괄 업로드 (3.5 : 6.5)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
@@ -644,7 +645,6 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
                 
-                # 💡 [피드백 반영] 일괄 반영 버튼 역시 동일 규격의 가로 '절반' 크기로 피팅 완료
                 st.markdown("<br>", unsafe_allow_html=True)
                 apply_btn_col1, apply_btn_col2 = st.columns(2)
                 with apply_btn_col1:
