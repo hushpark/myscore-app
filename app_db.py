@@ -10,7 +10,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="수행평가 점수 확인 시스템 (Supabase)", layout="wide")
 
 # =========================================================================
-# 🎨 [디자인 관통 패치] 테두리 가시성 및 참고 스냅샷 스타일 시트 반영 CSS
+# 🎨 [디자인 관통 패치] 브라우저 스크롤 바 차단 및 한 화면 고정 스케일 CSS
 # =========================================================================
 st.markdown("""
     <style>
@@ -351,7 +351,7 @@ elif st.session_state["admin_logged_in"]:
     """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------------------
-    # 1번 메뉴: 학생 조회 현황 모니터링 (3.5 : 6.5)
+    # 1번 메뉴: 학생 조회 현황 모니터링
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         with st.container(border=True):
@@ -403,7 +403,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 3.5 : 6.5 구조 및 드롭박스 아래 정렬 완성)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (📊 표 격자 기반 정렬)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -420,10 +420,10 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
-                # 💡 [피드백 반영] 불필요한 공백/마진 없이 드롭박스 바로 아래 공간에 2분할 절반크기 규격으로 완벽 배치
+                # 💡 [피드백 완벽 반영] 가로 표 2열 격자로 드롭박스 오른쪽 정렬 기준에 맞춰 칼같이 아래 배치
                 st.markdown("<br>", unsafe_allow_html=True)
-                score_btn_col1, score_btn_col2 = st.columns(2)
-                with score_btn_col1:
+                score_grid_col1, score_grid_col2 = st.columns(2)
+                with score_grid_col1:
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
                 
             with layout_right:
@@ -470,7 +470,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리 (💡 3.5 : 6.5 구조 및 드롭박스 아래 정렬 완성)
+    # 3번 메뉴: 학생 정보 관리 (📊 표 격자 기반 정렬)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
@@ -487,12 +487,12 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 💡 [피드백 반영] 불필요한 마진 없이 드롭박스 바로 직하단 공간에 추가/저장 단추 수평 결합
+                # 💡 [피드백 완벽 반영] 가로 표 2열 격자로 드롭박스 오른쪽 정렬 기준에 맞춰 칼같이 아래 배치
                 st.markdown("<br>", unsafe_allow_html=True)
-                btn_split1, btn_split2 = st.columns(2)
-                with btn_split1:
+                info_grid_col1, info_grid_col2 = st.columns(2)
+                with info_grid_col1:
                     add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
-                with btn_split2:
+                with info_grid_col2:
                     save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
 
             with layout_right:
@@ -604,8 +604,8 @@ elif st.session_state["admin_logged_in"]:
                                     "item1_name": item_titles[0] if item_count >= 1 else "-",
                                     "item2_name": item_titles[1] if item_count >= 2 else "-",
                                     "item3_name": item_titles[2] if item_count >= 3 else "-",
-                                    "item4_name": item_titles[4] if item_count >= 4 else "-",
-                                    "item5_name": item_titles[5] if item_count >= 5 else "-"
+                                    "item4_name": item_titles[3] if item_count >= 4 else "-",
+                                    "item5_name": item_titles[4] if item_count >= 5 else "-"
                                 }
                                 supabase.table(config_table).upsert(config_record).execute()
                                 st.success("🎉 수행평가 구조 셋업 세이브 완료!"); st.rerun()
@@ -621,7 +621,7 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (3.5 : 6.5)
+    # 5번 메뉴: 성적 전체 일괄 업로드 (📊 표 격자 기반 정렬)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
@@ -645,6 +645,7 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
                 
+                # 💡 [피드백 완벽 반영] 가로 표 2열 격자로 드롭박스 오른쪽 정렬 기준에 맞춰 칼같이 아래 배치
                 st.markdown("<br>", unsafe_allow_html=True)
                 apply_btn_col1, apply_btn_col2 = st.columns(2)
                 with apply_btn_col1:
