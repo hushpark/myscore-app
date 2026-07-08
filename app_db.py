@@ -10,7 +10,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="수행평가 점수 확인 시스템 (Supabase)", layout="wide")
 
 # =========================================================================
-# 🎨 [디자인 관통 패치] 테두리 가시성 및 참고 스냅샷 스타일 시트 반영 CSS
+# 🎨 [디자인 관통 패치] 테두리 가시성 및 스타일 시트 반영 CSS
 # =========================================================================
 st.markdown("""
     <style>
@@ -176,41 +176,52 @@ def show_profile_popup_dialog():
     if edit_mode == "🔐 비밀번호 변경":
         if "pw_step_unlocked" not in st.session_state: st.session_state["pw_step_unlocked"] = False
         is_unlocked = st.session_state["pw_step_unlocked"]
-        curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="curr_pw_input_field", disabled=is_unlocked)
         
-        if not is_unlocked and curr_pw:
-            if curr_pw != st.session_state.get("logged_teacher_pw", ""):
-                st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
-            else:
-                st.session_state["pw_step_unlocked"] = True
-                is_unlocked = True
-
-        if is_unlocked:
-            st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
-            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
-            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
-            
-            components.html("""<script>setTimeout(function() { const inputs = window.parent.document.querySelectorAll('input[type="password"]:not([disabled])'); if (inputs.length > 0) { inputs[0].focus(); } }, 150);</script>""", height=0, width=0)
-            msg_box = st.empty()
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            col1, col2 = st.columns(2)
-            with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
-            with col2:
-                if st.button("닫기", type="secondary", use_container_width=True):
-                    st.session_state["pw_step_unlocked"] = False
-                    st.rerun()
-                    
-            if save_btn:
-                if not new_pw or new_pw != new_pw_confirm: msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 새 비밀번호가 서로 일치하지 않습니다.</p>", unsafe_allow_html=True)
+        # 1단계: 현재 비밀번호 검증
+        if not is_unlocked:
+            curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="curr_pw_input_field")
+            if curr_pw:
+                if curr_pw != st.session_state.get("logged_teacher_pw", ""):
+                    st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
                 else:
-                    st.session_state["logged_teacher_pw"] = new_pw
-                    msg_box.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 비밀번호 메모리 임시 저장이 완료되었습니다.</p>", unsafe_allow_html=True)
-        else:
+                    st.session_state["pw_step_unlocked"] = True
+                    st.rerun()
+            
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("닫기", type="secondary", use_container_width=True):
                 st.session_state["pw_step_unlocked"] = False
                 st.rerun()
+
+        # 2단계: 새 비밀번호 입력 폼 (엔터 강제 없이 탭 이동 후 일괄 저장 가능하도록 form 처리)
+        else:
+            st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
+            
+            with st.form("new_password_submit_form", border=False):
+                new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
+                new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                col1, col2 = st.columns(2)
+                with col1: save_btn = st.form_submit_button("💾 비밀번호 저장", type="primary", use_container_width=True)
+                with col2: cancel_btn = st.form_submit_button("닫기", use_container_width=True)
+                
+                if cancel_btn:
+                    st.session_state["pw_step_unlocked"] = False
+                    st.rerun()
+                    
+                if save_btn:
+                    if not new_pw or new_pw != new_pw_confirm: 
+                        st.error("❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다. 다시 확인해 주세요.")
+                    else:
+                        try:
+                            # 🎯 Supabase 실제 DB에 즉시 동기화 업데이트 진행
+                            teacher_id = st.session_state.get("logged_teacher_id", "")
+                            if teacher_id:
+                                supabase.table(teacher_table).update({"비밀번호": new_pw.strip()}).eq("교사_ID", teacher_id).execute()
+                                st.session_state["logged_teacher_pw"] = new_pw.strip()
+                                st.success("🎉 새 비밀번호가 원격 데이터베이스(Supabase)에 성공적으로 저장되었습니다!")
+                        except Exception as e:
+                            st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
 
     elif edit_mode == "📚 담당과목 변경":
         curr_subs_str = ", ".join(st.session_state.get("allowed_subjects", []))
@@ -284,7 +295,6 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         if df_tc.empty: st.error("❌ 일반 교사 계정이 비어있습니다. 최고관리자 계정으로 먼저 등록하세요.")
                         else:
                             id_match = df_tc[df_tc['교사_ID'] == clean_id]
-                            # 💡 [문법 오류 해결] && 기호를 파싱 가능한 정식 파이썬 연산자 and로 교정 완료
                             if not id_match.empty and str(id_match.iloc[0]['비밀번호']) == clean_pw:
                                 row = id_match.iloc[0]
                                 st.session_state["admin_logged_in"] = True
@@ -303,7 +313,6 @@ elif st.session_state["student_logged_in"]:
     if st.button("🚪 로그아웃"): st.session_state.clear(); st.rerun()
     if st.button("🚀 나의 수행평가 성적 실시간 검증", type="primary", use_container_width=True):
         id_col = "학교 이메일" if "학교 이메일" in df.columns else "school_email"
-        # 💡 [문법 오류 해결] & 기호를 파싱 가능한 정식 파이썬 연산자 and로 교정 완료
         res = df[(df[id_col] == st.session_state["logged_student_id"]) & (df['비밀번호'].astype(str) == st.session_state["logged_student_pw"])]
         if not res.empty: show_result_dialog(res.iloc[0].to_dict())
 
@@ -328,7 +337,6 @@ elif st.session_state["admin_logged_in"]:
             show_profile_popup_dialog()
         if st.sidebar.button("🚪 로그아웃", type="secondary", use_container_width=True): st.session_state.clear(); st.rerun()
 
-    # 💡 [문법 오류 해결] & 및 && 기호를 파싱 가능한 정식 파이썬 연산자 and로 교정 완료
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
     # ---------------------------------------------------------------------
@@ -345,7 +353,6 @@ elif st.session_state["admin_logged_in"]:
             with c_class:
                 st.markdown("**🎯 필터링할 학급 선택**")
                 class_options = ["전체 학급 보기"]
-                # 💡 [문법 오류 해결] & 및 && 기호를 파싱 가능한 정식 파이썬 연산자 and로 교정 완료
                 if not df.empty and "반" in df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class = st.selectbox("학급 선택", options=class_options, label_visibility="collapsed", key="mon_class")
                 
@@ -384,7 +391,6 @@ elif st.session_state["admin_logged_in"]:
             with c_class:
                 st.markdown("**🎯 필터링할 학급 선택**")
                 class_options_ed = ["전체 학급 보기"]
-                # 💡 [문법 오류 해결] & 및 && 기호를 파싱 가능한 정식 파이썬 연산자 and로 교정 완료
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
@@ -435,7 +441,6 @@ elif st.session_state["admin_logged_in"]:
             with c_class:
                 st.markdown("**👥 학반 필터링**")
                 class_opts = ["전체"]
-                # 💡 [문법 오류 해결] & 및 && 기호를 파싱 가능한 정식 파이썬 연산자 and로 교정 완료
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
@@ -460,7 +465,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 평가 대상 과목 구성 (선생님 요청 2x2 격자 및 스플릿 압축 반영)
+    # 평가 대상 과목 구성 (정렬 불일치 및 가이드라인 위치 수정 반영)
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         st.markdown("<h2>🎯 평가 대상 과목 및 항목 관리</h2>", unsafe_allow_html=True)
@@ -517,6 +522,9 @@ elif st.session_state["admin_logged_in"]:
 
                 with st.container(border=True):
                     st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
+                    
+                    # 💡 수정 포인트: 안내 문구를 전체 상단으로 빼서 좌우 인풋박스들의 높이를 칼각으로 맞춤
+                    st.write("📝 **각 항목의 제목을 입력하세요:**")
                     st.markdown("<br>", unsafe_allow_html=True)
                     
                     split_c1, split_c2 = st.columns([1.1, 1.9])
@@ -525,7 +533,6 @@ elif st.session_state["admin_logged_in"]:
                         item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=(init_count - 1))
                         
                     with split_c2:
-                        st.write("📝 **각 항목의 제목을 입력하세요:**")
                         item_titles = []
                         for i in range(item_count):
                             default_val = init_titles[i] if i < len(init_titles) else f"수행평가_{i+1}"
