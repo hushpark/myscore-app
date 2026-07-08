@@ -177,35 +177,37 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 흐름 및 결과 메시지 위치/크기 패치 완결본]
+# 💡 내 정보 수정 흐름 및 결과 메시지 무조건 노출 완벽 패치 버전
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
     edit_mode = st.radio("관리할 항목 선택", ["🔐 비밀번호 변경", "📚 담당과목 변경"], horizontal=True)
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
+    if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
+
     if edit_mode == "🔐 비밀번호 변경":
         curr_pw_input = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="profile_verify_cur_pw")
         
         if curr_pw_input:
             if curr_pw_input.strip() != st.session_state.get("logged_teacher_pw", ""):
-                st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
             else:
-                st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
                 
                 new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="profile_new_pw_1")
                 new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="profile_new_pw_2")
                 
-                # 피드백 반영: 성공 / 실패 문구를 텍스트 박스 바로 밑에 똑같은 글자 크기 서식으로 표출하기 위한 전용 상태 세션 정의
-                if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
-
-                # 💡 [피드백 적용] 새 비밀번호 확인 박스 밑에 정밀 동적 폰트 크기 매칭 메시지 분기 표출
+                # 메시지 전용 컨테이너 생성하여 덮어쓰기 현상 방지
+                msg_placeholder = st.container()
                 if st.session_state["pw_save_status"] == "success":
-                    st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
-                elif st.session_state["pw_save_status"] == "fail":
-                    st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: 5px;'>✗ 새 비밀번호가 비어있거나 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+                    msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호가 성공적으로 변경되었습니다.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail_mismatch":
+                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail_empty":
+                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
 
-                # 자동 커서 포커스 JS
+                # 자동 커서 포커스 및 엔터 매크로 JS
                 components.html("""
                     <script>
                         setTimeout(function() {
@@ -236,7 +238,6 @@ def show_profile_popup_dialog():
                 col1, col2 = st.columns(2)
                 with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
                 with col2: 
-                    # 🛠️ [버그 픽스 완료] 성공 로직을 기억한 채 닫기를 눌러도 에러 화면으로 역주행하지 않고 안전 클리어 탈출
                     if st.button("닫기", key="close_pw_inner", use_container_width=True):
                         st.session_state["pw_save_status"] = "none"
                         st.rerun()
@@ -245,8 +246,11 @@ def show_profile_popup_dialog():
                     clean_new_pw = new_pw.strip()
                     clean_confirm_pw = new_pw_confirm.strip()
                     
-                    if not clean_new_pw or clean_new_pw != clean_confirm_pw:
-                        st.session_state["pw_save_status"] = "fail"
+                    if not clean_new_pw:
+                        st.session_state["pw_save_status"] = "fail_empty"
+                        st.rerun()
+                    elif clean_new_pw != clean_confirm_pw:
+                        st.session_state["pw_save_status"] = "fail_mismatch"
                         st.rerun()
                     else:
                         try:
@@ -260,7 +264,9 @@ def show_profile_popup_dialog():
                             st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("닫기", key="close_pw_outer", use_container_width=True): st.rerun()
+            if st.button("닫기", key="close_pw_outer", use_container_width=True): 
+                st.session_state["pw_save_status"] = "none"
+                st.rerun()
 
     elif edit_mode == "📚 담당과목 변경":
         curr_subs_str = ", ".join(st.session_state.get("allowed_subjects", []))
@@ -382,9 +388,7 @@ elif st.session_state["admin_logged_in"]:
         <div class="header-nav-sub">현재 위치: 교사 모드 > 📁 {menu_selection}</div>
     """, unsafe_allow_html=True)
 
-    # ---------------------------------------------------------------------
     # 1번 메뉴: 학생 조회 현황 모니터링
-    # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📊 학생별 조회 이력 및 성적 현황 모니터링</h4></div>', unsafe_allow_html=True)
@@ -434,9 +438,7 @@ elif st.session_state["admin_logged_in"]:
                     final_view_df = r_df[display_cols].rename(columns=rename_map)
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
-    # ---------------------------------------------------------------------
     # 2번 메뉴: 개인별 성적 데이터 입력
-    # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 개인별 성적 데이터 입력</h4></div>', unsafe_allow_html=True)
@@ -504,9 +506,7 @@ elif st.session_state["admin_logged_in"]:
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
-    # ---------------------------------------------------------------------
     # 3번 메뉴: 학생 정보 관리
-    # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📇 학생 기본 정보 관리</h4></div>', unsafe_allow_html=True)
@@ -557,9 +557,7 @@ elif st.session_state["admin_logged_in"]:
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
-    # ---------------------------------------------------------------------
     # 4번 메뉴: 평가 대상 과목 구성
-    # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">🎯 평가 대상 과목 및 항목 관리</h4></div>', unsafe_allow_html=True)
@@ -656,9 +654,7 @@ elif st.session_state["admin_logged_in"]:
                         unsafe_allow_html=True
                     )
 
-    # ---------------------------------------------------------------------
     # 5번 메뉴: 성적 전체 일괄 업로드
-    # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📥 전체 일괄 성적 대장 CSV 업로드</h4></div>', unsafe_allow_html=True)
