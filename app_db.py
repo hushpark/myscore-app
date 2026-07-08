@@ -10,11 +10,11 @@ from supabase import create_client, Client
 st.set_page_config(page_title="수행평가 점수 확인 시스템 (Supabase)", layout="wide")
 
 # =========================================================================
-# 🎨 [디자인 관통 패치] 브라우저 스크롤 바 차단 및 한 화면 고정 스케일 CSS
+# 🎨 [디자인 관통 패치] 테두리 가시성 및 참고 스냅샷 스타일 시트 반영 CSS
 # =========================================================================
 st.markdown("""
     <style>
-        /* 💡 브라우저 전체 우측 스크롤바 원천 차단 및 한 화면 고정 */
+        /* 브라우저 전체 우측 스크롤바 원천 차단 및 한 화면 고정 */
         html, body, [data-testid="stAppViewContainer"], .main {
             overflow: hidden !important;
             height: 100vh !important;
@@ -345,6 +345,11 @@ elif st.session_state["admin_logged_in"]:
 
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
+    st.markdown(f"""
+        <div class="header-title-main">수행평가 점수 확인 시스템</div>
+        <div class="header-nav-sub">현재 위치: 교사 모드 > 📁 {menu_selection}</div>
+    """, unsafe_allow_html=True)
+
     # ---------------------------------------------------------------------
     # 1번 메뉴: 학생 조회 현황 모니터링
     # ---------------------------------------------------------------------
@@ -398,7 +403,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 피드백 반영: 저장 단추 가로 절반 정렬)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 피드백 반영: 버튼 위치 원래대로 피팅 + 하단 다이어트 크기)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -415,7 +420,7 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
-                # 💡 [피드백 반영] 2분할 서브 컬럼 구조를 적용하여 추가/저장 단추와 완벽히 규격 일치
+                # 💡 [피드백 반영] 불필요하게 솟아오르거나 박스를 깨지 않고, 상단 컴포넌트 바로 직하단에 2분할 절반크기로 이식 완료
                 st.markdown("<br>", unsafe_allow_html=True)
                 score_btn_col1, score_btn_col2 = st.columns(2)
                 with score_btn_col1:
@@ -639,7 +644,7 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
                 
-                # 💡 [피드백 반영] 일괄 반영 버튼 역시 동일 규격의 가로 '절반' 크기로 다이어트 피팅
+                # 💡 [피드백 반영] 일괄 반영 버튼 역시 동일 규격의 가로 '절반' 크기로 피팅 완료
                 st.markdown("<br>", unsafe_allow_html=True)
                 apply_btn_col1, apply_btn_col2 = st.columns(2)
                 with apply_btn_col1:
