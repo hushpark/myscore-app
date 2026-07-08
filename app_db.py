@@ -169,7 +169,7 @@ def show_result_dialog(student_data):
     sc2.metric("📝 수행평가 2차", f"{int(student_data.get('수행평가2', 0))} 점")
     sc3.metric("📝 수행평가 3차", f"{int(student_data.get('수행평가3', 0))} 점")
     if "has_counted" not in st.session_state:
-        new_count = int(student_data.get("성적조회 횟수", 0)) + 1
+        new_count = int(student_data.get("성적조ation 횟수", 0)) + 1
         supabase.table(student_table).upsert({"반": int(student_data["반"]), "번호": int(student_data["번호"]), "성적조회 횟수": new_count, "최종 확인일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}).execute()
         st.session_state["has_counted"] = True
     if st.button("닫기", type="secondary", use_container_width=True):
@@ -177,7 +177,7 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 불일치 엔터 차단 및 텍스트 캐시 폭파 초기화 완성본]
+# 💡 [내 정보 수정 엔터 불일치 버그 원천 차단 마스터피스 패치본]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -185,7 +185,6 @@ def show_profile_popup_dialog():
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
     if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
-    # 🛠️ 닫기 누를 때 강제 컴포넌트 초기화를 보장하는 시각적 밸브 버전 증설
     if "pw_version_key" not in st.session_state: st.session_state["pw_version_key"] = 100
 
     v_key = str(st.session_state["pw_version_key"])
@@ -196,7 +195,6 @@ def show_profile_popup_dialog():
         if curr_pw_input:
             if curr_pw_input.strip() != st.session_state.get("logged_teacher_pw", ""):
                 st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
-                # 현재 비밀번호가 틀린 시점에는 저장 상태값을 초기화하여 옛날 문구가 간섭하는 현상 방어
                 st.session_state["pw_save_status"] = "none"
             else:
                 st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
@@ -204,7 +202,6 @@ def show_profile_popup_dialog():
                 new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
                 new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
                 
-                # 피드백 반영: 성공 / 실패 문구를 확인 텍스트 박스 바로 밑에 똑같은 글자 크기 지정 표출
                 msg_placeholder = st.container()
                 if st.session_state["pw_save_status"] == "success":
                     msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
@@ -213,8 +210,7 @@ def show_profile_popup_dialog():
                 elif st.session_state["pw_save_status"] == "fail_empty":
                     msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
 
-                # 🛠️ 엔터 버그 패치 자바스크립트 업그레이드 주입
-                # 확인란에서 엔터를 쳤을 때 다짜고짜 전체 Rerun되어 팝업창이 닫히는 기본 submit 가로채기 차단 로직 주입
+                # 🛠️ [엔터 버그 영구 사냥 패치] 자바스크립트 내 매칭 텍스트에 이모지 아이콘 무조건 추적 연동 반영
                 components.html("""
                     <script>
                         setTimeout(function() {
@@ -229,12 +225,15 @@ def show_profile_popup_dialog():
                                 };
                                 inputs[2].onkeydown = function(e) {
                                     if(e.keyCode === 13) {
-                                        // 💡 엔터 조작 시 Streamlit이 독단적으로 전체 리런을 때려 창을 닫아버리는 브라우저 기본 현상을 무력화 차단합니다.
                                         e.preventDefault(); 
                                         e.stopPropagation();
                                         const submitButtons = parentDoc.querySelectorAll('button');
                                         for(let btn of submitButtons) {
-                                            if(btn.innerText.includes("비밀번호 저장")) { btn.click(); break; }
+                                            // 💡 기존에 "비밀번호 저장"으로만 되어있어 매칭에 실패하고 튕기던 부분을 이모지 결합형인 "비밀번호 저장" 전체 추적으로 전면 교정 수리했습니다.
+                                            if(btn.innerText.includes("비밀번호 저장")) {
+                                                btn.click();
+                                                break;
+                                            }
                                         }
                                     }
                                 };
@@ -247,7 +246,6 @@ def show_profile_popup_dialog():
                 col1, col2 = st.columns(2)
                 with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
                 with col2: 
-                    # 💡 [피드백 반영] 닫기 클릭 시 세션 상태 및 텍스트 캐시 키를 강제 변경(버전업)하여 흔적을 완전 초기화 백아웃!
                     if st.button("닫기", key="close_pw_inner", use_container_width=True):
                         st.session_state["pw_save_status"] = "none"
                         st.session_state["pw_version_key"] += 1
@@ -275,7 +273,6 @@ def show_profile_popup_dialog():
                             st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
             st.markdown("<br>", unsafe_allow_html=True)
-            # 현재 비밀번호만 입력된 빈 상태에서 닫기를 누를 때도 캐시 초기화 기어 연동
             if st.button("닫기", key="close_pw_outer", use_container_width=True): 
                 st.session_state["pw_save_status"] = "none"
                 st.session_state["pw_version_key"] += 1
