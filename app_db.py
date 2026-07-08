@@ -51,10 +51,10 @@ st.markdown("""
 
         /* 각 메뉴 제목 밑 구분 라인 디자인 */
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
-        .menu-title-text { font-size: 20px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; }
+        .menu-title-text { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; }
 
-        /* 💡 [수정 반영] 다른 요소의 간격 방해 없이 오직 '버튼만 밑으로' 밀착시키는 수직 마그네틱 서식 */
-        .magnet-button-wrapper { margin-top: 160px !important; }
+        /* 💡 [피드백 4 반영] 과목 개설 카드 내부 제목 폰트 크기를 대메뉴 크기와 동일하게 대통합 */
+        .sync-giant-title { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
 
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
     </style>
@@ -340,19 +340,21 @@ elif st.session_state["admin_logged_in"]:
 
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
+    # 최상단 현재위치바 출력
     st.markdown(f"""
         <div class="header-title-main">수행평가 점수 확인 시스템</div>
         <div class="header-nav-sub">현재 위치: 교사 모드 > 📁 {menu_selection}</div>
     """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------------------
-    # 1번 메뉴: 학생 조회 현황 모니터링
+    # 1번 메뉴: 학생 조회 현황 모니터링 (💡 3.5 : 6.5 황금 스케일 피팅)
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📊 학생별 조회 이력 및 성적 현황 모니터링</h4></div>', unsafe_allow_html=True)
             
-            layout_left, layout_right = st.columns([2.5, 7.5])
+            # 💡 [피드백 2 반영] 왼쪽 3.5, 오른쪽 6.5 콤팩트 스케일 스플릿
+            layout_left, layout_right = st.columns([3.5, 6.5])
             
             with layout_left:
                 st.markdown("**📂 대상 교과 선택**")
@@ -398,16 +400,16 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 필터 위치 원래대로 상단 고정, 버튼만 밑으로)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 필터 바로 아래 저장 버튼 결합 완료)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 개인별 성적 데이터 입력</h4></div>', unsafe_allow_html=True)
             
-            layout_left, layout_right = st.columns([2.5, 7.5])
+            # 💡 [피드백 2 반영] 콤팩트 스케일 적용
+            layout_left, layout_right = st.columns([3.5, 6.5])
             
             with layout_left:
-                # 💡 필터링 메뉴들은 원래 보시던 상단 위치에 자연스럽게 배치
                 st.markdown("**📂 관리할 교과 선택**")
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="edt_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -416,10 +418,9 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
-                # 💡 [요청 반영] 다른 배치 방해 없이 오직 저장 버튼만 CSS 마진을 통해 맨 밑 바닥으로 밀착
-                st.markdown('<div class="magnet-button-wrapper">', unsafe_allow_html=True)
+                # 💡 [피드백 1 반영] 일괄 반영 버튼 위치처럼 필터 바로 하단에 단정하게 결합
+                st.markdown("<br>", unsafe_allow_html=True)
                 save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
-                st.markdown('</div>', unsafe_allow_html=True)
                 
             with layout_right:
                 subject_key = "정보_2학년_2026학년도_1학기"
@@ -465,16 +466,16 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리 (💡 필터 위치 원래대로 상단 고정, 추가/저장 버튼만 밑으로)
+    # 3번 메뉴: 학생 정보 관리 (💡 추가/저장 버튼 나란히 필터 바로 아래 장착)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📇 학생 기본 정보 관리</h4></div>', unsafe_allow_html=True)
             
-            layout_left, layout_right = st.columns([2.5, 7.5])
+            # 💡 [피드백 2 반영] 콤팩트 스케일 적용
+            layout_left, layout_right = st.columns([3.5, 6.5])
             
             with layout_left:
-                # 💡 필터링 메뉴들은 원래 보시던 상단 위치에 자연스럽게 배치
                 st.markdown("**📂 관리할 교과 선택**")
                 st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="inf_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -483,14 +484,13 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 💡 [요청 반영] 추가 및 저장 버튼 묶음만 CSS 마진을 통해 맨 밑 바닥으로 밀착 정렬
-                st.markdown('<div class="magnet-button-wrapper">', unsafe_allow_html=True)
+                # 💡 [피드백 1, 2 반영] 복잡한 바닥 컴포넌트 해체 후 필터 바로 하단에 [추가] | [저장] 수평 연동
+                st.markdown("<br>", unsafe_allow_html=True)
                 btn_split1, btn_split2 = st.columns(2)
                 with btn_split1:
                     add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
                 with btn_split2:
                     save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
-                st.markdown('</div>', unsafe_allow_html=True)
 
             with layout_right:
                 if df.empty:
@@ -519,7 +519,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 4번 메뉴: 평가 대상 과목 구성
+    # 4번 메뉴: 평가 대상 과목 구성 (💡 정렬 및 제목 글씨 크기 대통합)
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         with st.container(border=True):
@@ -529,7 +529,8 @@ elif st.session_state["admin_logged_in"]:
             
             with main_col1:
                 with st.container(border=True):
-                    st.markdown("<h3>⚙️ 1. 평가 과목 설정</h3>", unsafe_allow_html=True)
+                    # 💡 [피드백 4 반영] 대메뉴 제목과 똑같은 폰트 굵기/크기(sync-giant-title) 매핑
+                    st.markdown('<div class="sync-giant-title">⚙️ 1. 평가 과목 설정</div>', unsafe_allow_html=True)
                     st.caption("과목 설정이 끝나면, 우측에서 수행평가 세부 항목을 구성하세요.")
                     st.markdown("<br>", unsafe_allow_html=True)
                     
@@ -575,8 +576,8 @@ elif st.session_state["admin_logged_in"]:
                         init_titles = ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행평가5"]
 
                     with st.container(border=True):
-                        st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
-                        st.markdown("<div style='font-size:14px; font-weight:800; color:#1e293b; margin-bottom: 5px;'>📝 각 항목의 제목을 입력하세요.</div>", unsafe_allow_html=True)
+                        # 💡 [피드백 4 반영] 대메뉴 제목과 똑같은 폰트 굵기/크기(sync-giant-title) 매핑
+                        st.markdown('<div class="sync-giant-title">🎯 2. 수행평가 항목 구성</div>', unsafe_allow_html=True)
                         st.markdown("<br>", unsafe_allow_html=True)
                         
                         split_c1, split_c2 = st.columns([1.1, 1.9])
@@ -585,6 +586,8 @@ elif st.session_state["admin_logged_in"]:
                             item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=(init_count - 1))
                             
                         with split_c2:
+                            # 💡 [피드백 3 반영] 엉뚱한 곳에 뜨지 않도록 항목 1 제목 인풋 칸 바로 정수리 위로 칼같이 매핑
+                            st.markdown("<div style='font-size:14px; font-weight:800; color:#1e293b; margin-bottom: 5px;'>📝 각 항목의 제목을 입력하세요.</div>", unsafe_allow_html=True)
                             item_titles = []
                             for i in range(item_count):
                                 default_val = init_titles[i] if i < len(init_titles) else f"수행평가_{i+1}"
@@ -601,8 +604,8 @@ elif st.session_state["admin_logged_in"]:
                                     "item1_name": item_titles[0] if item_count >= 1 else "-",
                                     "item2_name": item_titles[1] if item_count >= 2 else "-",
                                     "item3_name": item_titles[2] if item_count >= 3 else "-",
-                                    "item4_name": item_titles[4] if item_count >= 4 else "-",
-                                    "item5_name": item_titles[5] if item_count >= 5 else "-"
+                                    "item4_name": item_titles[3] if item_count >= 4 else "-",
+                                    "item5_name": item_titles[4] if item_count >= 5 else "-"
                                 }
                                 supabase.table(config_table).upsert(config_record).execute()
                                 st.success("🎉 수행평가 구조 셋업 세이브 완료!"); st.rerun()
@@ -618,13 +621,14 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 필터 및 인풋 상단 유지, 버튼만 밑으로)
+    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 3.5 : 6.5 황금 스케일 피팅)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📥 전체 일괄 성적 대장 CSV 업로드</h4></div>', unsafe_allow_html=True)
             
-            upload_left, upload_right = st.columns([4.0, 6.0])
+            # 💡 [피드백 2 반영] 왼쪽 3.5 : 오른쪽 6.5 최적 스케일 조율 적용
+            upload_left, upload_right = st.columns([3.5, 6.5])
             
             with upload_left:
                 st.markdown("**📂 성적 연동 과목 선택**")
@@ -642,10 +646,8 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
                 
-                # 💡 [요청 반영] 일괄 반영 버튼도 상단 인풋 상자들 간격 깨지 않고 오직 얘만 맨 밑 바닥으로 밀착
-                st.markdown('<div class="magnet-button-wrapper">', unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
                 apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
-                st.markdown('</div>', unsafe_allow_html=True)
                 
             with upload_right:
                 st.markdown("<div style='font-size:15px; font-weight:800; color:#0f172a; padding-bottom:10px;'>📊 업로드 데이터 미리보기</div>", unsafe_allow_html=True)
