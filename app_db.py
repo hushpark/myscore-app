@@ -44,14 +44,18 @@ st.markdown("""
         /* 로그인 박스 외곽 폼 */
         div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
-        .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
-        .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
-        h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
         
-        .stButton button {
-            white-space: nowrap !important;
-            word-break: keep-all !important;
-        }
+        /* 💡 그림 2 스타일: 상단 현재위치 내비게이션 바 디자인 */
+        .top-nav-bar { background-color: #ffffff; padding: 15px 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .top-nav-title { font-size: 14px; color: #64748b; font-weight: 500; }
+        .top-nav-current { font-size: 18px; color: #0f172a; font-weight: 800; margin-top: 2px; }
+        
+        /* 💡 그림 3 스타일: 메뉴 설명 서브헤더 카드 디자인 */
+        .menu-header-card { background-color: #eff6ff; border-left: 5px solid #3b82f6; padding: 18px 20px; border-radius: 0 10px 10px 0; margin-bottom: 25px; }
+        .menu-header-title { font-size: 20px; font-weight: 800; color: #1e3a8a; display: flex; align-items: center; gap: 8px; }
+        .menu-header-desc { font-size: 14px; color: #1e40af; margin-top: 5px; opacity: 0.85; }
+
+        .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -177,7 +181,6 @@ def show_profile_popup_dialog():
         if "pw_step_unlocked" not in st.session_state: st.session_state["pw_step_unlocked"] = False
         is_unlocked = st.session_state["pw_step_unlocked"]
         
-        # 1단계: 현재 비밀번호 검증
         if not is_unlocked:
             curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="curr_pw_input_field")
             if curr_pw:
@@ -191,8 +194,6 @@ def show_profile_popup_dialog():
             if st.button("닫기", type="secondary", use_container_width=True):
                 st.session_state["pw_step_unlocked"] = False
                 st.rerun()
-
-        # 2단계: 새 비밀번호 입력 폼 (엔터 강제 없이 탭 이동 후 일괄 저장 가능하도록 form 처리)
         else:
             st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
             
@@ -214,7 +215,6 @@ def show_profile_popup_dialog():
                         st.error("❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다. 다시 확인해 주세요.")
                     else:
                         try:
-                            # 🎯 Supabase 실제 DB에 즉시 동기화 업데이트 진행
                             teacher_id = st.session_state.get("logged_teacher_id", "")
                             if teacher_id:
                                 supabase.table(teacher_table).update({"비밀번호": new_pw.strip()}).eq("교사_ID", teacher_id).execute()
@@ -339,13 +339,27 @@ elif st.session_state["admin_logged_in"]:
 
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
+    # 💡 [그림 2 복원] 최상단 공통 현재위치 내비게이션 바 출력
+    st.markdown(f"""
+        <div class="top-nav-bar">
+            <div class="top-nav-title">수행평가 점수 확인 시스템</div>
+            <div class="top-nav-current">📍 {menu_selection}</div>
+        </div>
+    """, unsafe_allow_html=True)
+
     # ---------------------------------------------------------------------
     # 학생별 조회 이력 및 성적 현황 모니터링
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
+        # 💡 [그림 3 복원] 서브 카드 헤더 이식
+        st.markdown("""
+            <div class="menu-header-card">
+                <div class="menu-header-title">📊 학생별 성적 및 조회 현황 모니터링 대장</div>
+                <div class="menu-header-desc">각 학급별 학생들의 실시간 수행평가 득점 현황과 시스템 조회 이력을 한눈에 관제합니다.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
         with st.container(border=True):
-            st.markdown("<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
-            
             c_sub, c_class = st.columns(2)
             with c_sub:
                 st.markdown("**📂 대상 교과 선택**")
@@ -381,9 +395,15 @@ elif st.session_state["admin_logged_in"]:
     # 개인별 성적 데이터 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
+        # 💡 [그림 3 복원] 서브 카드 헤더 이식
+        st.markdown("""
+            <div class="menu-header-card">
+                <div class="menu-header-title">📝 학생별 성적 데이터 실시간 수정·입력</div>
+                <div class="menu-header-desc">아래의 그리드 셀을 더블 클릭하여 개별 학생의 수행 점수를 직접 수정하고 클라우드에 동기화할 수 있습니다.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
         with st.container(border=True):
-            st.markdown("<h3>📝 개인별 성적 데이터 입력</h3>", unsafe_allow_html=True)
-            
             c_sub, c_class = st.columns(2)
             with c_sub:
                 st.markdown("**📂 관리할 교과 선택**")
@@ -431,9 +451,15 @@ elif st.session_state["admin_logged_in"]:
     # 학생 기본 정보 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
+        # 💡 [그림 3 복원] 서브 카드 헤더 이식
+        st.markdown("""
+            <div class="menu-header-card">
+                <div class="menu-header-title">📇 학생 인적 사항 및 로그인 계정 설정</div>
+                <div class="menu-header-desc">학생들의 메일 주소 및 초기 접속 비밀번호를 편집하거나 신규 전학생을 대장에 개별 추가합니다.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
         with st.container(border=True):
-            st.markdown("<h3>📇 학생 기본 정보 관리</h3>", unsafe_allow_html=True)
-            
             c_sub, c_class = st.columns(2)
             with c_sub:
                 st.markdown("**📂 관리할 교과 선택**")
@@ -465,11 +491,16 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 평가 대상 과목 구성 (정렬 불일치 및 가이드라인 위치 수정 반영)
+    # 평가 대상 과목 구성 (정렬 불일치 및 가이드라인 위치 수정 완벽 반영)
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
-        st.markdown("<h2>🎯 평가 대상 과목 및 항목 관리</h2>", unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
+        # 💡 [그림 3 복원] 서브 카드 헤더 이식
+        st.markdown("""
+            <div class="menu-header-card">
+                <div class="menu-header-title">🎯 평가 대상 과목 및 수행평가 세부 명칭 구성</div>
+                <div class="menu-header-desc">학기별 운영 과목을 정의하고, 각 과목에 반영될 수행평가의 명칭과 반영 개수를 세부 셋업합니다.</div>
+            </div>
+        """, unsafe_allow_html=True)
         
         main_col1, main_col2 = st.columns(2)
         
@@ -522,9 +553,6 @@ elif st.session_state["admin_logged_in"]:
 
                 with st.container(border=True):
                     st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
-                    
-                    # 💡 수정 포인트: 안내 문구를 전체 상단으로 빼서 좌우 인풋박스들의 높이를 칼각으로 맞춤
-                    st.write("📝 **각 항목의 제목을 입력하세요:**")
                     st.markdown("<br>", unsafe_allow_html=True)
                     
                     split_c1, split_c2 = st.columns([1.1, 1.9])
@@ -533,6 +561,8 @@ elif st.session_state["admin_logged_in"]:
                         item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=(init_count - 1))
                         
                     with split_c2:
+                        # 💡 수정 완료: 안내 문구가 "항목 1 제목"의 정수리 바로 위로 오도록 완벽 배치
+                        st.markdown("<div style='font-size:14px; font-weight:800; color:#1e293b; margin-bottom: -5px;'>📝 각 항목의 제목을 입력하세요.</div>", unsafe_allow_html=True)
                         item_titles = []
                         for i in range(item_count):
                             default_val = init_titles[i] if i < len(init_titles) else f"수행평가_{i+1}"
@@ -569,9 +599,15 @@ elif st.session_state["admin_logged_in"]:
     # 성적 전체 일괄 업로드(CSV / Excel)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
+        # 💡 [그림 3 복원] 서브 카드 헤더 이식
+        st.markdown("""
+            <div class="menu-header-card">
+                <div class="menu-header-title">📥 엑셀(Excel) / CSV 성적 장부 마스터 일괄 업로드</div>
+                <div class="menu-header-desc">나이스(NEIS)나 엑셀 파일로 관리하던 전교생 성적 양식을 드래그 앤 드롭으로 원격 DB에 일괄 마이그레이션합니다.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
         with st.container(border=True):
-            st.markdown("<h3>📥 전체 일괄 성적 대장 CSV 업로드</h3>", unsafe_allow_html=True)
-            
             st.markdown("**📂 성적 연동 과목 선택**")
             st.selectbox("과목 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="csv_upl_sub")
             
@@ -605,8 +641,15 @@ elif st.session_state["admin_logged_in"]:
 
     # 교사 계정 관리 대장 (보안 유지)
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
+        # 💡 [그림 3 복원] 서브 카드 헤더 이식
+        st.markdown("""
+            <div class="menu-header-card">
+                <div class="menu-header-title">👑 교사 권한 관리 및 마스터 관제 대장</div>
+                <div class="menu-header-desc">각 교과별 담당 교사의 신규 ID 발급, 비밀번호 강제 초기화 및 관리 과목 권한을 마스터 제어합니다.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
         with st.container(border=True):
-            st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow_html=True)
             df_tc = load_db_df(teacher_table)
             edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor")
             c1, c2 = st.columns([4.8, 1.2])
