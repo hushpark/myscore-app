@@ -177,53 +177,43 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 팝업창 셧다운 버그 완전 수정본]
+# 💡 [내 정보 수정 일체형 패치버전 - 박스 완전 제거 및 블루 버튼 통일]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
-    st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
+    st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div>", unsafe_allow_html=True)
     edit_mode = st.radio("관리할 항목 선택", ["🔐 비밀번호 변경", "📚 담당과목 변경"], horizontal=True)
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
     if edit_mode == "🔐 비밀번호 변경":
-        # 현재 비밀번호가 임력되어 맞는지 검증하는 임시 변수 (리런 보호용)
-        curr_pw_input = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="curr_pw_direct_verify")
-        
-        # 팝업창 셧다운을 방지하기 위해 st.rerun 없이 내부 if 조건문으로 분기 전환 처리
-        if curr_pw_input:
-            if curr_pw_input != st.session_state.get("logged_teacher_pw", ""):
-                st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
-            else:
-                st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
-                
-                # 비밀번호 일치 확인 시, 하나의 다이얼로그 안에서 자연스럽게 폼이 확장되어 흐르도록 락 오버랩 셋업
-                with st.form("new_password_direct_form", border=False):
-                    new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호")
-                    new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
-                    
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    col1, col2 = st.columns(2)
-                    with col1: save_btn = st.form_submit_button("💾 비밀번호 저장", type="primary", use_container_width=True)
-                    with col2: cancel_btn = st.form_submit_button("닫기", use_container_width=True)
-                    
-                    if cancel_btn:
-                        st.rerun()
-                        
-                    if save_btn:
-                        if not new_pw or new_pw != new_pw_confirm: 
-                            st.error("❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다. 다시 확인해 주세요.")
-                        else:
-                            try:
-                                teacher_id = st.session_state.get("logged_teacher_id", "")
-                                if teacher_id:
-                                    supabase.table(teacher_table).update({"비밀번호": new_pw.strip()}).eq("교사_ID", teacher_id).execute()
-                                    st.session_state["logged_teacher_pw"] = new_pw.strip()
-                                    st.success("🎉 새 비밀번호가 원격 데이터베이스(Supabase)에 성공적으로 저장되었습니다!")
-                            except Exception as e:
-                                st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
-        else:
+        # 분리형 박스를 완전히 제거하고, 원하시는 대로 하나로 깔끔하게 묶어 연결한 폼
+        with st.form("unified_password_form", border=False):
+            curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력")
+            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정")
+            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 재입력")
+            
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("닫기", type="secondary", use_container_width=True):
+            col1, col2 = st.columns(2)
+            # 🎨 시각적 통일성을 위해 [비밀번호 저장] 버튼을 파란색(Primary)으로 완성도 있게 고정
+            with col1: save_btn = st.form_submit_button("💾 비밀번호 저장", type="primary", use_container_width=True)
+            with col2: cancel_btn = st.form_submit_button("닫기", use_container_width=True)
+            
+            if cancel_btn:
                 st.rerun()
+                
+            if save_btn:
+                if curr_pw != st.session_state.get("logged_teacher_pw", ""):
+                    st.error("❌ 현재 비밀번호가 일치하지 않습니다. 다시 입력해 주세요.")
+                elif not new_pw or new_pw != new_pw_confirm:
+                    st.error("❌ 새 비밀번호가 비어있거나 확인 비밀번호와 일치하지 않습니다.")
+                else:
+                    try:
+                        teacher_id = st.session_state.get("logged_teacher_id", "")
+                        if teacher_id:
+                            supabase.table(teacher_table).update({"비밀번호": new_pw.strip()}).eq("교사_ID", teacher_id).execute()
+                            st.session_state["logged_teacher_pw"] = new_pw.strip()
+                            st.success("🎉 비밀번호가 원격 데이터베이스에 성공적으로 업데이트되었습니다!")
+                    except Exception as e:
+                        st.error(f"❌ DB 저장 오류 발생: {e}")
 
     elif edit_mode == "📚 담당과목 변경":
         curr_subs_str = ", ".join(st.session_state.get("allowed_subjects", []))
@@ -335,7 +325,6 @@ elif st.session_state["admin_logged_in"]:
         st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("👤 내 정보 수정", type="secondary", use_container_width=True):
-            st.session_state["pw_step_unlocked"] = False
             show_profile_popup_dialog()
         if st.sidebar.button("🚪 로그아웃", type="secondary", use_container_width=True): st.session_state.clear(); st.rerun()
 
@@ -399,7 +388,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (for _ in range(15): 적용 고정)
+    # 2번 메뉴: 개인별 성적 데이터 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -413,10 +402,9 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown("**🎯 필터링할 학급 선택**")
                 class_options_ed = ["전체 학급 보기"]
-                if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
+                if not df.empty Club and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
-                # 💡 [선생님 커스텀 서식 반영] 15칸 여백 밀어내기 픽스
                 for _ in range(15):
                     st.write("")
                 
@@ -468,7 +456,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리 (💡 for _ in range(15): 적용 고정)
+    # 3번 메뉴: 학생 정보 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
@@ -485,7 +473,6 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 💡 [선생님 커스텀 서식 반영] 15칸 여백 밀어내기 픽스
                 for _ in range(15):
                     st.write("")
 
@@ -621,7 +608,7 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 피드백 반영: 오직 이 메뉴만 range(3) 교정)
+    # 5번 메뉴: 성적 전체 일괄 업로드 (루프 수치 range(3) 고정 유지)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
@@ -645,7 +632,6 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
                 
-                # 💡 [선생님 피드백 완벽 적용] 5번 메뉴에만 오직 딱 3줄 여백 기정의 밀어내기 처리!
                 for _ in range(3):
                     st.write("")
                 
