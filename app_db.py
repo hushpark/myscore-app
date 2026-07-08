@@ -17,7 +17,7 @@ st.markdown("""
         .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { background-color: #f1f5f9 !important; }
         div[data-testid="stHeader"] { display: none !important; }
         [data-testid="stAppViewContainer"] { margin-left: 0px !important; }
-        [data-testid="stSidebar"], section[data-testid="stSidebar"] { min-width: 280px !important; max-width: 280px !important; background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
+        .stSidebar, section[data-testid="stSidebar"] { min-width: 280px !important; max-width: 280px !important; background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
         [data-testid="stSidebar"] .stRadio label p, [data-testid="stSidebar"] .stRadio label span, [data-testid="stSidebar"] .stRadio label div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div[role="radiogroup"] * { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; opacity: 1 !important; }
         [data-testid="stSidebar"] div[role="radiogroup"] p { font-size: 15px !important; font-weight: 700 !important; line-height: 2.0 !important; }
         [data-testid="stSidebar"] div[role="radiogroup"] label:hover * { color: #60a5fa !important; -webkit-text-fill-color: #60a5fa !important; }
@@ -47,6 +47,11 @@ st.markdown("""
         .footer-container { width: 100%; display: flex; justify-content: center; margin-top: 25px; }
         .footer-text { text-align: center; font-size: 12px; color: #94a3b8; font-weight: 500; }
         h3 { color: #1e293b !important; font-weight: 700 !important; font-size: 20px !important; margin-top: 0px !important; margin-bottom: 5px !important; }
+        
+        .stButton button {
+            white-space: nowrap !important;
+            word-break: keep-all !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -140,8 +145,6 @@ def show_add_student_dialog():
                         "수행평가1": 0, "수행평가2": 0, "수행평가3": 0, 
                         "성적조회 횟수": 0, "최종 확인일시": "-"
                     }).execute()
-                    
-                    # 💡 [피드백 1 반영] 너무 빨리 사라지는 동적 알림 삭제 후 즉시 리프레시로 최적화
                     st.rerun()
                 except ValueError:
                     st.error("❌ '반'과 '번호', '초기 비밀번호'란에는 숫자만 입력할 수 있습니다.")
@@ -281,7 +284,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         if df_tc.empty: st.error("❌ 일반 교사 계정이 비어있습니다. 최고관리자 계정으로 먼저 등록하세요.")
                         else:
                             id_match = df_tc[df_tc['교사_ID'] == clean_id]
-                            if not id_match.empty and str(id_match.iloc[0]['비밀번호']) == clean_pw:
+                            if not id_match.empty && str(id_match.iloc[0]['비밀번호']) == clean_pw:
                                 row = id_match.iloc[0]
                                 st.session_state["admin_logged_in"] = True
                                 st.session_state["logged_teacher_id"] = clean_id
@@ -311,7 +314,7 @@ elif st.session_state["admin_logged_in"]:
         st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 선생님 접속 중</div>', unsafe_allow_html=True)
         st.markdown("---")
         
-        # 💡 [피드백 3 반영] 사이드바 항목 앞에 있던 화살표 '▶' 기호를 완전히 제거
+        # 💡 [피드백 3 반영] 메뉴 앞 화살표 제거 완료
         menus = ["학생 조회 현황 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성", "성적 전체 일괄 업로드(CSV / Excel)"]
         if st.session_state["logged_teacher_id"] == "admin": 
             menus.append("👑 교사 계정 관리 대장")
@@ -324,10 +327,10 @@ elif st.session_state["admin_logged_in"]:
             show_profile_popup_dialog()
         if st.sidebar.button("🚪 로그아웃", type="secondary", use_container_width=True): st.session_state.clear(); st.rerun()
 
-    if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
+    if not df.empty & "반" in df.columns && "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
     # ---------------------------------------------------------------------
-    # 학생별 조회 이력 및 성적 현황 모니터링
+    # 그림 1 대치: 학생별 조회 이력 및 성적 현황 모니터링
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         with st.container(border=True):
@@ -340,7 +343,7 @@ elif st.session_state["admin_logged_in"]:
             with c_class:
                 st.markdown("**🎯 필터링할 학급 선택**")
                 class_options = ["전체 학급 보기"]
-                if not df.empty and "반" in df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
+                if not df.empty & "반" in df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class = st.selectbox("학급 선택", options=class_options, label_visibility="collapsed", key="mon_class")
                 
             subject_key = "정보_2학년_2026학년도_1학기"
@@ -365,7 +368,7 @@ elif st.session_state["admin_logged_in"]:
                 st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True)
 
     # ---------------------------------------------------------------------
-    # 개인별 성적 데이터 입력
+    # 그림 2 대치: 개인별 성적 데이터 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -378,7 +381,7 @@ elif st.session_state["admin_logged_in"]:
             with c_class:
                 st.markdown("**🎯 필터링할 학급 선택**")
                 class_options_ed = ["전체 학급 보기"]
-                if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
+                if not df.empty & "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
             subject_key = "정보_2학년_2026학년도_1학기"
@@ -415,7 +418,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 학생 기본 정보 관리
+    # 그림 3 대치: 학생 기본 정보 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
@@ -428,7 +431,7 @@ elif st.session_state["admin_logged_in"]:
             with c_class:
                 st.markdown("**👥 학반 필터링**")
                 class_opts = ["전체"]
-                if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
+                if not df.empty & "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
             if df.empty:
@@ -452,7 +455,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 평가 대상 과목 구성
+    # ⚙️ 그림 4 대치: 평가 대상 과목 구성 (선생님 요청 2x2 격자 및 스플릿 압축 반영)
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         st.markdown("<h2>🎯 평가 대상 과목 및 항목 관리</h2>", unsafe_allow_html=True)
@@ -466,28 +469,26 @@ elif st.session_state["admin_logged_in"]:
                 st.caption("과목 설정이 끝나면, 우측에서 수행평가 세부 항목을 구성하세요.")
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # 교과군 대분류 매핑 딕셔너리
                 group_map = {"국어": "인문·사회군", "수학": "수리·과학군", "정보": "수리·과학군", "영어": "인문·사회군"}
-                
-                # 💡 [피드백 2 반영] 로그인된 선생님의 첫 번째 담당과목 권한 추출 자동 선택 로직
                 allowed_list = st.session_state.get("allowed_subjects", [])
-                default_sub = "정보" # 권한 파싱 실패 시 예비 안전 장치
+                default_sub = "정보"
                 if allowed_list and allowed_list[0] != "마스터":
                     default_sub = allowed_list[0]
                 
-                # 세부 과목 리스트 구성 및 기본 자동 인덱스 계산
                 sub_options = ["국어", "정보", "수학", "영어"]
                 sub_idx = sub_options.index(default_sub) if default_sub in sub_options else 0
-                
-                # 대분류 군(group) 역시 선택한 세부과목에 맞춰 지능적으로 연동
                 predicted_group = group_map.get(default_sub, "수리·과학군")
                 group_options = ["인문·사회군", "수리·과학군", "예체능군"]
                 group_idx = group_options.index(predicted_group) if predicted_group in group_options else 0
                 
-                sel_g = st.selectbox("교과군 선택", options=group_options, index=group_idx)
-                final_sub = st.selectbox("세부 과목", options=sub_options, index=sub_idx)
-                sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"], index=1) # 2학년 기본
-                sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=1) # 1학기 기본
+                # 💡 [그림2 스케치 반영] 드롭박스 4개를 2열 종대로 배치하여 길이 단축 효과
+                grid_c1, grid_c2 = st.columns(2)
+                with grid_c1:
+                    sel_g = st.selectbox("교과군 선택", options=group_options, index=group_idx)
+                    final_sub = st.selectbox("세부 과목", options=sub_options, index=sub_idx)
+                with grid_c2:
+                    sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"], index=1)
+                    sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=1)
                 
                 subject_key = f"{final_sub}_{sel_gr}_{sel_se}".replace(" ", "_")
 
@@ -514,20 +515,26 @@ elif st.session_state["admin_logged_in"]:
                     st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=(init_count - 1))
-                    st.write("📝 **각 항목의 제목을 입력하세요:**")
+                    # 💡 [그림2 스케치 반영] 좌측엔 개수 드롭박스, 우측엔 텍스트박스 나열 분할 레이아웃
+                    split_c1, split_c2 = st.columns([1.1, 1.9])
                     
-                    item_titles = []
-                    for i in range(item_count):
-                        default_val = init_titles[i] if i < len(init_titles) else f"수행평가_{i+1}"
-                        t_in = st.text_input(f"항목 {i+1} 제목", value=default_val, key=f"split_item_title_{i}")
-                        item_titles.append(t_in.strip())
+                    with split_c1:
+                        item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=(init_count - 1))
+                        
+                    with split_c2:
+                        st.write("📝 **각 항목의 제목을 입력하세요:**")
+                        item_titles = []
+                        for i in range(item_count):
+                            default_val = init_titles[i] if i < len(init_titles) else f"수행평가_{i+1}"
+                            t_in = st.text_input(f"항목 {i+1} 제목", value=default_val, key=f"split_item_title_{i}")
+                            item_titles.append(t_in.strip())
                     
                     st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 20px 0;'>", unsafe_allow_html=True)
                     
                     b_sc1, b_space2 = st.columns([3.8, 1.2])
                     with b_space2:
-                        if st.button("💾 이 과목 설정 저장하기", type="primary", use_container_width=True):
+                        # 💡 [요청 사항] 버튼 텍스트를 "과목 설정 저장"으로 심플하게 변경
+                        if st.button("💾 과목 설정 저장", type="primary", use_container_width=True):
                             config_record = {
                                 "subject_key": subject_key, "item_count": item_count,
                                 "item1_name": item_titles[0] if item_count >= 1 else "-",
@@ -550,7 +557,7 @@ elif st.session_state["admin_logged_in"]:
                 )
 
     # ---------------------------------------------------------------------
-    # 성적 전체 일괄 업로드(CSV / Excel)
+    # 그림 5 대치: 성적 전체 일괄 업로드(CSV / Excel)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
