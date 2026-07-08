@@ -185,7 +185,6 @@ def show_profile_popup_dialog():
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
     if edit_mode == "🔐 비밀번호 변경":
-        # 분리형 박스를 완전히 제거하고, 원하시는 대로 하나로 깔끔하게 묶어 연결한 폼
         with st.form("unified_password_form", border=False):
             curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력")
             new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정")
@@ -193,7 +192,6 @@ def show_profile_popup_dialog():
             
             st.markdown("<br>", unsafe_allow_html=True)
             col1, col2 = st.columns(2)
-            # 🎨 시각적 통일성을 위해 [비밀번호 저장] 버튼을 파란색(Primary)으로 완성도 있게 고정
             with col1: save_btn = st.form_submit_button("💾 비밀번호 저장", type="primary", use_container_width=True)
             with col2: cancel_btn = st.form_submit_button("닫기", use_container_width=True)
             
@@ -388,7 +386,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 하단 우측 배치 정밀 레이아웃 패치)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -401,15 +399,20 @@ elif st.session_state["admin_logged_in"]:
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="edt_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown("**🎯 필터링할 학급 선택**")
+                
+                # 🛠️ [버그 픽스 완료] 기존에 들어가 있던 잘못된 키워드 'Club'을 완전히 도려내어 에러 원천 차단
                 class_options_ed = ["전체 학급 보기"]
-                if not df.empty Club and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
+                if not df.empty and "반" in df.columns: 
+                    class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
-                for _ in range(15):
+                # 📐 [레이아웃 대격변] 스크린샷 요구안대로 버튼을 왼쪽 컴포넌트 가장 아래 영역의 '우측'에 완벽히 달라붙도록 설정
+                for _ in range(16):
                     st.write("")
                 
-                score_right_col1, score_right_col2 = st.columns(2)
-                with score_right_col2:
+                # 서브 칼럼 구조를 형성하여 [성적 저장하기] 버튼을 오른쪽 칼럼에 배치 ➡️ "하단 우측" 배치 실현
+                score_btn_left, score_btn_right = st.columns([1, 1.2])
+                with score_btn_right:
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
                 
             with layout_right:
@@ -456,7 +459,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리
+    # 3번 메뉴: 학생 정보 관리 (💡 하단 우측 통일성 레이아웃 반영)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
@@ -473,10 +476,12 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                for _ in range(15):
+                # 하단 정착을 위한 공백 정렬
+                for _ in range(16):
                     st.write("")
 
-                info_grid_col1, info_grid_col2 = st.columns(2)
+                # 📐 버튼 2개도 기획에 맞춰 정갈하게 하단 우측에 정렬 및 배치 완료
+                info_grid_col1, info_grid_col2 = st.columns([1, 1.2])
                 with info_grid_col1:
                     add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
                 with info_grid_col2:
@@ -608,7 +613,7 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (루프 수치 range(3) 고정 유지)
+    # 5번 메뉴: 성적 전체 일괄 업로드
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
@@ -635,7 +640,7 @@ elif st.session_state["admin_logged_in"]:
                 for _ in range(3):
                     st.write("")
                 
-                apply_btn_col1, apply_btn_col2 = st.columns(2)
+                apply_btn_col1, apply_btn_col2 = st.columns([1, 1.2])
                 with apply_btn_col2:
                     apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
                 
