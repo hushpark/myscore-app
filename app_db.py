@@ -422,7 +422,7 @@ elif st.session_state["admin_logged_in"]:
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
                 # 💡 [피드백 완벽 반영] 세비어 루프를 통한 세로 여백 밀어내기 설계
-                for _ in range(7):
+                for _ in range(10):
                     st.write("")
                 
                 # 💡 가로 2분할 격자를 통하여 정확히 왼쪽 창 내부의 '우하단' 구석에 정착 완료!
@@ -492,7 +492,7 @@ elif st.session_state["admin_logged_in"]:
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
                 # 💡 [피드백 완벽 반영] 세비어 루프를 통한 세로 여백 밀어내기 설계
-                for _ in range(7):
+                for _ in range(10):
                     st.write("")
 
                 # 💡 가로 2분할 격자를 통하여 정확히 왼쪽 창 내부의 '우하단' 구석에 정착 완료!
