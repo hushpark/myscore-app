@@ -258,14 +258,16 @@ def show_profile_popup_dialog():
                     st.session_state["pw_save_status"] = "fail_mismatch"
                     st.rerun()
                 else:
-                    try:
+                   try:
                         teacher_id = st.session_state.get("logged_teacher_id", "")
                         if teacher_id:
+                            # 괄호와 마침표 체계를 정확하게 맞춘 코드입니다.
                             supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
                             st.session_state["logged_teacher_pw"] = clean_new_pw
                             st.session_state["pw_save_status"] = "success"
+                            st.session_state["pw_version_key"] += 1
                             st.rerun()
-                        except Exception as e:
+                    except Exception as e:
                             st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
             st.markdown("<br>", unsafe_allow_html=True)
