@@ -169,7 +169,7 @@ def show_result_dialog(student_data):
     sc2.metric("📝 수행평가 2차", f"{int(student_data.get('수행평가2', 0))} 점")
     sc3.metric("📝 수행평가 3차", f"{int(student_data.get('수행평가3', 0))} 점")
     if "has_counted" not in st.session_state:
-        new_count = int(student_data.get("성적조ation 횟수", 0)) + 1
+        new_count = int(student_data.get("성적조회 횟수", 0)) + 1
         supabase.table(student_table).upsert({"반": int(student_data["반"]), "번호": int(student_data["번호"]), "성적조회 횟수": new_count, "최종 확인일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}).execute()
         st.session_state["has_counted"] = True
     if st.button("닫기", type="secondary", use_container_width=True):
@@ -177,7 +177,7 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 엔터 불일치 버그 원천 차단 마스터피스 패치본]
+# 💡 [내 정보 수정 불일치 창 닫힘 버그 및 텍스트 박스 초기화 기능 완결 패치본]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -199,18 +199,28 @@ def show_profile_popup_dialog():
             else:
                 st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
                 
-                new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
-                new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
-                
-                msg_placeholder = st.container()
-                if st.session_state["pw_save_status"] == "success":
-                    msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
-                elif st.session_state["pw_save_status"] == "fail_mismatch":
-                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
-                elif st.session_state["pw_save_status"] == "fail_empty":
-                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
+                # 🛠️ 엔터를 쳐도 창이 절대 혼자 닫히지 않도록 완전히 차단된 독립형 st.form 제어 인프라 기용 설계
+                with st.form("inner_safe_password_form", border=False):
+                    new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
+                    new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
+                    
+                    # 피드백 반영: 성공 / 실패 문구를 확인 텍스트 박스 바로 밑에 똑같은 글자 크기 지정 표출
+                    msg_placeholder = st.container()
+                    if st.session_state["pw_save_status"] == "success":
+                        msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
+                    elif st.session_state["pw_save_status"] == "fail_mismatch":
+                        msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+                    elif st.session_state["pw_save_status"] == "fail_empty":
+                        msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
 
-                # 🛠️ [엔터 버그 영구 사냥 패치] 자바스크립트 내 매칭 텍스트에 이모지 아이콘 무조건 추적 연동 반영
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    col1, col2 = st.columns(2)
+                    with col1: save_btn = st.form_submit_button("💾 비밀번호 저장", type="primary", use_container_width=True)
+                    with col2:
+                        # 폼 안으로 들어온 닫기 단추: 누르는 순간 텍스트 박스 잔류 캐시를 깨끗하게 밀어버립니다.
+                        close_btn = st.form_submit_button("닫기", use_container_width=True)
+
+                # 자동 커서 포커스 워프 이동 매크로 JS 주입
                 components.html("""
                     <script>
                         setTimeout(function() {
@@ -223,33 +233,15 @@ def show_profile_popup_dialog():
                                 inputs[1].onkeydown = function(e) {
                                     if(e.keyCode === 13) { e.preventDefault(); inputs[2].focus(); }
                                 };
-                                inputs[2].onkeydown = function(e) {
-                                    if(e.keyCode === 13) {
-                                        e.preventDefault(); 
-                                        e.stopPropagation();
-                                        const submitButtons = parentDoc.querySelectorAll('button');
-                                        for(let btn of submitButtons) {
-                                            // 💡 기존에 "비밀번호 저장"으로만 되어있어 매칭에 실패하고 튕기던 부분을 이모지 결합형인 "비밀번호 저장" 전체 추적으로 전면 교정 수리했습니다.
-                                            if(btn.innerText.includes("비밀번호 저장")) {
-                                                btn.click();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                };
                             }
                         }, 250);
                     </script>
                 """, height=0, width=0)
                 
-                st.markdown("<br>", unsafe_allow_html=True)
-                col1, col2 = st.columns(2)
-                with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
-                with col2: 
-                    if st.button("닫기", key="close_pw_inner", use_container_width=True):
-                        st.session_state["pw_save_status"] = "none"
-                        st.session_state["pw_version_key"] += 1
-                        st.rerun()
+                if静态_btn := close_btn:
+                    st.session_state["pw_save_status"] = "none"
+                    st.session_state["pw_version_key"] += 1
+                    st.rerun()
                     
                 if save_btn:
                     clean_new_pw = new_pw.strip()
