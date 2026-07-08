@@ -177,7 +177,7 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 흐름 복구 및 포커스 워프 동기화 버전]
+# 💡 [내 정보 수정 엔터 매크로 시퀀스 완벽 주입 버전]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -188,23 +188,53 @@ def show_profile_popup_dialog():
         curr_pw_input = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="profile_verify_cur_pw")
         
         if curr_pw_input:
-            if curr_pw_input != st.session_state.get("logged_teacher_pw", ""):
+            if curr_pw_input.strip() != st.session_state.get("logged_teacher_pw", ""):
                 st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
             else:
                 st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
                 
+                # 실시간 양방향 동선 확보를 위해 엔터 폼 구축
                 new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="profile_new_pw_1")
                 new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="profile_new_pw_2")
                 
-                # 🛠️ [자동 커서 포커스 JS 스크립트 가동] 
-                # 탭 순서 제어는 완전히 도려내고, 현재 비밀번호 검증이 끝나면 '새 비밀번호 입력' 인풋 박스로 커서가 즉시 워프하도록 구현했습니다.
+                # 🛠️ [엔터 트랙 및 우하단 자동 워프 매크로 가동 JS]
+                # 1) 현재 비밀번호 통과 시 새비밀번호 창으로 포커싱 자동 이동
+                # 2) 새비밀번호에서 엔터 시 확인 창으로 자동 점프
+                # 3) 확인 창에서 엔터 시 파란색 저장 단추 클릭 이벤트 강제 유도 전송
                 components.html("""
                     <script>
                         setTimeout(function() {
                             const parentDoc = window.parent.document;
                             const inputs = parentDoc.querySelectorAll('input[type="password"]');
-                            if(inputs.length >= 2) {
-                                inputs[1].focus(); // 새 비밀번호 입력 박스로 자동 포커스
+                            const saveBtn = parentDoc.querySelector('button[key="final_save_blue_btn_id"]');
+                            
+                            if(inputs.length >= 3) {
+                                // 현재비밀번호 검증 직후이므로 새 비밀번호 인풋창에 강제 포커싱
+                                if (parentDoc.activeElement === inputs[0] || parentDoc.activeElement.tagName === "BODY") {
+                                    inputs[1].focus();
+                                }
+                                
+                                // 새 비밀번호 입력란에서 엔터 누르면 확인창으로 포커스 점프
+                                inputs[1].onkeydown = function(e) {
+                                    if(e.keyCode === 13) {
+                                        e.preventDefault();
+                                        inputs[2].focus();
+                                    }
+                                };
+                                
+                                // 새 비밀번호 확인란에서 엔터를 치면 '저장' 변수 트리거 가동
+                                inputs[2].onkeydown = function(e) {
+                                    if(e.keyCode === 13) {
+                                        e.preventDefault();
+                                        const submitButtons = parentDoc.querySelectorAll('button');
+                                        for(let btn of submitButtons) {
+                                            if(btn.innerText.includes("비밀번호 저장")) {
+                                                btn.click();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                };
                             }
                         }, 250);
                     </script>
@@ -217,14 +247,17 @@ def show_profile_popup_dialog():
                     if st.button("닫기", key="close_pw_inner", use_container_width=True): st.rerun()
                     
                 if save_btn:
-                    if not new_pw or new_pw != new_pw_confirm:
+                    clean_new_pw = new_pw.strip()
+                    clean_confirm_pw = new_pw_confirm.strip()
+                    
+                    if not clean_new_pw or clean_new_pw != clean_confirm_pw:
                         st.error("❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다. 다시 확인해 주세요.")
                     else:
                         try:
                             teacher_id = st.session_state.get("logged_teacher_id", "")
                             if teacher_id:
-                                supabase.table(teacher_table).update({"비밀번호": new_pw.strip()}).eq("교사_ID", teacher_id).execute()
-                                st.session_state["logged_teacher_pw"] = new_pw.strip()
+                                supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
+                                st.session_state["logged_teacher_pw"] = clean_new_pw
                                 st.success("🎉 새 비밀번호가 원격 데이터베이스(Supabase)에 성공적으로 저장되었습니다!")
                         except Exception as e:
                             st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
@@ -334,7 +367,7 @@ elif st.session_state["admin_logged_in"]:
         st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 선생님 접속 중</div>', unsafe_allow_html=True)
         st.markdown("---")
         
-        menus = ["학생 조회 현황 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성", "성적 전체 일괄 업로드(CSV / Excel)"]
+        menus = ["학생 조회 현황 모니화 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성", "성적 전체 일괄 업로드(CSV / Excel)"]
         if st.session_state["logged_teacher_id"] == "admin": 
             menus.append("👑 교사 계정 관리 대장")
             
