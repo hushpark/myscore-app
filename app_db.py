@@ -403,7 +403,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 붉은 펜 캡처 피드백: 표 아래 우측 하단으로 대이동)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 피드백 최종 반영: 왼쪽 창 내부의 우하단 구석 배치)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -412,6 +412,7 @@ elif st.session_state["admin_logged_in"]:
             layout_left, layout_right = st.columns([3.5, 6.5])
             
             with layout_left:
+                # 상단 필터 영역 배치
                 st.markdown("**📂 관리할 교과 선택**")
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="edt_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -419,6 +420,15 @@ elif st.session_state["admin_logged_in"]:
                 class_options_ed = ["전체 학급 보기"]
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
+                
+                # 💡 [피드백 완벽 반영] 세비어 루프를 통한 세로 여백 밀어내기 설계
+                for _ in range(7):
+                    st.write("")
+                
+                # 💡 가로 2분할 격자를 통하여 정확히 왼쪽 창 내부의 '우하단' 구석에 정착 완료!
+                score_right_col1, score_right_col2 = st.columns(2)
+                with score_right_col2:
+                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
                 
             with layout_right:
                 subject_key = "정보_2학년_2026학년도_1학기"
@@ -453,14 +463,7 @@ elif st.session_state["admin_logged_in"]:
                     sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                     disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                     
-                    # 엑셀 표 표출 (단독 스크롤바 작동)
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
-                    
-                    # 💡 [위치 대수정] 왼쪽 구역에서 추방하여, 엑셀 표 바로 아랫방향 우측 하단 절반(2분할) 크기로 정렬 안착!
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    score_right_col1, score_right_col2 = st.columns(2)
-                    with score_right_col1:
-                        save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
                     
                     if save_trigger:
                         for idx_pos, r_idx in enumerate(f_idx):
@@ -471,7 +474,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리 (💡 피드백 반영: 조작 버튼을 엑셀 표 아래 우측 하단으로 이동)
+    # 3번 메뉴: 학생 정보 관리 (💡 피드백 최종 반영: 왼쪽 창 내부의 우하단 구석 배치)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
@@ -487,6 +490,17 @@ elif st.session_state["admin_logged_in"]:
                 class_opts = ["전체"]
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
+
+                # 💡 [피드백 완벽 반영] 세비어 루프를 통한 세로 여백 밀어내기 설계
+                for _ in range(7):
+                    st.write("")
+
+                # 💡 가로 2분할 격자를 통하여 정확히 왼쪽 창 내부의 '우하단' 구석에 정착 완료!
+                info_right_col1, info_right_col2 = st.columns(2)
+                with info_right_col1:
+                    add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
+                with info_right_col2:
+                    save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
 
             with layout_right:
                 if df.empty:
@@ -504,16 +518,7 @@ elif st.session_state["admin_logged_in"]:
                         "비밀번호": st.column_config.NumberColumn(alignment="center", format="%d")
                     }
                     
-                    # 엑셀 표 표출
                     edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=500)
-                    
-                    # 💡 [위치 대수정] 왼쪽 구역에서 완벽 분리 추방! 엑셀 표 바로 아랫방향 절반 분할 크기로 정렬 배치 완료
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    info_right_col1, info_right_col2 = st.columns(2)
-                    with info_right_col1:
-                        add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
-                    with info_right_col2:
-                        save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
                     
                     if add_std_trigger:
                         show_add_student_dialog()
@@ -606,8 +611,8 @@ elif st.session_state["admin_logged_in"]:
                                     "item1_name": item_titles[0] if item_count >= 1 else "-",
                                     "item2_name": item_titles[1] if item_count >= 2 else "-",
                                     "item3_name": item_titles[2] if item_count >= 3 else "-",
-                                    "item4_name": item_titles[3] if item_count >= 4 else "-",
-                                    "item5_name": item_titles[4] if item_count >= 5 else "-"
+                                    "item4_name": item_titles[4] if item_count >= 4 else "-",
+                                    "item5_name": item_titles[5] if item_count >= 5 else "-"
                                 }
                                 supabase.table(config_table).upsert(config_record).execute()
                                 st.success("🎉 수행평가 구조 셋업 세이브 완료!"); st.rerun()
@@ -623,7 +628,7 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 피드백 반영: 반영 버튼을 우측 표 하단으로 이동)
+    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 피드백 최종 반영: 왼쪽 창 내부의 우하단 구석 배치)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
@@ -647,6 +652,15 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
                 
+                # 💡 [피드백 완벽 반영] 세비어 루프를 통한 세로 여백 밀어내기 설계
+                for _ in range(3):
+                    st.write("")
+
+                # 💡 가로 2분할 격자를 통하여 정확히 왼쪽 창 내부의 '우하단' 구석에 정착 완료!
+                apply_btn_col1, apply_btn_col2 = st.columns(2)
+                with apply_btn_col2:
+                    apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
+                
             with upload_right:
                 st.markdown("<div style='font-size:15px; font-weight:800; color:#0f172a; padding-bottom:10px;'>📊 업로드 데이터 미리보기</div>", unsafe_allow_html=True)
                 if up_f:
@@ -661,12 +675,6 @@ elif st.session_state["admin_logged_in"]:
                             preview_align[col_name] = st.column_config.TextColumn(alignment="center")
                             
                     st.dataframe(df_up, use_container_width=True, hide_index=True, column_config=preview_align, height=450)
-                    
-                    # 💡 [위치 대수정] 왼쪽 구역에서 탈출시켜, 미리보기 엑셀 표 바로 아랫방향 절반 분할 크기로 정렬 안착!
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    apply_btn_col1, apply_btn_col2 = st.columns(2)
-                    with apply_btn_col1:
-                        apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
                     
                     if apply_trigger:
                         if not df.empty:
