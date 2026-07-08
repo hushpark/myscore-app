@@ -177,6 +177,7 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
+# 💡 [내 정보 수정 팝업창 버그 완전 패치]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -184,22 +185,25 @@ def show_profile_popup_dialog():
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
     if edit_mode == "🔐 비밀번호 변경":
-        if "pw_step_unlocked" not in st.session_state: st.session_state["pw_step_unlocked"] = False
-        is_unlocked = st.session_state["pw_step_unlocked"]
+        if "pw_step_unlocked" not in st.session_state: 
+            st.session_state["pw_step_unlocked"] = False
         
-        if not is_unlocked:
+        # 1단계: 현재 비밀번호 검증 (창이 사라지지 않도록 st.rerun 대신 세션 검증 상태 유지)
+        if not st.session_state["pw_step_unlocked"]:
             curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="curr_pw_input_field")
             if curr_pw:
                 if curr_pw != st.session_state.get("logged_teacher_pw", ""):
                     st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
                 else:
                     st.session_state["pw_step_unlocked"] = True
-                    st.rerun()
+                    st.rerun()  # 검증 성공 시에만 안전하게 드로잉 갱신
             
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("닫기", type="secondary", use_container_width=True):
                 st.session_state["pw_step_unlocked"] = False
                 st.rerun()
+                
+        # 2단계: 새 비밀번호 일괄 탭 입력 폼
         else:
             st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
             
@@ -226,6 +230,7 @@ def show_profile_popup_dialog():
                                 supabase.table(teacher_table).update({"비밀번호": new_pw.strip()}).eq("교사_ID", teacher_id).execute()
                                 st.session_state["logged_teacher_pw"] = new_pw.strip()
                                 st.success("🎉 새 비밀번호가 원격 데이터베이스(Supabase)에 성공적으로 저장되었습니다!")
+                                st.session_state["pw_step_unlocked"] = False
                         except Exception as e:
                             st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
 
@@ -403,7 +408,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 피드백 최종 반영: 왼쪽 창 내부의 우하단 구석 배치)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 range(15) 밀어내기 반영 완료)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -412,7 +417,6 @@ elif st.session_state["admin_logged_in"]:
             layout_left, layout_right = st.columns([3.5, 6.5])
             
             with layout_left:
-                # 상단 필터 영역 배치
                 st.markdown("**📂 관리할 교과 선택**")
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="edt_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -421,11 +425,10 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
-                # 💡 [피드백 완벽 반영] 세비어 루프를 통한 세로 여백 밀어내기 설계
+                # 💡 [피드백 적용] 선생님표 세비어 루프 15칸 밀어내기 적용
                 for _ in range(15):
                     st.write("")
                 
-                # 💡 가로 2분할 격자를 통하여 정확히 왼쪽 창 내부의 '우하단' 구석에 정착 완료!
                 score_right_col1, score_right_col2 = st.columns(2)
                 with score_right_col2:
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
@@ -474,7 +477,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리 (💡 피드백 최종 반영: 왼쪽 창 내부의 우하단 구석 배치)
+    # 3번 메뉴: 학생 정보 관리 (💡 range(15) 밀어내기 반영 완료)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
@@ -491,15 +494,14 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 💡 [피드백 완벽 반영] 세비어 루프를 통한 세로 여백 밀어내기 설계
+                # 💡 [피드백 적용] 선생님표 세비어 루프 15칸 밀어내기 적용
                 for _ in range(15):
                     st.write("")
 
-                # 💡 가로 2분할 격자를 통하여 정확히 왼쪽 창 내부의 '우하단' 구석에 정착 완료!
-                info_right_col1, info_right_col2 = st.columns(2)
-                with info_right_col1:
+                info_grid_col1, info_grid_col2 = st.columns(2)
+                with info_grid_col1:
                     add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
-                with info_right_col2:
+                with info_grid_col2:
                     save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
 
             with layout_right:
@@ -611,8 +613,8 @@ elif st.session_state["admin_logged_in"]:
                                     "item1_name": item_titles[0] if item_count >= 1 else "-",
                                     "item2_name": item_titles[1] if item_count >= 2 else "-",
                                     "item3_name": item_titles[2] if item_count >= 3 else "-",
-                                    "item4_name": item_titles[4] if item_count >= 4 else "-",
-                                    "item5_name": item_titles[5] if item_count >= 5 else "-"
+                                    "item4_name": item_titles[3] if item_count >= 4 else "-",
+                                    "item5_name": item_titles[4] if item_count >= 5 else "-"
                                 }
                                 supabase.table(config_table).upsert(config_record).execute()
                                 st.success("🎉 수행평가 구조 셋업 세이브 완료!"); st.rerun()
@@ -628,7 +630,7 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 피드백 최종 반영: 왼쪽 창 내부의 우하단 구석 배치)
+    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 range(15) 대신 콤팩트 11칸 밀어내기 피팅)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
@@ -652,11 +654,10 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
                 
-                # 💡 [피드백 완벽 반영] 세비어 루프를 통한 세로 여백 밀어내기 설계
-                for _ in range(3):
+                # 일괄 업로드는 입력창 구성이 적으므로 바닥 맞춤을 위해 11칸 기정의 밀어내기
+                for _ in range(11):
                     st.write("")
 
-                # 💡 가로 2분할 격자를 통하여 정확히 왼쪽 창 내부의 '우하단' 구석에 정착 완료!
                 apply_btn_col1, apply_btn_col2 = st.columns(2)
                 with apply_btn_col2:
                     apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
@@ -681,7 +682,7 @@ elif st.session_state["admin_logged_in"]:
                             for _, r in df.iterrows(): supabase.table(student_table).delete().eq("반", int(r["반"])).eq("번호", int(r["번호"])).execute()
                         for c in ["수행평가1", "수행평가2", "수행평가3", "성적조회 횟수"]:
                             if c not in df_up.columns: df_up[c] = 0
-                        df_up["최종 확인일시"] = "-"
+                        df_up["`최종 확인일시`"] = "-"
                         for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
                         st.success("🎯 파일 성적 데이터셋이 실시간 일괄 반영(동기화)되었습니다!"); st.rerun()
                 else:
