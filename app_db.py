@@ -177,7 +177,7 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 흐름 복구 및 파란색 버튼 완전 동기화 버전]
+# 💡 [내 정보 수정 흐름 복구 및 포커스 워프 동기화 버전]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -185,7 +185,6 @@ def show_profile_popup_dialog():
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
     if edit_mode == "🔐 비밀번호 변경":
-        # 팝업이 강제로 꺼지는 것을 완벽 방지하기 위해 폼 외부 변수로 현재 비밀번호 실시간 매핑 검증
         curr_pw_input = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="profile_verify_cur_pw")
         
         if curr_pw_input:
@@ -194,13 +193,25 @@ def show_profile_popup_dialog():
             else:
                 st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
                 
-                # 💡 [구조 복구 완성] 현재 비밀번호 확인이 완료되면 아래로 연달아 새 암호 입력창들이 슥 나타납니다!
                 new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="profile_new_pw_1")
                 new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="profile_new_pw_2")
                 
+                # 🛠️ [자동 커서 포커스 JS 스크립트 가동] 
+                # 탭 순서 제어는 완전히 도려내고, 현재 비밀번호 검증이 끝나면 '새 비밀번호 입력' 인풋 박스로 커서가 즉시 워프하도록 구현했습니다.
+                components.html("""
+                    <script>
+                        setTimeout(function() {
+                            const parentDoc = window.parent.document;
+                            const inputs = parentDoc.querySelectorAll('input[type="password"]');
+                            if(inputs.length >= 2) {
+                                inputs[1].focus(); // 새 비밀번호 입력 박스로 자동 포커스
+                            }
+                        }, 250);
+                    </script>
+                """, height=0, width=0)
+                
                 st.markdown("<br>", unsafe_allow_html=True)
                 col1, col2 = st.columns(2)
-                # 🎨 [색상 통일 완료] 선생님 의견에 따라 완벽한 시스템 통일성을 보장하는 세련된 파란색(primary)으로 조정
                 with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
                 with col2: 
                     if st.button("닫기", key="close_pw_inner", use_container_width=True): st.rerun()
@@ -394,7 +405,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 하단 우측 칼위치 정착 완료)
+    # 2번 메뉴: 개인별 성적 데이터 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -408,13 +419,11 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown("**🎯 필터링할 학급 선택**")
                 
-                # 🛠️ [에러 해결 완벽본] invalid syntax 원인이던 단어 'Club'을 완벽 제거
                 class_options_ed = ["전체 학급 보기"]
                 if not df.empty and "반" in df.columns: 
                     class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
-                # 📐 그림과 같이 가장 하단 오른쪽 자리에 안착시키기 위한 15줄 밀어내기 공백 가동
                 for _ in range(15):
                     st.write("")
                 
@@ -618,7 +627,7 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (루프 수치 3칸 고정)
+    # 5번 메뉴: 성적 전체 일괄 업로드
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
