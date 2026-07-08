@@ -339,14 +339,13 @@ elif st.session_state["admin_logged_in"]:
     """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------------------
-    # 1번 메뉴: 학생 조회 현황 모니터링 (좌우 분할 + 정렬 + 스크롤)
+    # 1번 메뉴: 학생 조회 현황 모니터링
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown("<h4>📊 학생별 조회 이력 및 성적 현황 모니터링</h4>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 💡 [3번 요건] 좌우 대칭 배치 분할 (좌측 2.5 : 우측 7.5)
             layout_left, layout_right = st.columns([2.5, 7.5])
             
             with layout_left:
@@ -370,7 +369,6 @@ elif st.session_state["admin_logged_in"]:
                     display_cols = ["반", "번호", "이름", "학교 이메일"]
                     rename_map = {}
                     
-                    # 💡 [1번 요건] 열 설정 정의 생성 (가운데 정렬)
                     align_config = {
                         "반": st.column_config.TextColumn(alignment="center"),
                         "번호": st.column_config.TextColumn(alignment="center"),
@@ -391,19 +389,16 @@ elif st.session_state["admin_logged_in"]:
                     align_config["최종 확인일시"] = st.column_config.TextColumn(alignment="center")
                     
                     final_view_df = r_df[display_cols].rename(columns=rename_map)
-                    
-                    # 💡 [2번 요건] height=500 설정으로 내부 무한 스크롤 탑재
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (좌우 분할 + 정렬 + 스크롤)
+    # 2번 메뉴: 개인별 성적 데이터 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
             st.markdown("<h4>📝 개인별 성적 데이터 입력</h4>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 💡 [3번 요건] 좌우 배치 분할
             layout_left, layout_right = st.columns([2.5, 7.5])
             
             with layout_left:
@@ -448,7 +443,6 @@ elif st.session_state["admin_logged_in"]:
                     sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                     disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                     
-                    # 💡 [1번, 2번 요건] 정렬 config 및 고정 높이 지정
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -463,14 +457,13 @@ elif st.session_state["admin_logged_in"]:
                             st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리 (좌우 분할 + 정렬 + 스크롤)
+    # 3번 메뉴: 학생 정보 관리 (🚨 데이터 타입 호환성 완벽 복구 완료)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
             st.markdown("<h4>📇 학생 기본 정보 관리</h4>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 💡 [3번 요건] 좌우 배치 분할
             layout_left, layout_right = st.columns([2.5, 7.5])
             
             with layout_left:
@@ -490,16 +483,15 @@ elif st.session_state["admin_logged_in"]:
                     f_idx = df[df["반"].astype(int) == int(sel_c.replace("반", ""))].index if sel_c != "전체" else df.index
                     info_cols = ["반", "번호", "이름", "학교 이메일", "비밀번호"]
                     
-                    # 💡 [1번 요건] 정렬 설정
+                    # 💡 [버그 완전 해결] DB 내부 숫자형(Integer) 구조에 맞춰 NumberColumn 규격 및 포맷 수정 패치 적용
                     align_config = {
-                        "반": st.column_config.TextColumn(alignment="center"),
-                        "번호": st.column_config.TextColumn(alignment="center"),
+                        "반": st.column_config.NumberColumn(alignment="center", format="%d"),
+                        "번호": st.column_config.NumberColumn(alignment="center", format="%d"),
                         "이름": st.column_config.TextColumn(alignment="center"),
                         "학교 이메일": st.column_config.TextColumn(alignment="center"),
-                        "비밀번호": st.column_config.TextColumn(alignment="center")
+                        "비밀번호": st.column_config.NumberColumn(alignment="center", format="%d")
                     }
                     
-                    # 💡 [2번 요건] 고정 높이 지정 
                     edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=500)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -652,7 +644,7 @@ elif st.session_state["admin_logged_in"]:
                         for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
                         st.success("🎯 대량 성적 명단 수파베이스 이식 완료!"); st.rerun()
 
-    # 👑 교사 관리 대장 (보안 관리자 전용)
+    # 교사 계정 관리 대장 (보안 관리자 전용)
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
         with st.container(border=True):
             st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow_html=True)
