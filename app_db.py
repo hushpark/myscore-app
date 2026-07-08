@@ -177,7 +177,7 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 엔터 매크로 시퀀스 완벽 주입 버전]
+# 💡 [내 정보 수정 흐름 및 결과 메시지 위치/크기 패치 완결본]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -193,45 +193,37 @@ def show_profile_popup_dialog():
             else:
                 st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
                 
-                # 실시간 양방향 동선 확보를 위해 엔터 폼 구축
                 new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="profile_new_pw_1")
                 new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="profile_new_pw_2")
                 
-                # 🛠️ [엔터 트랙 및 우하단 자동 워프 매크로 가동 JS]
-                # 1) 현재 비밀번호 통과 시 새비밀번호 창으로 포커싱 자동 이동
-                # 2) 새비밀번호에서 엔터 시 확인 창으로 자동 점프
-                # 3) 확인 창에서 엔터 시 파란색 저장 단추 클릭 이벤트 강제 유도 전송
+                # 피드백 반영: 성공 / 실패 문구를 텍스트 박스 바로 밑에 똑같은 글자 크기 서식으로 표출하기 위한 전용 상태 세션 정의
+                if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
+
+                # 💡 [피드백 적용] 새 비밀번호 확인 박스 밑에 정밀 동적 폰트 크기 매칭 메시지 분기 표출
+                if st.session_state["pw_save_status"] == "success":
+                    st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail":
+                    st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: 5px;'>✗ 새 비밀번호가 비어있거나 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+
+                # 자동 커서 포커스 JS
                 components.html("""
                     <script>
                         setTimeout(function() {
                             const parentDoc = window.parent.document;
                             const inputs = parentDoc.querySelectorAll('input[type="password"]');
-                            const saveBtn = parentDoc.querySelector('button[key="final_save_blue_btn_id"]');
-                            
                             if(inputs.length >= 3) {
-                                // 현재비밀번호 검증 직후이므로 새 비밀번호 인풋창에 강제 포커싱
                                 if (parentDoc.activeElement === inputs[0] || parentDoc.activeElement.tagName === "BODY") {
                                     inputs[1].focus();
                                 }
-                                
-                                // 새 비밀번호 입력란에서 엔터 누르면 확인창으로 포커스 점프
                                 inputs[1].onkeydown = function(e) {
-                                    if(e.keyCode === 13) {
-                                        e.preventDefault();
-                                        inputs[2].focus();
-                                    }
+                                    if(e.keyCode === 13) { e.preventDefault(); inputs[2].focus(); }
                                 };
-                                
-                                // 새 비밀번호 확인란에서 엔터를 치면 '저장' 변수 트리거 가동
                                 inputs[2].onkeydown = function(e) {
                                     if(e.keyCode === 13) {
                                         e.preventDefault();
                                         const submitButtons = parentDoc.querySelectorAll('button');
                                         for(let btn of submitButtons) {
-                                            if(btn.innerText.includes("비밀번호 저장")) {
-                                                btn.click();
-                                                break;
-                                            }
+                                            if(btn.innerText.includes("비밀번호 저장")) { btn.click(); break; }
                                         }
                                     }
                                 };
@@ -244,21 +236,26 @@ def show_profile_popup_dialog():
                 col1, col2 = st.columns(2)
                 with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
                 with col2: 
-                    if st.button("닫기", key="close_pw_inner", use_container_width=True): st.rerun()
+                    # 🛠️ [버그 픽스 완료] 성공 로직을 기억한 채 닫기를 눌러도 에러 화면으로 역주행하지 않고 안전 클리어 탈출
+                    if st.button("닫기", key="close_pw_inner", use_container_width=True):
+                        st.session_state["pw_save_status"] = "none"
+                        st.rerun()
                     
                 if save_btn:
                     clean_new_pw = new_pw.strip()
                     clean_confirm_pw = new_pw_confirm.strip()
                     
                     if not clean_new_pw or clean_new_pw != clean_confirm_pw:
-                        st.error("❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다. 다시 확인해 주세요.")
+                        st.session_state["pw_save_status"] = "fail"
+                        st.rerun()
                     else:
                         try:
                             teacher_id = st.session_state.get("logged_teacher_id", "")
                             if teacher_id:
                                 supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
                                 st.session_state["logged_teacher_pw"] = clean_new_pw
-                                st.success("🎉 새 비밀번호가 원격 데이터베이스(Supabase)에 성공적으로 저장되었습니다!")
+                                st.session_state["pw_save_status"] = "success"
+                                st.rerun()
                         except Exception as e:
                             st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
@@ -367,7 +364,7 @@ elif st.session_state["admin_logged_in"]:
         st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 선생님 접속 중</div>', unsafe_allow_html=True)
         st.markdown("---")
         
-        menus = ["학생 조회 현황 모니화 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성", "성적 전체 일괄 업로드(CSV / Excel)"]
+        menus = ["학생 조회 현황 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성", "성적 전체 일괄 업로드(CSV / Excel)"]
         if st.session_state["logged_teacher_id"] == "admin": 
             menus.append("👑 교사 계정 관리 대장")
             
@@ -500,10 +497,10 @@ elif st.session_state["admin_logged_in"]:
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                     
                     if save_trigger:
-                        for idx_pos, r_idx in enumerate(f_idx):
+                        for _pos, r_idx in enumerate(f_idx):
                             for idx_c, db_col in enumerate(db_cols_ordered):
                                 view_title = item_titles[idx_c]
-                                df.loc[r_idx, db_col] = edited_df.iloc[idx_pos][view_title]
+                                df.loc[r_idx, db_col] = edited_df.iloc[_pos][view_title]
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
@@ -555,8 +552,8 @@ elif st.session_state["admin_logged_in"]:
                     if add_std_trigger:
                         show_add_student_dialog()
                     if save_info_trigger:
-                        for idx_pos, r_idx in enumerate(f_idx):
-                            for col in edited_df.columns: df.loc[r_idx, col] = edited_df.iloc[idx_pos][col]
+                        for _pos, r_idx in enumerate(f_idx):
+                            for col in edited_df.columns: df.loc[r_idx, col] = edited_df.iloc[_pos][col]
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
