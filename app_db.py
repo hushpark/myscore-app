@@ -111,7 +111,6 @@ def show_add_student_dialog():
     st.markdown("새로 명단에 추가할 학생의 기본 정보를 입력해 주세요.")
     with st.form("add_student_form", border=False):
         c1, c2, c3 = st.columns(3)
-        # 💡 [그림2 적용] 회색 가이드 예시 힌트(placeholder) 완전 내장
         with c1: new_ban = st.text_input("반", placeholder="예: 1")
         with c2: new_num = st.text_input("번호", placeholder="예: 15")
         with c3: new_name = st.text_input("이름", placeholder="예: 홍길동")
@@ -142,8 +141,7 @@ def show_add_student_dialog():
                         "성적조회 횟수": 0, "최종 확인일시": "-"
                     }).execute()
                     
-                    # 💡 [성공 메시지 고도화] 입력값을 결합한 맞춤형 안내 메시지 출력
-                    st.success(f"🎉 {clean_ban}반 {clean_num}번 {clean_name} 학생의 데이터를 추가하였습니다!")
+                    # 💡 [피드백 1 반영] 너무 빨리 사라지는 동적 알림 삭제 후 즉시 리프레시로 최적화
                     st.rerun()
                 except ValueError:
                     st.error("❌ '반'과 '번호', '초기 비밀번호'란에는 숫자만 입력할 수 있습니다.")
@@ -313,7 +311,8 @@ elif st.session_state["admin_logged_in"]:
         st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 선생님 접속 중</div>', unsafe_allow_html=True)
         st.markdown("---")
         
-        menus = ["▶ 학생 조회 현황 모니터링", "▶ 개인별 성적 입력", "▶ 학생 정보 관리", "▶ 평가 대상 과목 구성", "▶ 성적 전체 일괄 업로드(CSV / Excel)"]
+        # 💡 [피드백 3 반영] 사이드바 항목 앞에 있던 화살표 '▶' 기호를 완전히 제거
+        menus = ["학생 조회 현황 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성", "성적 전체 일괄 업로드(CSV / Excel)"]
         if st.session_state["logged_teacher_id"] == "admin": 
             menus.append("👑 교사 계정 관리 대장")
             
@@ -328,9 +327,9 @@ elif st.session_state["admin_logged_in"]:
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
     # ---------------------------------------------------------------------
-    # 그림 1 대치: 학생별 조회 이력 및 성적 현황 모니터링
+    # 학생별 조회 이력 및 성적 현황 모니터링
     # ---------------------------------------------------------------------
-    if menu_selection == "▶ 학생 조회 현황 모니터링":
+    if menu_selection == "학생 조회 현황 모니터링":
         with st.container(border=True):
             st.markdown("<h3>📊 학생별 조회 이력 및 성적 현황 모니터링</h3>", unsafe_allow_html=True)
             
@@ -366,9 +365,9 @@ elif st.session_state["admin_logged_in"]:
                 st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True)
 
     # ---------------------------------------------------------------------
-    # 그림 2 대치: 개인별 성적 데이터 입력
+    # 개인별 성적 데이터 입력
     # ---------------------------------------------------------------------
-    elif menu_selection == "▶ 개인별 성적 입력":
+    elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
             st.markdown("<h3>📝 개인별 성적 데이터 입력</h3>", unsafe_allow_html=True)
             
@@ -416,9 +415,9 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 그림 3 대치: 학생 기본 정보 관리
+    # 학생 기본 정보 관리
     # ---------------------------------------------------------------------
-    elif menu_selection == "▶ 학생 정보 관리":
+    elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
             st.markdown("<h3>📇 학생 기본 정보 관리</h3>", unsafe_allow_html=True)
             
@@ -453,9 +452,9 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 그림 4 대치: 평가 대상 과목 구성 (좌, 우 폼 분리 방식 컴백)
+    # 평가 대상 과목 구성
     # ---------------------------------------------------------------------
-    elif menu_selection == "▶ 평가 대상 과목 구성":
+    elif menu_selection == "평가 대상 과목 구성":
         st.markdown("<h2>🎯 평가 대상 과목 및 항목 관리</h2>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -467,10 +466,28 @@ elif st.session_state["admin_logged_in"]:
                 st.caption("과목 설정이 끝나면, 우측에서 수행평가 세부 항목을 구성하세요.")
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                sel_g = st.selectbox("교과군 선택", options=["인문·사회군", "수리·과학군", "예체능군"])
-                final_sub = st.selectbox("세부 과목", options=["국어", "정보", "수학", "영어"])
-                sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"])
-                sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"])
+                # 교과군 대분류 매핑 딕셔너리
+                group_map = {"국어": "인문·사회군", "수학": "수리·과학군", "정보": "수리·과학군", "영어": "인문·사회군"}
+                
+                # 💡 [피드백 2 반영] 로그인된 선생님의 첫 번째 담당과목 권한 추출 자동 선택 로직
+                allowed_list = st.session_state.get("allowed_subjects", [])
+                default_sub = "정보" # 권한 파싱 실패 시 예비 안전 장치
+                if allowed_list and allowed_list[0] != "마스터":
+                    default_sub = allowed_list[0]
+                
+                # 세부 과목 리스트 구성 및 기본 자동 인덱스 계산
+                sub_options = ["국어", "정보", "수학", "영어"]
+                sub_idx = sub_options.index(default_sub) if default_sub in sub_options else 0
+                
+                # 대분류 군(group) 역시 선택한 세부과목에 맞춰 지능적으로 연동
+                predicted_group = group_map.get(default_sub, "수리·과학군")
+                group_options = ["인문·사회군", "수리·과학군", "예체능군"]
+                group_idx = group_options.index(predicted_group) if predicted_group in group_options else 0
+                
+                sel_g = st.selectbox("교과군 선택", options=group_options, index=group_idx)
+                final_sub = st.selectbox("세부 과목", options=sub_options, index=sub_idx)
+                sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"], index=1) # 2학년 기본
+                sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=1) # 1학기 기본
                 
                 subject_key = f"{final_sub}_{sel_gr}_{sel_se}".replace(" ", "_")
 
@@ -533,9 +550,9 @@ elif st.session_state["admin_logged_in"]:
                 )
 
     # ---------------------------------------------------------------------
-    # 그림 5 대치: 성적 전체 일괄 업로드(CSV / Excel)
+    # 성적 전체 일괄 업로드(CSV / Excel)
     # ---------------------------------------------------------------------
-    elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV / Excel)":
+    elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
             st.markdown("<h3>📥 전체 일괄 성적 대장 CSV 업로드</h3>", unsafe_allow_html=True)
             
@@ -570,7 +587,7 @@ elif st.session_state["admin_logged_in"]:
                         for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
                         st.success("🎯 대량 성적 명단 수파베이스 이식 완료!"); st.rerun()
 
-    # 👑 교사 관리 패널 (보안 유지)
+    # 교사 계정 관리 대장 (보안 유지)
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
         with st.container(border=True):
             st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow_html=True)
