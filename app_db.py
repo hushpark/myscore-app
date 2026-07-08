@@ -33,8 +33,8 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
         /* 메인 화면 primary 푸른색 계열 버튼 규격화 */
-        div.stButton > button[kind="primary"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; padding: 8px 16px !important; }
-        div.stButton > button[kind="primary"]:hover { background-color: #2563eb !important; }
+        div.stButton > button[kind="primary"], button[data-testid="stFormSubmitButton"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; padding: 8px 16px !important; }
+        div.stButton > button[kind="primary"]:hover, button[data-testid="stFormSubmitButton"]:hover { background-color: #2563eb !important; }
         div.stButton > button[kind="secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
         
         /* 로그인 화면 수동 왼쪽 여백 제어 */
@@ -43,7 +43,7 @@ st.markdown("""
         
         div[data-testid="InputInstructions"] { display: none !important; }
         div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
-        div[data-testid="stAddressInput"] > div, div[data-testid="stSelectbox"] > div, div[data-testid="stTextInput"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
+        div[data-testid="stTextInput"] > div, div[data-testid="stSelectbox"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
         
@@ -177,14 +177,13 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 - 리런 프리(Rerun Free) 메모리 보존 방식 최종 완성본]
+# 💡 [내 정보 수정 - st.form 도입으로 무단 닫힘 현상 완벽 차단 마스터피스 버전]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
     edit_mode = st.radio("관리할 항목 선택", ["🔐 비밀번호 변경", "📚 담당과목 변경"], horizontal=True)
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
-    # 메모리 보존 제어 변수 선언
     if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
     if "pw_version_key" not in st.session_state: st.session_state["pw_version_key"] = 100
     if "cur_pw_verified" not in st.session_state: st.session_state["cur_pw_verified"] = False
@@ -202,46 +201,44 @@ def show_profile_popup_dialog():
                 st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
                 st.session_state["pw_save_status"] = "none"
 
-        # 💡 현재 암호가 맞으면 자석처럼 붙어서 한 화면에 아래 필드 연장 표출
+        # 💡 현재 암호 검증 성공 시 일체형으로 아래에 폼 생성 연동
         if st.session_state["cur_pw_verified"]:
             st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
             
-            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
-            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
-            
-            # 실시간 유효성 메시지 자리 고정
-            msg_placeholder = st.container()
-            if st.session_state["pw_save_status"] == "success":
-                msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
-            elif st.session_state["pw_save_status"] == "fail_mismatch":
-                msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
-            elif st.session_state["pw_save_status"] == "fail_empty":
-                msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
-
-            # 요구하신 단 하나의 조건: 현재 비밀번호 치면 자동으로 커서를 다음 칸으로 옮김
-            components.html("""
-                <script>
-                    setTimeout(function() {
-                        const parentDoc = window.parent.document;
-                        const inputs = parentDoc.querySelectorAll('input[type="password"]');
-                        if(inputs.length >= 3 && parentDoc.activeElement === inputs[0]) {
-                            inputs[1].focus();
-                        }
-                    }, 200);
-                </script>
-            """, height=0, width=0)
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            col1, col2 = st.columns(2)
-            
-            # 🎨 요구하신 단정한 파란색 단추 고정
-            with col1: 
-                save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True, key="real_blue_save_action")
-            with col2:
-                close_btn = st.button("닫기", key="close_pw_inner", use_container_width=True)
+            # 🛠️ [핵심 조치] 비밀번호 입력 및 전송 영역을 하나의 st.form 인프라로 묶어 무단 새로고침 차단!
+            with st.form(key="teacher_pw_secure_form", border=False):
+                new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
+                new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
                 
-            # 💡 [버그 완전 격파] 저장 버튼 클릭 시 틀렸다면 창이 절대 닫히지 않고, 오직 '닫기' 버튼을 클릭할 때만 나가도록 완벽 분리 교정했습니다.
-            if close_btn:
+                # 메시지 출력 공간 확보
+                msg_placeholder = st.container()
+                if st.session_state["pw_save_status"] == "success":
+                    msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail_mismatch":
+                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail_empty":
+                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
+
+                # 현재 비밀번호 입력 후 엔터 치면 새 비밀번호 박스로 부드럽게 넘겨주는 경량 JS 가이드
+                components.html("""
+                    <script>
+                        setTimeout(function() {
+                            const parentDoc = window.parent.document;
+                            const inputs = parentDoc.querySelectorAll('input[type="password"]');
+                            if(inputs.length >= 3 && parentDoc.activeElement === inputs[0]) {
+                                inputs[1].focus();
+                            }
+                        }, 200);
+                    </script>
+                """, height=0, width=0)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # 🎨 [폼 전용 규격화] form 내부에 배치되는 전용 파란색 서브밋 버튼 가동
+                save_btn = st.form_submit_button("💾 비밀번호 저장", use_container_width=True)
+            
+            # 닫기 버튼은 폼 바깥에 두어 언제든 눌러서 탈출할 수 있도록 설계
+            if st.button("닫기", key="close_pw_inner", use_container_width=True):
                 st.session_state["pw_save_status"] = "none"
                 st.session_state["cur_pw_verified"] = False
                 st.session_state["pw_version_key"] += 1
@@ -251,24 +248,23 @@ def show_profile_popup_dialog():
                 clean_new_pw = new_pw.strip()
                 clean_confirm_pw = new_pw_confirm.strip()
                 
+                # 💡 이제는 틀려도 폼 내부 데이터가 안전하게 보호되므로 팝업창이 절대 홀로 꺼지지 않습니다!
                 if not clean_new_pw:
                     st.session_state["pw_save_status"] = "fail_empty"
-                    st.rerun() # 내부에 메모리가 박혀있으므로 다이얼로그 강제 셧다운 없이 정갈하게 리런 루프
+                    st.rerun()
                 elif clean_new_pw != clean_confirm_pw:
                     st.session_state["pw_save_status"] = "fail_mismatch"
                     st.rerun()
                 else:
-                   try:
+                    try:
                         teacher_id = st.session_state.get("logged_teacher_id", "")
                         if teacher_id:
-                            # 괄호와 마침표 체계를 정확하게 맞춘 코드입니다.
                             supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
                             st.session_state["logged_teacher_pw"] = clean_new_pw
                             st.session_state["pw_save_status"] = "success"
-                            st.session_state["pw_version_key"] += 1
                             st.rerun()
-                   except Exception as e:
-                            st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
+                    except Exception as e:
+                        st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("닫기", key="close_pw_outer", use_container_width=True): 
