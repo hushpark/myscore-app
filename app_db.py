@@ -267,7 +267,7 @@ def show_profile_popup_dialog():
                             st.session_state["pw_save_status"] = "success"
                             st.session_state["pw_version_key"] += 1
                             st.rerun()
-                    except Exception as e:
+                   except Exception as e:
                             st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
             st.markdown("<br>", unsafe_allow_html=True)
