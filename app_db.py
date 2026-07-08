@@ -655,7 +655,7 @@ elif st.session_state["admin_logged_in"]:
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
                 
                 # 일괄 업로드는 입력창 구성이 적으므로 바닥 맞춤을 위해 11칸 기정의 밀어내기
-                for _ in range(11):
+                for _ in range(3):
                     st.write("")
 
                 apply_btn_col1, apply_btn_col2 = st.columns(2)
