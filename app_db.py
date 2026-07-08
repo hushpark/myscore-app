@@ -53,10 +53,8 @@ st.markdown("""
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
         .menu-title-text { font-size: 20px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; }
 
-        /* ✨ [요청 반영] 좌측 메뉴 조작용 카드 박스 고정 높이 지정 및 하단 정렬용 컨테이너 서식 */
-        .magnet-left-container { display: flex; flex-direction: column; justify-content: space-between; height: 500px; }
-        .magnet-top-fields { flex-grow: 1; }
-        .magnet-bottom-buttons { margin-top: auto; }
+        /* 💡 [수정 반영] 다른 요소의 간격 방해 없이 오직 '버튼만 밑으로' 밀착시키는 수직 마그네틱 서식 */
+        .magnet-button-wrapper { margin-top: 160px !important; }
 
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
     </style>
@@ -400,7 +398,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (🚨 저장 버튼 왼쪽 최하단 밀착 정렬)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 필터 위치 원래대로 상단 고정, 버튼만 밑으로)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -409,8 +407,7 @@ elif st.session_state["admin_logged_in"]:
             layout_left, layout_right = st.columns([2.5, 7.5])
             
             with layout_left:
-                # 💡 [2번 요건] 수직 바닥 밀착용 자석 컨테이너 도입
-                st.markdown('<div class="magnet-left-container"><div class="magnet-top-fields">', unsafe_allow_html=True)
+                # 💡 필터링 메뉴들은 원래 보시던 상단 위치에 자연스럽게 배치
                 st.markdown("**📂 관리할 교과 선택**")
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="edt_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -418,12 +415,11 @@ elif st.session_state["admin_logged_in"]:
                 class_options_ed = ["전체 학급 보기"]
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
-                st.markdown('</div>', unsafe_allow_html=True) # 탑 필드 마감
                 
-                # 자석 컨테이너의 하단(바닥) 구역에 바짝 붙임
-                st.markdown('<div class="magnet-bottom-buttons">', unsafe_allow_html=True)
+                # 💡 [요청 반영] 다른 배치 방해 없이 오직 저장 버튼만 CSS 마진을 통해 맨 밑 바닥으로 밀착
+                st.markdown('<div class="magnet-button-wrapper">', unsafe_allow_html=True)
                 save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
-                st.markdown('</div></div>', unsafe_allow_html=True) # 바닥 및 전체 컨테이너 마감
+                st.markdown('</div>', unsafe_allow_html=True)
                 
             with layout_right:
                 subject_key = "정보_2학년_2026학년도_1학기"
@@ -469,7 +465,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리 (🚨 추가 옆에 저장 배치 및 왼쪽 아래 밀착 정렬)
+    # 3번 메뉴: 학생 정보 관리 (💡 필터 위치 원래대로 상단 고정, 추가/저장 버튼만 밑으로)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
@@ -478,7 +474,7 @@ elif st.session_state["admin_logged_in"]:
             layout_left, layout_right = st.columns([2.5, 7.5])
             
             with layout_left:
-                st.markdown('<div class="magnet-left-container"><div class="magnet-top-fields">', unsafe_allow_html=True)
+                # 💡 필터링 메뉴들은 원래 보시던 상단 위치에 자연스럽게 배치
                 st.markdown("**📂 관리할 교과 선택**")
                 st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="inf_sub")
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -486,16 +482,15 @@ elif st.session_state["admin_logged_in"]:
                 class_opts = ["전체"]
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # 💡 [2번 요건] 가로 분할(1:1)을 통해 왼쪽 하단 바닥면에 [추가] 옆에 [저장] 나란히 배치
-                st.markdown('<div class="magnet-bottom-buttons">', unsafe_allow_html=True)
+
+                # 💡 [요청 반영] 추가 및 저장 버튼 묶음만 CSS 마진을 통해 맨 밑 바닥으로 밀착 정렬
+                st.markdown('<div class="magnet-button-wrapper">', unsafe_allow_html=True)
                 btn_split1, btn_split2 = st.columns(2)
                 with btn_split1:
                     add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
                 with btn_split2:
                     save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
-                st.markdown('</div></div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
 
             with layout_right:
                 if df.empty:
@@ -623,17 +618,15 @@ elif st.session_state["admin_logged_in"]:
                     )
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드 (🚨 요청 기반 4:6 좌우 스플릿 완벽 가공)
+    # 5번 메뉴: 성적 전체 일괄 업로드 (💡 필터 및 인풋 상단 유지, 버튼만 밑으로)
     # ---------------------------------------------------------------------
     elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📥 전체 일괄 성적 대장 CSV 업로드</h4></div>', unsafe_allow_html=True)
             
-            # 💡 [1번 요건] 가로 폭을 왼쪽 4, 오른쪽 6 비율의 대칭 스플릿 구조로 세분화
             upload_left, upload_right = st.columns([4.0, 6.0])
             
             with upload_left:
-                st.markdown('<div class="magnet-left-container"><div class="magnet-top-fields">', unsafe_allow_html=True)
                 st.markdown("**📂 성적 연동 과목 선택**")
                 st.selectbox("과목 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="csv_upl_sub")
                 
@@ -648,21 +641,18 @@ elif st.session_state["admin_logged_in"]:
                 
                 st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
                 up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
+                
+                # 💡 [요청 반영] 일괄 반영 버튼도 상단 인풋 상자들 간격 깨지 않고 오직 얘만 맨 밑 바닥으로 밀착
+                st.markdown('<div class="magnet-button-wrapper">', unsafe_allow_html=True)
+                apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                # 💡 [1번 요건] 버튼 명칭을 '일괄 반영'으로 고치고 좌측 최하단 바닥에 정착
-                st.markdown('<div class="magnet-bottom-buttons">', unsafe_allow_html=True)
-                apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
-                st.markdown('</div></div>', unsafe_allow_html=True)
-                
             with upload_right:
-                # 💡 [1번 요건] 파일 검증용 '업로드 데이터 미리보기' 영역을 우측 컴포넌트로 완벽 이주
                 st.markdown("<div style='font-size:15px; font-weight:800; color:#0f172a; padding-bottom:10px;'>📊 업로드 데이터 미리보기</div>", unsafe_allow_html=True)
                 if up_f:
                     df_up = pd.read_csv(up_f) if up_f.name.endswith(".csv") else pd.read_excel(up_f)
                     df_up.columns = [c.strip() for c in df_up.columns]
                     
-                    # 미리보기용 정렬 설정 적용
                     preview_align = {}
                     for col_name in df_up.columns:
                         if col_name in ["반", "번호", "비밀번호"] or "수행평가" in col_name:
