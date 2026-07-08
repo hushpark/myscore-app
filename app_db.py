@@ -177,7 +177,7 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 불일치 창 닫힘 버그 및 텍스트 박스 초기화 기능 완결 패치본]
+# 💡 [내 정보 수정 한자 오타 완벽 수리 빌드본]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -199,12 +199,10 @@ def show_profile_popup_dialog():
             else:
                 st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
                 
-                # 🛠️ 엔터를 쳐도 창이 절대 혼자 닫히지 않도록 완전히 차단된 독립형 st.form 제어 인프라 기용 설계
                 with st.form("inner_safe_password_form", border=False):
                     new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
                     new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
                     
-                    # 피드백 반영: 성공 / 실패 문구를 확인 텍스트 박스 바로 밑에 똑같은 글자 크기 지정 표출
                     msg_placeholder = st.container()
                     if st.session_state["pw_save_status"] == "success":
                         msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
@@ -216,9 +214,7 @@ def show_profile_popup_dialog():
                     st.markdown("<br>", unsafe_allow_html=True)
                     col1, col2 = st.columns(2)
                     with col1: save_btn = st.form_submit_button("💾 비밀번호 저장", type="primary", use_container_width=True)
-                    with col2:
-                        # 폼 안으로 들어온 닫기 단추: 누르는 순간 텍스트 박스 잔류 캐시를 깨끗하게 밀어버립니다.
-                        close_btn = st.form_submit_button("닫기", use_container_width=True)
+                    with col2: close_btn = st.form_submit_button("닫기", use_container_width=True)
 
                 # 자동 커서 포커스 워프 이동 매크로 JS 주입
                 components.html("""
@@ -238,7 +234,8 @@ def show_profile_popup_dialog():
                     </script>
                 """, height=0, width=0)
                 
-                if静态_btn := close_btn:
+                # 🛠️ [오타 완벽 수리 마감] 한자 기호가 완전히 제거되어 정상적인 변수로 치환되었습니다.
+                if close_btn:
                     st.session_state["pw_save_status"] = "none"
                     st.session_state["pw_version_key"] += 1
                     st.rerun()
