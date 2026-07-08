@@ -111,21 +111,44 @@ def show_add_student_dialog():
     st.markdown("새로 명단에 추가할 학생의 기본 정보를 입력해 주세요.")
     with st.form("add_student_form", border=False):
         c1, c2, c3 = st.columns(3)
-        with c1: new_ban = st.number_input("반", min_value=1, max_value=15, step=1)
-        with c2: new_num = st.number_input("번호", min_value=1, max_value=50, step=1)
-        with c3: new_name = st.text_input("이름")
+        # 💡 [그림2 적용] 회색 가이드 예시 힌트(placeholder) 완전 내장
+        with c1: new_ban = st.text_input("반", placeholder="예: 1")
+        with c2: new_num = st.text_input("번호", placeholder="예: 15")
+        with c3: new_name = st.text_input("이름", placeholder="예: 홍길동")
+        
         c4, c5 = st.columns(2)
-        with c4: new_email = st.text_input("학교 이메일")
-        with c5: new_pw = st.text_input("초기 비밀번호")
+        with c4: new_email = st.text_input("학교 이메일", placeholder="예: student@school.kr")
+        with c5: new_pw = st.text_input("초기 비밀번호", placeholder="예: 1234")
+        
         submit_btn = st.form_submit_button("💾 이 학생 명단에 추가하기", use_container_width=True)
         if submit_btn:
-            if not new_name or not new_email or not new_pw: st.error("❌ 모든 항목을 빠짐없이 입력해 주세요.")
+            if not new_ban.strip() or not new_num.strip() or not new_name.strip() or not new_email.strip() or not new_pw.strip(): 
+                st.error("❌ 모든 항목을 빠짐없이 입력해 주세요.")
             else:
                 try:
-                    supabase.table(student_table).upsert({"반": int(new_ban), "번호": int(new_num), "이름": new_name.strip(), "학교 이메일": new_email.strip(), "비밀번호": int(new_pw), "수행평가1": 0, "수행평가2": 0, "수행평가3": 0, "성적조회 횟수": 0, "최종 확인일시": "-"}).execute()
-                    st.success("🎉 학생 데이터가 주입되었습니다!")
+                    clean_ban = new_ban.strip()
+                    clean_num = new_num.strip()
+                    clean_name = new_name.strip()
+                    clean_email = new_email.strip()
+                    clean_pw = new_pw.strip()
+                    
+                    supabase.table(student_table).upsert({
+                        "반": int(clean_ban), 
+                        "번호": int(clean_num), 
+                        "이름": clean_name, 
+                        "학교 이메일": clean_email, 
+                        "비밀번호": int(clean_pw), 
+                        "수행평가1": 0, "수행평가2": 0, "수행평가3": 0, 
+                        "성적조회 횟수": 0, "최종 확인일시": "-"
+                    }).execute()
+                    
+                    # 💡 [성공 메시지 고도화] 입력값을 결합한 맞춤형 안내 메시지 출력
+                    st.success(f"🎉 {clean_ban}반 {clean_num}번 {clean_name} 학생의 데이터를 추가하였습니다!")
                     st.rerun()
-                except: st.error("❌ 학생 추가 실패")
+                except ValueError:
+                    st.error("❌ '반'과 '번호', '초기 비밀번호'란에는 숫자만 입력할 수 있습니다.")
+                except Exception as e:
+                    st.error(f"❌ 데이터베이스 통신 실패: {e}")
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_data):
@@ -218,7 +241,7 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 클린 통합 로그인 시스템
+# 🔓 [1단계] 로그인 시스템
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -270,8 +293,6 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                                 st.rerun()
                             else: st.error("❌ 교사 로그인 실패")
 
-    st.markdown("<div class='footer-container'><div class='footer-text'>Designed & Developed by User & Supabase Backend Engine</div></div>", unsafe_allow_html=True)
-
 # =========================================================================
 # 🎓 [2단계-A] 학생 화면
 # =========================================================================
@@ -291,10 +312,14 @@ elif st.session_state["admin_logged_in"]:
         st.markdown('<span class="sidebar-title">📋 교사 메뉴</span>', unsafe_allow_html=True)
         st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 선생님 접속 중</div>', unsafe_allow_html=True)
         st.markdown("---")
+        
         menus = ["▶ 학생 조회 현황 모니터링", "▶ 개인별 성적 입력", "▶ 학생 정보 관리", "▶ 평가 대상 과목 구성", "▶ 성적 전체 일괄 업로드(CSV / Excel)"]
-        if st.session_state["logged_teacher_id"] == "admin": menus.append("👑 교사 계정 관리 대장")
+        if st.session_state["logged_teacher_id"] == "admin": 
+            menus.append("👑 교사 계정 관리 대장")
+            
         menu_selection = st.radio("메뉴 선택", menus, label_visibility="collapsed")
         st.markdown("<br>", unsafe_allow_html=True)
+        
         if st.button("👤 내 정보 수정", type="secondary", use_container_width=True):
             st.session_state["pw_step_unlocked"] = False
             show_profile_popup_dialog()
@@ -303,7 +328,7 @@ elif st.session_state["admin_logged_in"]:
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
     # ---------------------------------------------------------------------
-    # 📊 그림 1 폼 연동: 학생 조회 현황 모니터링
+    # 그림 1 대치: 학생별 조회 이력 및 성적 현황 모니터링
     # ---------------------------------------------------------------------
     if menu_selection == "▶ 학생 조회 현황 모니터링":
         with st.container(border=True):
@@ -312,7 +337,6 @@ elif st.session_state["admin_logged_in"]:
             c_sub, c_class = st.columns(2)
             with c_sub:
                 st.markdown("**📂 대상 교과 선택**")
-                # 고정 예시 연동 하드코딩 표출 패치
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="mon_sub")
             with c_class:
                 st.markdown("**🎯 필터링할 학급 선택**")
@@ -320,7 +344,6 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_options = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class = st.selectbox("학급 선택", options=class_options, label_visibility="collapsed", key="mon_class")
                 
-            # 동적 헤더 바인딩 연동
             subject_key = "정보_2학년_2026학년도_1학기"
             item_count, item_titles = get_subject_item_names(subject_key)
 
@@ -343,7 +366,7 @@ elif st.session_state["admin_logged_in"]:
                 st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True)
 
     # ---------------------------------------------------------------------
-    # 📝 그림 2 폼 연동: 개인별 성적 데이터 입력
+    # 그림 2 대치: 개인별 성적 데이터 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "▶ 개인별 성적 입력":
         with st.container(border=True):
@@ -354,7 +377,7 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("**📂 관리할 교과 선택**")
                 selected_db_str = st.selectbox("교과 선택", options=["정보 (2학년 / 2026학년도 1학기)"], label_visibility="collapsed", key="edt_sub")
             with c_class:
-                st.markdown("**👥 필터링할 학급 선택**")
+                st.markdown("**🎯 필터링할 학급 선택**")
                 class_options_ed = ["전체 학급 보기"]
                 if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
@@ -377,7 +400,6 @@ elif st.session_state["admin_logged_in"]:
                 target_cols += ["성적조회 횟수", "최종 확인일시"]
                 
                 sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
-                # 스냅샷 흐름에 따른 비활성화 대칭 매핑 처리
                 disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                 
                 edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc")
@@ -391,10 +413,10 @@ elif st.session_state["admin_logged_in"]:
                                 view_title = item_titles[idx_c]
                                 df.loc[r_idx, db_col] = edited_df.iloc[idx_pos][view_title]
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
-                        st.success("🎉 수행 점수가 원격 DB에 안전하게 마감 처리되었습니다!"); st.rerun()
+                        st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 📇 그림 3 폼 연동: 학생 기본 정보 관리
+    # 그림 3 대치: 학생 기본 정보 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "▶ 학생 정보 관리":
         with st.container(border=True):
@@ -428,10 +450,10 @@ elif st.session_state["admin_logged_in"]:
                         for idx_pos, r_idx in enumerate(f_idx):
                             for col in edited_df.columns: df.loc[r_idx, col] = edited_df.iloc[idx_pos][col]
                             supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
-                        st.success("🎉 학생 신상정보 동기화 완료!"); st.rerun()
+                        st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # ⚙️ 그림 4 폼 연동: 평가 대상 과목 구성 (완벽한 좌, 우 스플릿 레이아웃)
+    # 그림 4 대치: 평가 대상 과목 구성 (좌, 우 폼 분리 방식 컴백)
     # ---------------------------------------------------------------------
     elif menu_selection == "▶ 평가 대상 과목 구성":
         st.markdown("<h2>🎯 평가 대상 과목 및 항목 관리</h2>", unsafe_allow_html=True)
@@ -460,10 +482,16 @@ elif st.session_state["admin_logged_in"]:
                 if not db_match.empty:
                     saved_info = db_match.iloc[0]
                     init_count = int(saved_info.get("item_count", 3))
-                    init_titles = [saved_info.get("item1_name", "수행평가1"), saved_info.get("item2_name", "수행평가2"), saved_info.get("item3_name", "수행평가3")]
+                    init_titles = [
+                        saved_info.get("item1_name", "수행평가1"), 
+                        saved_info.get("item2_name", "수행평가2"), 
+                        saved_info.get("item3_name", "수행평가3"),
+                        saved_info.get("item4_name", "수행평가4"),
+                        saved_info.get("item5_name", "수행평가5")
+                    ]
                 else:
                     init_count = 3
-                    init_titles = ["수행평가1", "수행평가2", "수행평가3"]
+                    init_titles = ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행평가5"]
 
                 with st.container(border=True):
                     st.markdown("<h3>🎯 2. 수행평가 항목 구성</h3>", unsafe_allow_html=True)
@@ -492,7 +520,7 @@ elif st.session_state["admin_logged_in"]:
                                 "item5_name": item_titles[4] if item_count >= 5 else "-"
                             }
                             supabase.table(config_table).upsert(config_record).execute()
-                            st.success("🎉 수행평가 맵핑 구조 저장 완료!"); st.rerun()
+                            st.success("🎉 수행평가 구조 셋업 세이브 완료!"); st.rerun()
             else:
                 st.markdown(
                     """
@@ -505,7 +533,7 @@ elif st.session_state["admin_logged_in"]:
                 )
 
     # ---------------------------------------------------------------------
-    # 📥 그림 5 폼 연동: 전체 일괄 성적 대장 csv 업로드
+    # 그림 5 대치: 성적 전체 일괄 업로드(CSV / Excel)
     # ---------------------------------------------------------------------
     elif menu_selection == "▶ 성적 전체 일괄 업로드(CSV / Excel)":
         with st.container(border=True):
@@ -540,9 +568,9 @@ elif st.session_state["admin_logged_in"]:
                             if c not in df_up.columns: df_up[c] = 0
                         df_up["최종 확인일시"] = "-"
                         for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
-                        st.success("🎯 대량 마이그레이션 및 인프라 구축 성공!"); st.rerun()
+                        st.success("🎯 대량 성적 명단 수파베이스 이식 완료!"); st.rerun()
 
-    # 👑 교사 계정 제어 탭 (인프라 유지 보장)
+    # 👑 교사 관리 패널 (보안 유지)
     elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
         with st.container(border=True):
             st.markdown("<h3>👑 교사 계정 자동 관리 관제 센터</h3>", unsafe_allow_html=True)
