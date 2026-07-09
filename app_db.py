@@ -116,14 +116,12 @@ def get_active_databases():
             if len(parts) >= 3:
                 subj = parts[0]
                 grade = parts[1]
-                # 💡 [join1학기 버그 해결] 수식 규칙을 '_join'에서 표준 언더바('_')로 완벽 원상복구!
                 sem = "_".join(parts[2:])
                 active_list.append({"subject": subj, "grade": grade, "semester": sem.replace("_", " "), "key": subj_key})
     return active_list
 
 def get_subject_item_names(subject_key):
     cfg_df = load_db_df(config_table)
-    # 💡 [125라인 수리 완료] 문법 오류 유발자 && 기호를 파이썬 표준 연산자인 and로 전격 수정!
     if not cfg_df.empty and "subject_key" in cfg_df.columns:
         match = cfg_df[cfg_df["subject_key"] == subject_key]
         if not match.empty:
@@ -455,7 +453,6 @@ elif st.session_state["admin_logged_in"]:
             show_profile_popup_dialog()
         if st.sidebar.button("🚪 로그아웃", type="secondary", use_container_width=True): st.session_state.clear(); st.rerun()
 
-    # 💡 마스터 상단 네비게이션 가이드 단독 표출 패치 적용
     st.markdown(f"""
         <div class="header-title-main">수행평가 점수 확인 시스템</div>
         <div class="header-nav-sub" style="border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 25px;">
@@ -468,7 +465,7 @@ elif st.session_state["admin_logged_in"]:
     layout_left, layout_right = st.columns([3.5, 6.5])
 
     # ---------------------------------------------------------------------
-    # 1번 메뉴: 학생 조회 현황 모니터링 (💡 표 높이 최적화 패치)
+    # 1번 메뉴: 학생 조회 현황 모니터링 (💡 요구사항 반영: 세로 높이 시원하게 650으로 확장)
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         registered_dbs = get_active_databases()
@@ -527,11 +524,11 @@ elif st.session_state["admin_logged_in"]:
                     align_config["최종 확인일시"] = st.column_config.TextColumn(alignment="center")
                     
                     final_view_df = r_df[display_cols].rename(columns=rename_map)
-                    # 💡 요구사항 반영: 1번 메뉴 표 높이를 한 화면에 맞게 height=400으로 압축 세팅
-                    st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=400)
+                    # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=650 확장 고정
+                    st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 표 높이 최적화 패치)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항 반영: 세로 높이 시원하게 650 확장)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -655,8 +652,8 @@ elif st.session_state["admin_logged_in"]:
                     sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                     disabled_cols = ["반", "번호", "이름", "학교 이메일", "합계", "성적조회 횟수", "최종 확인일시"]
                     
-                    # 💡 요구사항 반영: 2번 메뉴 표 높이를 한 화면 고정을 위해 height=380으로 압축 세팅
-                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=380)
+                    # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=650 확장 고정
+                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=650)
                     
                     if save_trigger:
                         if excel_loaded_df is not None:
@@ -676,7 +673,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리 (💡 표 높이 최적화 패치)
+    # 3번 메뉴: 학생 기본 정보 관리 (💡 요구사항 반영: 세로 높이 시원하게 650 확장)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -705,8 +702,7 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 간격 조정을 위한 여백 슬림화 패치
-                for _ in range(8):
+                for _ in range(15):
                     st.write("")
 
                 info_grid_col1, info_grid_col2 = st.columns(2)
@@ -731,8 +727,8 @@ elif st.session_state["admin_logged_in"]:
                         "비밀번호": st.column_config.TextColumn(alignment="center")
                     }
                     
-                    # 💡 요구사항 반영: 3번 메뉴 표 높이도 동일하게 height=380으로 스크롤바 제어 압축 세팅
-                    edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=380)
+                    # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=650 확장 고정
+                    edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=650)
                     
                     if add_std_trigger:
                         show_add_student_dialog(subject_key)
@@ -873,7 +869,8 @@ elif st.session_state["admin_logged_in"]:
             save_tc_trigger = st.button("💾 교사 정보 원격 저장", type="primary", use_container_width=True)
             
         with layout_right:
-            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor", height=400)
+            # 👑 관리 대장 그리드 높이도 height=650 확장 고정 싱크 패치
+            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor", height=650)
             
             if save_tc_trigger:
                 if not df_tc.empty:
