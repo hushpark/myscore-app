@@ -597,6 +597,10 @@ elif st.session_state["admin_logged_in"]:
                     except Exception as e:
                         st.error(f"❌ 파일 구조 해석 실패: {e}")
                         
+                # 10번 정도 반복하며 빈 줄을 만들어 컴포넌트를 아래로 밀어내는 방식
+                for _ in range(10):
+                    st.write("")  # 혹은 st.text("")
+                
                 btn_space_l, btn_space_r = st.columns([5.0, 5.0])
                 with btn_space_r:
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
