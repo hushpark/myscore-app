@@ -58,11 +58,10 @@ st.markdown("""
 
         /* 각 메뉴 제목 밑 구분 라인 디자인 */
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
-        
-        /* 💡 그림1(제목)과 그림2(안내 가이드)의 완벽한 가로 나열 플렉스 박스 */
-        .title-flex-box { display: flex !important; align-items: center !important; gap: 20px !important; flex-wrap: nowrap !important; }
         .menu-title-text { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; white-space: nowrap !important; }
-        .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 6px 14px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 !important; }
+        
+        /* 💡 안내 가이드라인 박스를 오른쪽 테이블 시작선 기점으로 수평 정렬하는 스타일 */
+        .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 8px 16px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 0 15px 0 !important; width: 100% !important; box-sizing: border-box !important; }
 
         .sync-giant-title { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
@@ -517,17 +516,12 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 오타 수정 완료, 가로 나열 레이아웃 적용 및 표 크기 복원)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 버튼 왼쪽 이동 + 테이블 크기 복원 + 안내창 우측 시작 싱크 정렬)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
-            # 💡 [교정 완료] 그림1과 그림2를 나란히 배치하는 플렉스 구조 가동
-            st.markdown("""
-                <div class="menu-title-container title-flex-box">
-                    <h4 class="menu-title-text">📝 수행 평가 성적 입력</h4>
-                    <p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>
-                </div>
-            """, unsafe_allow_html=True)
+            # 깔끔하게 비워진 메뉴 헤더 타이틀 영역
+            st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 수행 평가 성적 입력</h4></div>', unsafe_allow_html=True)
             
             registered_dbs = get_active_databases()
             if "마스터" not in st.session_state["allowed_subjects"]:
@@ -537,7 +531,6 @@ elif st.session_state["admin_logged_in"]:
             if not registered_dbs:
                 st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다. [평가 대상 과목 구성] 메뉴에서 먼저 과목을 추가해 주세요.")
             else:
-                # 💡 오타 원인이었던 변수 불일치 전면 해결 (`layout_left, layout_right`로 정밀 통일)
                 layout_left, layout_right = st.columns([3.5, 6.5])
                 
                 with layout_left:
@@ -575,7 +568,7 @@ elif st.session_state["admin_logged_in"]:
                     st.download_button("📥 일괄 업로드용 성적 양식(.CSV / .XLSX) 다운로드", data=csv_buffer, file_name=f"성적일괄업로드양식_{chosen_db['subject']}.csv", mime="text/csv", use_container_width=True)
                     
                     st.markdown("<br>📂 **엑셀/CSV 성적 일괄 가져오기 (덮어쓰기)**", unsafe_allow_html=True)
-                    up_f = st.file_uploader("Guideline File Drop", type=["csv","xlsx"], label_visibility="collapsed", key="integrated_file_uploader")
+                    up_f = st.file_uploader("엑셀 파일 올리기", type=["csv", "xlsx"], label_visibility="collapsed", key="integrated_file_uploader")
                     
                     excel_loaded_df = None
                     if up_f:
@@ -597,8 +590,15 @@ elif st.session_state["admin_logged_in"]:
                             st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
                         except Exception as e:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
-                    
+                            
+                    # 💡 [요구사항 1번] 성적 저장하기 버튼을 원래대로 왼쪽 하단 최하단 패널 행 위치로 컴백 배치!
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
+
                 with layout_right:
+                    # 💡 [요구사항 3번] 안내 가이드라인 메시지의 시작 원점을 우측 테이블 헤더 가로선 기점과 정확하게 일치시켜 우측으로 정렬!
+                    st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
+                    
                     if excel_loaded_df is not None:
                         df = excel_loaded_df.copy()
                     else:
@@ -640,13 +640,9 @@ elif st.session_state["admin_logged_in"]:
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        # 💡 표 크기를 원래의 시원시원한 500 규격으로 완전 복구!
+                        # 💡 [요구사항 2번] 간섭을 주던 버튼이 빠져나갔으므로 온전한 500 세로 크기 격격 복원 및 드넓은 화면 가동
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
-                        # 💡 [버튼 원래 자리 복구] 테이블 바로 하단 라인으로 성적 저장하기 버튼을 안전하게 원위치
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="grid_bottom_save_btn")
-
                         if save_trigger:
                             if excel_loaded_df is not None:
                                 supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
@@ -695,7 +691,7 @@ elif st.session_state["admin_logged_in"]:
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("**👥 학반 필터링**")
                     class_opts = ["전체"]
-                    if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
+                    if not df.empty && "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                     sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
                     for _ in range(15):
@@ -828,7 +824,7 @@ elif st.session_state["admin_logged_in"]:
                         if save_clicked:
                             allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
                             if "마스터" not in st.session_state["allowed_subjects"] and final_sub.strip() not in allowed_trimmed:
-                                st.error(f"❌ 권한 오류: {st.session_state['teacher_name']} 🔥선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
+                                st.error(f"❌ 권한 오류: {st.session_state['teacher_name']} 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
                             else:
                                 config_record = {
                                     "subject_key": subject_key, "item_count": item_count,
