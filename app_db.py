@@ -77,7 +77,6 @@ SUPABASE_URL = "https://jwkvojfmhorndnnhscwl.supabase.co"
 SUPABASE_KEY = "sb_publishable_6--SHGogHaHSEVO7g3rNjQ_FOHO-XlN"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# 💡 하드코딩된 st_info_2_2026_1을 버리고 새로운 '통합 성적 테이블'로 교체
 student_table = "student_scores" 
 teacher_table = "teacher_accounts"
 config_table = "subject_configs"
@@ -153,7 +152,6 @@ def show_add_teacher_dialog():
                     time.sleep(0.3)
                     st.rerun()
 
-# 💡 학생 추가 시 어떤 교과의 명단인지 subject_key를 함께 넘겨받도록 수정
 @st.dialog("➕ 전학생 / 개별 학생 추가")
 def show_add_student_dialog(subject_key):
     st.markdown("새로 명단에 추가할 학생의 기본 정보를 입력해 주세요.")
@@ -174,7 +172,7 @@ def show_add_student_dialog(subject_key):
             else:
                 try:
                     supabase.table(student_table).upsert({
-                        "subject_key": subject_key, # 💡 해당 과목에 종속되도록 저장!
+                        "subject_key": subject_key, 
                         "반": int(new_ban.strip()), 
                         "번호": int(new_num.strip()), 
                         "이름": new_name.strip(), 
@@ -198,7 +196,6 @@ def show_result_dialog(student_data):
     sc3.metric("📝 수행평가 3차", f"{int(student_data.get('수행평가3', 0))} 점")
     if "has_counted" not in st.session_state:
         new_count = int(student_data.get("성적조회 횟수", 0)) + 1
-        # 💡 특정 과목, 반, 번호를 정확히 찾아 업데이트
         supabase.table(student_table).update({
             "성적조회 횟수": new_count, 
             "최종 확인일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -352,7 +349,6 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 clean_id = str(user_id_input).strip()
                 clean_pw = str(user_pw_input).strip()
                 if login_mode == "학생":
-                    # 💡 학생 통합 성적 테이블(student_scores)에서 로그인 정보 확인
                     res = supabase.table(student_table).select("*").eq("학교 이메일", clean_id).eq("비밀번호", clean_pw).execute()
                     if len(res.data) > 0:
                         st.session_state["student_logged_in"] = True
@@ -396,7 +392,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                             else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (과목을 선택해서 조회하도록 진화)
+# 🎓 [2단계-A] 학생 화면
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown(f"<h2>수행평가 점수 확인 시스템 (학생 모드)</h2>", unsafe_allow_html=True)
@@ -415,7 +411,6 @@ elif st.session_state["student_logged_in"]:
                 chosen_db = active_dbs[opts_s.index(sel_s)-1]
                 subject_key = chosen_db['key']
 
-                # 💡 선택한 교과의 데이터만 정밀 타겟팅하여 가져옵니다.
                 res = supabase.table(student_table).select("*").eq("subject_key", subject_key).eq("학교 이메일", st.session_state["logged_student_id"]).eq("비밀번호", st.session_state["logged_student_pw"]).execute()
                 
                 if len(res.data) > 0:
@@ -427,7 +422,8 @@ elif st.session_state["student_logged_in"]:
 # 🔒 [2단계-B] 교사 화면
 # =========================================================================
 elif st.session_state["admin_logged_in"]:
-    menus = ["학생 조회 현황 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성", "성적 전체 일괄 업로드(CSV / Excel)"]
+    # 💡 5번 일괄 업로드 메뉴를 영구 제외하고 4개로 대폭 다듬었습니다.
+    menus = ["학생 조회 현황 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성"]
     if st.session_state["logged_teacher_id"] == "admin": 
         menus.append("👑 교사 계정 관리 대장")
         
@@ -488,7 +484,6 @@ elif st.session_state["admin_logged_in"]:
                     chosen_db = registered_dbs[selector_options.index(selected_db_str)]
                     subject_key = chosen_db['key']
                     
-                    # 💡 선택된 과목(subject_key)에 해당하는 데이터만 창고에서 꺼내옵니다!
                     df_data = supabase.table(student_table).select("*").eq("subject_key", subject_key).execute().data
                     df = pd.DataFrame(df_data)
                     if not df.empty: df = df.sort_values(by=["반", "번호"]).reset_index(drop=True)
@@ -532,11 +527,11 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 대량 일괄 엑셀 업로드 완벽 통합)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
-            st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 개인별 성적 데이터 입력</h4></div>', unsafe_allow_html=True)
+            st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 개인별 성적 입력 및 엑셀 대량 업로드 통합 대시보드</h4></div>', unsafe_allow_html=True)
             
             registered_dbs = get_active_databases()
             if "마스터" not in st.session_state["allowed_subjects"]:
@@ -556,20 +551,44 @@ elif st.session_state["admin_logged_in"]:
                     chosen_db = registered_dbs[selector_options.index(selected_db_str)]
                     subject_key = chosen_db['key']
 
-                    # 💡 선택된 과목(subject_key)에 해당하는 데이터만 가져옵니다!
+                    # 기존 DB 데이터 로드
                     df_data = supabase.table(student_table).select("*").eq("subject_key", subject_key).execute().data
-                    df = pd.DataFrame(df_data)
-                    if not df.empty: df = df.sort_values(by=["반", "번호"]).reset_index(drop=True)
+                    df_base = pd.DataFrame(df_data)
+                    if not df_base.empty: 
+                        df_base = df_base.sort_values(by=["반", "번호"]).reset_index(drop=True)
 
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    st.markdown("**🎯 필터링할 학급 선택**")
+                    st.markdown("<br>**🎯 필터링할 학급 선택**", unsafe_allow_html=True)
                     class_options_ed = ["전체 학급 보기"]
-                    if not df.empty and "반" in df.columns: class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df['반'].unique())]
+                    if not df_base.empty and "반" in df_base.columns: 
+                        class_options_ed = ["전체 학급 보기"] + [f"{x}반" for x in sorted(df_base['반'].unique())]
                     selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                     
-                    for _ in range(15):
-                        st.write("")
+                    st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
                     
+                    # 💡 [통합 패치] 왼쪽에 빌트인된 스마트 엑셀/CSV 업로더 박스
+                    st.markdown("📂 **엑셀/CSV 성적 일괄 가져오기 (덮어쓰기)**")
+                    up_f = st.file_uploader("엑셀 파일 올리기", type=["csv", "xlsx"], label_visibility="collapsed", key="integrated_file_uploader")
+                    
+                    # 업로드된 파일이 있으면 임시 결합 로직 작동 (별도 반영 버튼 필요 없음!)
+                    excel_loaded_df = None
+                    if up_f:
+                        try:
+                            df_up = pd.read_csv(up_f) if up_f.name.endswith(".csv") else pd.read_excel(up_f)
+                            df_up.columns = [c.strip() for c in df_up.columns]
+                            
+                            # 기본 필수 컬럼 보정
+                            for col in ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행평가5"]:
+                                if col not in df_up.columns: df_up[col] = 0
+                            if "비밀번호" not in df_up.columns: df_up["비밀번호"] = "1234"
+                            if "학교 이메일" not in df_up.columns: df_up["학교 이메일"] = "-"
+                            
+                            df_up["subject_key"] = subject_key
+                            excel_loaded_df = df_up
+                            st.caption("✅ 파일 파싱 성공! 우측 표에 실시간 반영되었습니다. [성적 저장]을 누르면 최종 확정됩니다.")
+                        except Exception as e:
+                            st.error(f"❌ 파일 읽기 실패: {e}")
+
+                    st.markdown("<br>", unsafe_allow_html=True)
                     score_right_col1, score_right_col2 = st.columns(2)
                     with score_right_col2:
                         save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
@@ -577,9 +596,20 @@ elif st.session_state["admin_logged_in"]:
                 with layout_right:
                     item_count, item_titles = get_subject_item_names(subject_key)
 
-                    if df.empty: st.info("📢 해당 교과에 등록된 학생 데이터가 없습니다.")
+                    # 💡 파일이 업로드된 상태라면 엑셀 데이터를 표에 뿌려주고, 없으면 기존 DB 데이터를 뿌려줍니다.
+                    if excel_loaded_df is not None:
+                        df = excel_loaded_df.copy()
                     else:
-                        f_idx = df[df["반"].astype(int) == int(selected_class_ed.replace("반", ""))].index if selected_class_ed != "전체 학급 보기" else df.index
+                        df = df_base.copy()
+
+                    if df.empty: 
+                        st.info("📢 현재 등록된 성적 대장이 없습니다. 왼쪽 하단에서 마스터 엑셀 파일을 업로드해 주세요.")
+                    else:
+                        # 반 필터링 적용
+                        if selected_class_ed != "전체 학급 보기":
+                            f_idx = df[df["반"].astype(int) == int(selected_class_ed.replace("반", ""))].index
+                        else:
+                            f_idx = df.index
                         
                         target_cols = ["반", "번호", "이름", "학교 이메일"]
                         rename_map = {}
@@ -599,27 +629,37 @@ elif st.session_state["admin_logged_in"]:
                             rename_map[db_col] = item_titles[idx]
                             align_config[item_titles[idx]] = st.column_config.NumberColumn(alignment="center")
                             
-                        target_cols += ["성적조회 횟수", "최종 확인일시"]
+                        # 조회 기록 컬럼 추가
+                        for h_col in ["성적조회 횟수", "최종 확인일시"]:
+                            if h_col not in df.columns: df[h_col] = 0 if h_col == "성적조회 횟수" else "-"
+                            target_cols.append(h_col)
+                        
                         align_config["성적조회 횟수"] = st.column_config.NumberColumn(alignment="center")
                         align_config["최종 확인일시"] = st.column_config.TextColumn(alignment="center")
                         
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
+                        # 💡 엑셀 업로드 미리보기 겸 수정이 가능한 완벽한 그리드 가동
+                        edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=520)
                         
                         if save_trigger:
-                            for _pos, r_idx in enumerate(f_idx):
-                                # 💡 기존 데이터를 딕셔너리로 만들고, 에디터에서 수정한 점수를 덮어씌워 통째로 저장합니다.
-                                record = df.loc[r_idx].to_dict()
-                                record["subject_key"] = subject_key # 과목 정보 유지 필수
+                            # 만약 엑셀 업로드 상태에서 저장을 누르면 해당 과목의 기존 데이터를 한 번 갈아엎어 싱크를 맞춥니다.
+                            if excel_loaded_df is not None:
+                                supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
                                 
+                            for _pos, r_idx in enumerate(f_idx):
+                                record = df.loc[r_idx].to_dict()
+                                record["subject_key"] = subject_key
+                                
+                                # 데이터 에디터에서 수정한 항목 매핑
                                 for idx_c, db_col in enumerate(db_cols_ordered):
                                     view_title = item_titles[idx_c]
                                     record[db_col] = edited_df.iloc[_pos][view_title]
                                 
                                 supabase.table(student_table).upsert(record).execute()
-                            st.success("🎉 수행 점수가 원격 클라우드 DB에 동기화 완료되었습니다!"); st.rerun()
+                                
+                            st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
 
     # ---------------------------------------------------------------------
     # 3번 메뉴: 학생 정보 관리
@@ -646,7 +686,6 @@ elif st.session_state["admin_logged_in"]:
                     chosen_db = registered_dbs[selector_options.index(selected_db_str)]
                     subject_key = chosen_db['key']
 
-                    # 💡 선택된 과목의 데이터만 불러옵니다.
                     df_data = supabase.table(student_table).select("*").eq("subject_key", subject_key).execute().data
                     df = pd.DataFrame(df_data)
                     if not df.empty: df = df.sort_values(by=["반", "번호"]).reset_index(drop=True)
@@ -685,7 +724,7 @@ elif st.session_state["admin_logged_in"]:
                         edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=500)
                         
                         if add_std_trigger:
-                            show_add_student_dialog(subject_key) # 과목 정보를 함께 넘김
+                            show_add_student_dialog(subject_key)
                             
                         if save_info_trigger:
                             for _pos, r_idx in enumerate(f_idx):
@@ -819,88 +858,6 @@ elif st.session_state["admin_logged_in"]:
                         """, 
                         unsafe_allow_html=True
                     )
-
-    # ---------------------------------------------------------------------
-    # 5번 메뉴: 성적 전체 일괄 업로드
-    # ---------------------------------------------------------------------
-    elif menu_selection == "성적 전체 일괄 업로드(CSV / Excel)":
-        with st.container(border=True):
-            st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📥 전체 일괄 성적 대장 CSV 업로드</h4></div>', unsafe_allow_html=True)
-            
-            registered_dbs = get_active_databases()
-            if "마스터" not in st.session_state["allowed_subjects"]:
-                allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
-                registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
-
-            if not registered_dbs:
-                st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다. [평가 대상 과목 구성] 메뉴에서 먼저 과목을 추가해 주세요.")
-            else:
-                upload_left, upload_right = st.columns([3.5, 6.5])
-                
-                with upload_left:
-                    st.markdown("**📂 성적 연동 과목 선택**")
-                    selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
-                    selected_db_str = st.selectbox("과목 선택", options=selector_options, label_visibility="collapsed", key="csv_upl_sub")
-                    
-                    chosen_db = registered_dbs[selector_options.index(selected_db_str)]
-                    subject_key = chosen_db['key']
-
-                    st.markdown("<br>💡 **양식을 다운로드하여 성적을 업로드하세요.**", unsafe_allow_html=True)
-                    template_df = pd.DataFrame({
-                        "반": [1, 1, 2], "번호": [1, 2, 1], "이름": ["홍길동", "이영희", "강백호"],
-                        "학교 이메일": ["hgd@school.kr", "lyh@school.kr", "kbh@school.kr"], "비밀번호": [1234, 1234, 1234],
-                        "수행평가1": [20, 19, 15], "수행평가2": [18, 20, 15], "수행평가3": [25, 22, 20]
-                    })
-                    csv_buffer = template_df.to_csv(index=False).encode('utf-8-sig')
-                    st.download_button("📥 일괄 업로드용 성적 양식(.CSV) 다운로드", data=csv_buffer, file_name="성적일괄업로드_양식.csv", mime="text/csv")
-                    
-                    st.markdown("<br>**성적 대장 마스터 CSV 파일 업로드**", unsafe_allow_html=True)
-                    up_f = st.file_uploader("성적 대장 마스터 CSV 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="csv_file_box")
-                    
-                    for _ in range(3):
-                        st.write("")
-                    
-                    apply_btn_col1, apply_btn_col2 = st.columns(2)
-                    with apply_btn_col2:
-                        apply_trigger = st.button("🚀 일괄 반영", type="primary", use_container_width=True, key="master_csv_apply_btn")
-                    
-                with upload_right:
-                    st.markdown("<div style='font-size:15px; font-weight:800; color:#0f172a; padding-bottom:10px;'>📊 업로드 데이터 미리보기</div>", unsafe_allow_html=True)
-                    if up_f:
-                        df_up = pd.read_csv(up_f) if up_f.name.endswith(".csv") else pd.read_excel(up_f)
-                        df_up.columns = [c.strip() for c in df_up.columns]
-                        
-                        preview_align = {}
-                        for col_name in df_up.columns:
-                            if col_name in ["반", "번호", "비밀번호"] or "수행평가" in col_name:
-                                preview_align[col_name] = st.column_config.NumberColumn(alignment="center", format="%d")
-                            else:
-                                preview_align[col_name] = st.column_config.TextColumn(alignment="center")
-                                
-                        st.dataframe(df_up, use_container_width=True, hide_index=True, column_config=preview_align, height=450)
-                        
-                        if apply_trigger:
-                            # 💡 선택한 과목(subject_key)의 기존 데이터만 깔끔하게 지우고 새 데이터를 덮어씁니다!
-                            supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
-                            
-                            records = df_up.to_dict(orient="records")
-                            for r in records:
-                                r["subject_key"] = subject_key
-                                if "성적조회 횟수" not in r: r["성적조회 횟수"] = 0
-                                r["최종 확인일시"] = "-"
-                                supabase.table(student_table).insert(r).execute()
-                                
-                            st.success("🎯 파일 성적 데이터셋이 실시간 일괄 반영(동기화)되었습니다!"); st.rerun()
-                    else:
-                        st.markdown(
-                            """
-                            <div style='border: 2px dashed #cbd5e1; border-radius: 12px; padding: 150px 20px; text-align: center; color: #94a3b8;'>
-                                📂 왼쪽에 성적 마스터 파일을 드롭하시면<br>
-                                이 자리에 업로드 데이터 실시간 미리보기 표가 로드됩니다.
-                            </div>
-                            """, 
-                            unsafe_allow_html=True
-                        )
 
     # ---------------------------------------------------------------------
     # 교사 계정 관리 대장 (보안 관리자 전용)
