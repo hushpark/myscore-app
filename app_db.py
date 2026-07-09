@@ -336,7 +336,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 clean_id = str(user_id_input).strip()
                 clean_pw = str(user_pw_input).strip()
                 if login_mode == "학생":
-                    res = supabase.table(student_table).select("*").eq("학교 이메일", clean_id).eq("비밀번호", clean_pw).execute()
+                    res = supabase.table(student_table).select("*").eq("school_email", clean_id).eq("password", clean_pw).execute()
                     if len(res.data) > 0:
                         st.session_state["student_logged_in"] = True
                         st.session_state["logged_student_id"] = clean_id
@@ -515,7 +515,7 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항에 맞게 [💾 성적 저장하기] 우측 정밀 배치)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 저장 버튼 레이아웃 형태 완벽 고정)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
@@ -590,7 +590,7 @@ elif st.session_state["admin_logged_in"]:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
 
                 with layout_right:
-                    st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 우측 최하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
+                    st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 우측 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
                     
                     if excel_loaded_df is not None:
                         df = excel_loaded_df.copy()
@@ -633,14 +633,14 @@ elif st.session_state["admin_logged_in"]:
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        # 표 규격 500 가동
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
-                        # 💡 [요구사항 반영 완벽 해결!] "학생 정보 관리" 메뉴처럼 테이블 하단 2분할 구조를 사용해 우측 구석에 정밀 안착!
+                        # 💡 [요구사항 원상복구 확정] "학생 정보 관리" 메뉴의 '💾 학생 정보 저장' 형태를 완벽 복사!
+                        # col1, col2 레이아웃 분할을 통해 테이블 하단 우측 구석탱이에 아담한 원본 표준 규격 크기로 정밀 안착했습니다!
                         st.markdown("<br>", unsafe_allow_html=True)
-                        btn_space_l, btn_space_r = st.columns([8.0, 2.0]) # 학생정보관리의 구조 복제 (우측 정렬 비율)
+                        btn_space_l, btn_space_r = st.columns([8.0, 2.0])
                         with btn_space_r:
-                            save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="fine_tuned_right_save_btn")
+                            save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="dashboard_right_bottom_save_btn")
                         
                         if save_trigger:
                             if excel_loaded_df is not None:
@@ -659,7 +659,7 @@ elif st.session_state["admin_logged_in"]:
                             st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 정보 관리
+    # 3번 메뉴: 학생 정보 관리 (💡 원래 교사님이 말씀해주신 기준점 레퍼런스 모델 고정)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 정보 관리":
         with st.container(border=True):
