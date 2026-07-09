@@ -596,7 +596,7 @@ elif st.session_state["admin_logged_in"]:
                         save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 with layout_right:
-                    st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
+                    st.markdown('<p class="menu-guide-inline">💡 개인별 성적 입력은 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
                     
                     if excel_loaded_df is not None:
                         df = excel_loaded_df.copy()
