@@ -515,11 +515,10 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 저장 버튼 레이아웃 형태 완벽 고정)
+    # 2번 메뉴: 수행 평가 성적 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
-            # 오리지널 기점 테이블 위 가이드라인 상단 정렬 복원
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 수행 평가 성적 입력</h4></div>', unsafe_allow_html=True)
             
             registered_dbs = get_active_databases()
@@ -590,9 +589,11 @@ elif st.session_state["admin_logged_in"]:
                         except Exception as e:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
                             
-                    # 💡 [요구사항 원상복구 확정] 성적 저장하기 버튼 레이아웃을 '현재의 아담한 크기(use_container_width=True)'로 패널 최하단 우측에 완벽 고정!
+                    # 💡 [요구사항 반영 완료] 왼쪽 조작 창 하단 공간 분할 구조를 사용하여 우측 구석탱이에 아담한 원본 표준 규격 크기로 정밀 안착했습니다!
                     st.markdown("<br>", unsafe_allow_html=True)
-                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
+                    btn_space_l, btn_space_r = st.columns([5.0, 5.0])
+                    with btn_space_r:
+                        save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 with layout_right:
                     st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
@@ -638,7 +639,6 @@ elif st.session_state["admin_logged_in"]:
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        # 표 규격 500 원상태 확장 유지 가동
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
                         if save_trigger:
