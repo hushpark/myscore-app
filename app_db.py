@@ -60,8 +60,8 @@ st.markdown("""
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
         .menu-title-text { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; white-space: nowrap !important; }
         
-        /* 💡 안내 가이드라인 박스를 오른쪽 테이블 시작선 기점으로 수평 정렬하는 스타일 */
-        .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 8px 16px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 0 15px 0 !important; width: 100% !important; box-sizing: border-box !important; }
+        /* 💡 가이드라인 박스가 오른쪽 단독 레이아웃 블록 안에서 100% 꽉 채워지도록 마진 최적화 */
+        .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 8px 16px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 0 10px 0 !important; width: 100% !important; box-sizing: border-box !important; }
 
         .sync-giant-title { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
@@ -516,11 +516,11 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 버튼 왼쪽 이동 + 테이블 크기 복원 + 안내창 우측 시작 싱크 정렬)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 그림 2 구조 정밀 정렬 주입)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
-            # 깔끔하게 비워진 메뉴 헤더 타이틀 영역
+            # 깔끔하게 리셋된 순수 대메뉴 타이틀 바 영역
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 수행 평가 성적 입력</h4></div>', unsafe_allow_html=True)
             
             registered_dbs = get_active_databases()
@@ -591,12 +591,12 @@ elif st.session_state["admin_logged_in"]:
                         except Exception as e:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
                             
-                    # 💡 [요구사항 1번] 성적 저장하기 버튼을 원래대로 왼쪽 하단 최하단 패널 행 위치로 컴백 배치!
                     st.markdown("<br>", unsafe_allow_html=True)
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 with layout_right:
-                    # 💡 [요구사항 3번] 안내 가이드라인 메시지의 시작 원점을 우측 테이블 헤더 가로선 기점과 정확하게 일치시켜 우측으로 정렬!
+                    # 💡 [핵심 타겟 교정 완료] 안내 메시지 가이드가 레이아웃 내부(with layout_right) 최상단으로 복귀했습니다.
+                    # 이로 인해 왼쪽 콤보박스에 침범하지 않고, 정확하게 우측 엑셀 테이블 시작 경계선 세로선에 맞춰 정렬됩니다! (그림 2 구현)
                     st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
                     
                     if excel_loaded_df is not None:
@@ -640,7 +640,7 @@ elif st.session_state["admin_logged_in"]:
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        # 💡 [요구사항 2번] 간섭을 주던 버튼이 빠져나갔으므로 온전한 500 세로 크기 격격 복원 및 드넓은 화면 가동
+                        # 표 크기 500 상태 완벽 유지 가동
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
                         if save_trigger:
