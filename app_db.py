@@ -597,7 +597,7 @@ elif st.session_state["admin_logged_in"]:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
                             
                     # 💡 선생님의 오리지널 위치 규칙 사수: 왼쪽 분할 패널 하단 구석 자리에 완벽 이주 고정!
-                    # st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("<br>", unsafe_allow_html=True)
                     btn_space_l, btn_space_r = st.columns([5.0, 5.0])
                     with btn_space_r:
                         save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
