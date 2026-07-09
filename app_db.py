@@ -141,11 +141,16 @@ def show_add_teacher_dialog():
         if submit_btn:
             if not t_id or not t_name or not t_pw or not t_subs: st.error("❌ 모든 항목을 입력해야 합니다.")
             else:
+                is_ok = False
                 try:
                     supabase.table(teacher_table).upsert({"교사_ID": t_id.strip(), "교사_성명": t_name.strip(), "비밀번호": t_pw.strip(), "담당_과목": t_subs.strip()}).execute()
+                    is_ok = True
+                except: 
+                    st.error("❌ 등록 실패")
+                if is_ok:
                     st.success("🎉 교사 계정이 활성화되었습니다!")
+                    time.sleep(0.3)
                     st.rerun()
-                except: st.error("❌ 등록 실패")
 
 @st.dialog("➕ 전학생 / 개별 학생 추가")
 def show_add_student_dialog():
@@ -165,6 +170,7 @@ def show_add_student_dialog():
             if not new_ban.strip() or not new_num.strip() or not new_name.strip() or not new_email.strip() or not new_pw.strip(): 
                 st.error("❌ 모든 항목을 빠짐없이 입력해 주세요.")
             else:
+                is_ok = False
                 try:
                     clean_ban = new_ban.strip()
                     clean_num = new_num.strip()
@@ -181,11 +187,14 @@ def show_add_student_dialog():
                         "수행평가1": 0, "수행평가2": 0, "수행평가3": 0, 
                         "성적조회 횟수": 0, "최종 확인일시": "-"
                     }).execute()
-                    st.rerun()
+                    is_ok = True
                 except ValueError:
                     st.error("❌ '반'과 '번호', '초기 비밀번호'란에는 숫자만 입력할 수 있습니다.")
                 except Exception as e:
                     st.error(f"❌ 데이터베이스 통신 실패: {e}")
+                
+                if is_ok:
+                    st.rerun()
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_data):
@@ -214,81 +223,89 @@ def show_profile_popup_dialog():
 
     if "pw_step_unlocked" not in st.session_state: st.session_state["pw_step_unlocked"] = False
     if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
-    if "pw_version_key" not in st.session_state: st.session_state["pw_version_key"] = 500
+    if "pw_version_key" not in st.session_state: st.session_state["pw_version_key"] = 100
 
-    is_unlocked = st.session_state["pw_step_unlocked"]
     v_key = str(st.session_state["pw_version_key"])
 
     if edit_mode == "🔐 비밀번호 변경":
-        curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="cur_pw_v_" + v_key, disabled=is_unlocked)
+        curr_pw_input = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="cur_pw_v_" + v_key)
         
-        if not is_unlocked and curr_pw:
-            actual_pw = st.session_state.get("logged_teacher_pw", "").strip()
-            if curr_pw.strip() != actual_pw:
+        if not curr_pw_input:
+            st.session_state["pw_save_status"] = "none"
+
+        if curr_pw_input:
+            if curr_pw_input.strip() != st.session_state.get("logged_teacher_pw", ""):
                 st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
-            else:
-                st.session_state["pw_step_unlocked"] = True
-                is_unlocked = True
-
-        if is_unlocked:
-            st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
-            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
-            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
-            
-            components.html("""
-                <script>
-                    setTimeout(function() {
-                        const parentDoc = window.parent.document;
-                        const inputs = parentDoc.querySelectorAll('input[type="password"]');
-                        if(inputs.length >= 3 && parentDoc.activeElement === inputs[0]) {
-                            inputs[1].focus();
-                        }
-                    }, 150);
-                </script>
-            """, height=0, width=0)
-
-            if st.session_state["pw_save_status"] == "success":
-                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
-            elif st.session_state["pw_save_status"] == "fail_mismatch":
-                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
-            elif st.session_state["pw_save_status"] == "fail_empty":
-                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            col1, col2 = st.columns(2)
-            with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
-            with col2: close_btn = st.button("닫기", use_container_width=True)
-                
-            if close_btn:
-                st.session_state["pw_step_unlocked"] = False
                 st.session_state["pw_save_status"] = "none"
-                st.session_state["pw_version_key"] += 1
-                st.rerun()
+            else:
+                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
                 
-            if save_btn:
-                clean_new_pw = new_pw.strip()
-                clean_confirm_pw = new_pw_confirm.strip()
+                new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key, on_change=reset_pw_status)
+                new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key, on_change=reset_pw_status)
                 
-                if not clean_new_pw:
-                    st.session_state["pw_save_status"] = "fail_empty"
+                msg_placeholder = st.container()
+                if st.session_state["pw_save_status"] == "success":
+                    msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail_mismatch":
+                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail_empty":
+                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
+
+                components.html("""
+                    <script>
+                        setTimeout(function() {
+                            const parentDoc = window.parent.document;
+                            const inputs = parentDoc.querySelectorAll('input[type="password"]');
+                            if(inputs.length >= 3) {
+                                if (parentDoc.activeElement === inputs[0] || parentDoc.activeElement.tagName === "BODY") {
+                                    inputs[1].focus();
+                                }
+                            }
+                        }, 250);
+                    </script>
+                """, height=0, width=0)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                col1, col2 = st.columns(2)
+                
+                with col1: 
+                    save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
+                with col2: 
+                    close_btn = st.button("닫기", key="close_pw_inner", use_container_width=True)
+
+                if close_btn:
+                    st.session_state["pw_save_status"] = "none"
+                    st.session_state["pw_version_key"] += 1
                     st.rerun()
-                elif clean_new_pw != clean_confirm_pw:
-                    st.session_state["pw_save_status"] = "fail_mismatch"
-                    st.rerun()
-                else:
-                    try:
-                        teacher_id = st.session_state.get("logged_teacher_id", "")
-                        if teacher_id:
-                            supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
-                            st.session_state["logged_teacher_pw"] = clean_new_pw
-                            st.session_state["pw_save_status"] = "success"
+                    
+                if save_btn:
+                    clean_new_pw = new_pw.strip()
+                    clean_confirm_pw = new_pw_confirm.strip()
+                    
+                    if not clean_new_pw:
+                        st.session_state["pw_save_status"] = "fail_empty"
+                        st.rerun()
+                    elif clean_new_pw != clean_confirm_pw:
+                        st.session_state["pw_save_status"] = "fail_mismatch"
+                        st.rerun()
+                    else:
+                        is_ok = False
+                        try:
+                            teacher_id = st.session_state.get("logged_teacher_id", "")
+                            if teacher_id:
+                                supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
+                                st.session_state["logged_teacher_pw"] = clean_new_pw
+                                st.session_state["pw_save_status"] = "success"
+                                st.session_state["pw_version_key"] += 1
+                                is_ok = True
+                        except Exception as e:
+                            st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
+                        
+                        if is_ok:
                             st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("닫기", key="close_pw_outer", use_container_width=True): 
-                st.session_state["pw_step_unlocked"] = False
                 st.session_state["pw_save_status"] = "none"
                 st.session_state["pw_version_key"] += 1
                 st.rerun()
@@ -323,7 +340,7 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 로그인 시스템
+# 🔓 [1단계] 로그인 시스템 (로그인 시 메뉴 자동 제어)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -734,13 +751,19 @@ elif st.session_state["admin_logged_in"]:
                                     "item4_name": item_titles[3] if item_count >= 4 else "-",
                                     "item5_name": item_titles[4] if item_count >= 5 else "-"
                                 }
+                                
+                                # 💡 에러 발생 시 앱이 죽는 것을 막고, 성공했을 때만 안전하게 화면을 넘깁니다.
+                                is_saved = False
                                 try:
                                     supabase.table(config_table).upsert(config_record).execute()
+                                    is_saved = True
+                                except Exception as e:
+                                    st.error("❌ DB 저장 실패! Supabase에 'subject_configs' 테이블이 제대로 생성되지 않았습니다. 관리자에게 문의해 주세요.")
+                                    
+                                if is_saved:
                                     time.sleep(0.3)
                                     st.session_state["current_menu"] = "개인별 성적 입력"
                                     st.rerun()
-                                except Exception as e:
-                                    st.error("❌ DB 저장 실패! Supabase에 'subject_configs' 테이블이 제대로 생성되지 않았습니다. 관리자에게 문의해 주세요.")
                 else:
                     st.markdown(
                         """
@@ -809,13 +832,16 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(df_up, use_container_width=True, hide_index=True, column_config=preview_align, height=450)
                         
                         if apply_trigger:
-                            if not df.empty:
-                                for _, r in df.iterrows(): supabase.table(student_table).delete().eq("반", int(r["반"])).eq("번호", int(r["번호"])).execute()
-                            for c in ["수행평가1", "수행평가2", "수행평가3", "성적조회 횟수"]:
-                                if c not in df_up.columns: df_up[c] = 0
-                            df_up["최종 확인일시"] = "-"
-                            for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
-                            st.success("🎯 파일 성적 데이터셋이 실시간 일괄 반영(동기화)되었습니다!"); st.rerun()
+                            if not registered_dbs or not selected_db_str:
+                                st.error("❌ 선택된 과목이 없어 업로드할 수 없습니다.")
+                            else:
+                                if not df.empty:
+                                    for _, r in df.iterrows(): supabase.table(student_table).delete().eq("반", int(r["반"])).eq("번호", int(r["번호"])).execute()
+                                for c in ["수행평가1", "수행평가2", "수행평가3", "성적조회 횟수"]:
+                                    if c not in df_up.columns: df_up[c] = 0
+                                df_up["최종 확인일시"] = "-"
+                                for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
+                                st.success("🎯 파일 성적 데이터셋이 실시간 일괄 반영(동기화)되었습니다!"); st.rerun()
                     else:
                         st.markdown(
                             """
