@@ -33,12 +33,12 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 메인 화면 primary 푸른색 계열 버튼 규격화 */
+        /* 마스터 푸른색 계열 버튼 규격화 */
         div.stButton > button[kind="primary"], button[data-testid="stFormSubmitButton"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; padding: 8px 16px !important; }
         div.stButton > button[kind="primary"]:hover, button[data-testid="stFormSubmitButton"]:hover { background-color: #2563eb !important; }
         div.stButton > button[kind="secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
         
-        /* 로그인 화면 수동 왼쪽 여백 제어 */
+        /* 로그인 화면 */
         div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
         div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
         
@@ -48,20 +48,17 @@ st.markdown("""
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
         
-        /* 로그인 박스 외곽 폼 */
-        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25 rgba(0,0,0,0.05) !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
         
-        /* 담백한 타이틀 영역 설계 */
+        /* 타이틀 영역 구조 복구 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
         .header-nav-sub { font-size: 15px !important; font-weight: 600 !important; color: #475569 !important; margin-bottom: 25px !important; }
-
-        /* 각 메뉴 제목 밑 구분 라인 디자인 */
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
         .menu-title-text { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; white-space: nowrap !important; }
         
-        /* 💡 안내 가이드라인 박스가 오른쪽 테이블 가로 라인에 완벽히 정렬되도록 스타일 세팅 */
-        .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 8px 16px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 0 10px 0 !important; width: 100% !important; box-sizing: border-box !important; }
+        /* 안내 가이드라인 박스 복구 */
+        .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 8px 16px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 0 15px 0 !important; width: 100% !important; box-sizing: border-box !important; }
 
         .sync-giant-title { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
@@ -443,9 +440,6 @@ elif st.session_state["admin_logged_in"]:
             show_profile_popup_dialog()
         if st.sidebar.button("🚪 로그아웃", type="secondary", use_container_width=True): st.session_state.clear(); st.rerun()
 
-    # ---------------------------------------------------------------------
-    # 💡 [구조 원상 복구] 대제목 영역 원상태 베이직 복원
-    # ---------------------------------------------------------------------
     st.markdown(f"""
         <div class="header-title-main">수행평가 점수 확인 시스템</div>
         <div class="header-nav-sub">현재 위치: 교사 모드 > 📁 {menu_selection}</div>
@@ -521,10 +515,11 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (🎯 완벽한 최종 복원 완성형 패널)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 저장 버튼 레이아웃 형태 완벽 고정)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
+            # 오리지널 기점 테이블 위 가이드라인 상단 정렬 복원
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 수행 평가 성적 입력</h4></div>', unsafe_allow_html=True)
             
             registered_dbs = get_active_databases()
@@ -594,10 +589,13 @@ elif st.session_state["admin_logged_in"]:
                             st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
                         except Exception as e:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
+                            
+                    # 💡 [요구사항 원상복구 확정] 성적 저장하기 버튼 레이아웃을 '현재의 아담한 크기(use_container_width=True)'로 패널 최하단 우측에 완벽 고정!
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 with layout_right:
-                    # 💡 [완벽 교정 1] 안내 메시지 문구를 오른쪽 6.5비율 창 최상단(표 바로 위)에 배치하여 시작 가로선을 칼같이 맞춤!
-                    st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 우측 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
+                    st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
                     
                     if excel_loaded_df is not None:
                         df = excel_loaded_df.copy()
@@ -640,15 +638,9 @@ elif st.session_state["admin_logged_in"]:
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        # 💡 표 크기를 온전한 원래 크기(height=500)로 완벽 셋업 가동!
+                        # 표 규격 500 원상태 확장 유지 가동
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
-                        # 💡 [완벽 교정 2] '학생 정보 관리' 메뉴의 그것과 100% 같은 크기와 같은 우측 정렬 형태로 표 밑에 배치 완료!
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        save_btn_col1, save_btn_col2 = st.columns([8.0, 2.0])
-                        with save_btn_col2:
-                            save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="dashboard_right_bottom_save_btn")
-
                         if save_trigger:
                             if excel_loaded_df is not None:
                                 supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
@@ -830,7 +822,7 @@ elif st.session_state["admin_logged_in"]:
                         if save_clicked:
                             allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
                             if "마스터" not in st.session_state["allowed_subjects"] and final_sub.strip() not in allowed_trimmed:
-                                st.error(f"❌ 권한 오류: {st.session_state['teacher_name']} 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
+                                st.error(f"❌ 권한 오류: 과목 개설 권한이 없습니다.")
                             else:
                                 config_record = {
                                     "subject_key": subject_key, "item_count": item_count,
