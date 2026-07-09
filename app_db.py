@@ -724,8 +724,11 @@ elif st.session_state["admin_logged_in"]:
                                         "item4_name": item_titles[3] if item_count >= 4 else "-",
                                         "item5_name": item_titles[4] if item_count >= 5 else "-"
                                     }
-                                    supabase.table(config_table).upsert(config_record).execute()
-                                    st.success("🎉 수행평가 구조 셋업 세이브 완료!"); st.rerun()
+                                    try:
+                                        supabase.table(config_table).upsert(config_record).execute()
+                                        st.success("🎉 수행평가 구조 셋업 세이브 완료!"); st.rerun()
+                                    except Exception as e:
+                                        st.error("❌ DB 저장 실패! Supabase에 'subject_configs' 테이블이 생성되었는지 확인해주세요.")
                 else:
                     st.markdown(
                         """
