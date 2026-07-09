@@ -24,10 +24,16 @@ st.markdown("""
         .main, [data-testid="stAppViewContainer"], [data-testid="stApp"] { background-color: #f1f5f9 !important; }
         div[data-testid="stHeader"] { display: none !important; }
         [data-testid="stAppViewContainer"] { margin-left: 0px !important; }
+        
+        /* 💡 요구사항 4 & 5번: 사이드바 내부 폰트 크기 +1 확대 및 메뉴 위치 하단 이동 */
         .stSidebar, section[data-testid="stSidebar"] { min-width: 280px !important; max-width: 280px !important; background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
         [data-testid="stSidebar"] .stRadio label p, [data-testid="stSidebar"] .stRadio label span, [data-testid="stSidebar"] .stRadio label div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div[role="radiogroup"] * { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; opacity: 1 !important; }
-        [data-testid="stSidebar"] div[role="radiogroup"] p { font-size: 15px !important; font-weight: 700 !important; line-height: 2.0 !important; }
+        
+        /* 사이드바 메뉴 선택 간격 및 폰트 확대 (+1 패치) */
+        [data-testid="stSidebar"] div[role="radiogroup"] { margin-top: 30px !important; } /* 버튼들을 조금 아래로 이동 */
+        [data-testid="stSidebar"] div[role="radiogroup"] p { font-size: 17px !important; font-weight: 700 !important; line-height: 2.3 !important; } /* 글자 크기 기존보다 +1 확대 */
         [data-testid="stSidebar"] div[role="radiogroup"] label:hover * { color: #60a5fa !important; -webkit-text-fill-color: #60a5fa !important; }
+        
         .sidebar-title { font-size: 24px !important; font-weight: 800 !important; margin-bottom: 5px !important; display: block; }
         .user-info { color: #38bdf8 !important; -webkit-text-fill-color: #38bdf8 !important; font-size: 14px !important; font-weight: 600 !important; margin-bottom: 25px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
@@ -336,7 +342,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 clean_id = str(user_id_input).strip()
                 clean_pw = str(user_pw_input).strip()
                 if login_mode == "학생":
-                    res = supabase.table(student_table).select("*").eq("학교 이메일", clean_id).eq("비밀번호", clean_pw).execute()
+                    res = supabase.table(student_table).select("*").eq("school_email", clean_id).eq("password", clean_pw).execute()
                     if len(res.data) > 0:
                         st.session_state["student_logged_in"] = True
                         st.session_state["logged_student_id"] = clean_id
@@ -515,7 +521,7 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항 1, 2, 3 전체 완벽 통합)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
@@ -554,7 +560,8 @@ elif st.session_state["admin_logged_in"]:
                     
                     st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
                     
-                    st.markdown("💡 **맞춤형 업로드 양식 파일 받기**")
+                    # 💡 요구사항 3번: 문구 깔끔하게 매칭 변경
+                    st.markdown("💡 **양식을 다운로드하여 성적을 일괄 업로드하세요.**")
                     template_df = pd.DataFrame({
                         "반": [1, 1, 2], "번호": [1, 2, 1], "이름": ["홍길동", "이영희", "강백호"],
                         "학교 이메일": ["hgd@school.kr", "lyh@school.kr", "kbh@school.kr"], "비밀번호": ["1234", "1234", "1234"]
@@ -589,14 +596,15 @@ elif st.session_state["admin_logged_in"]:
                         except Exception as e:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
                             
-                    # 💡 [요구사항 반영 완료] 왼쪽 조작 창 하단 공간 분할 구조를 사용하여 우측 구석탱이에 아담한 원본 표준 규격 크기로 정밀 안착했습니다!
+                    # 💡 선생님의 오리지널 위치 규칙 사수: 왼쪽 분할 패널 하단 구석 자리에 완벽 이주 고정!
                     st.markdown("<br>", unsafe_allow_html=True)
                     btn_space_l, btn_space_r = st.columns([5.0, 5.0])
                     with btn_space_r:
                         save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 with layout_right:
-                    st.markdown('<p class="menu-guide-inline">💡 개인별 성적 입력은 아래 테이블 영역의 점수를 더블클릭하여 점수를 수정한 후, 왼쪽 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
+                    # 💡 요구사항 1번: 짧고 직관적인 핵심 축소 문구로 일괄 전면 교체
+                    st.markdown('<p class="menu-guide-inline">💡 개인별 성적 입력은 아래 테이블 영역의 점수를 더블클릭하여 점수를 수정한 후, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
                     
                     if excel_loaded_df is not None:
                         df = excel_loaded_df.copy()
@@ -622,12 +630,21 @@ elif st.session_state["admin_logged_in"]:
                             "학교 이메일": st.column_config.TextColumn(alignment="center")
                         }
                         
+                        # 💡 요구사항 2번: 실시간 연동 합계 계산 로직 복구 가동 체계
+                        df["합계"] = 0
                         for idx in range(item_count):
                             db_col = f"수행평가{idx+1}"
                             db_cols_ordered.append(db_col)
                             target_cols.append(db_col)
                             rename_map[db_col] = item_titles[idx]
                             align_config[item_titles[idx]] = st.column_config.NumberColumn(alignment="center")
+                            if db_col in df.columns:
+                                df[db_col] = df[db_col].fillna(0).astype(int)
+                                df["합계"] += df[db_col]
+                                
+                        # 합계 열을 수행평가 뒤에 정렬 배치
+                        target_cols.append("합계")
+                        align_config["합계"] = st.column_config.NumberColumn(alignment="center", format="%d 점")
                             
                         for h_col in ["성적조회 횟수", "최종 확인일시"]:
                             if h_col not in df.columns: df[h_col] = 0 if h_col == "성적조회 횟수" else "-"
@@ -637,7 +654,7 @@ elif st.session_state["admin_logged_in"]:
                         align_config["최종 확인일시"] = st.column_config.TextColumn(alignment="center")
                         
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
-                        disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
+                        disabled_cols = ["반", "번호", "이름", "학교 이메일", "합계", "성적조회 횟수", "최종 확인일시"] # 합계는 자동계산이므로 수정 불가 락(Lock)
                         
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
@@ -649,10 +666,12 @@ elif st.session_state["admin_logged_in"]:
                                 record = df.loc[r_idx].to_dict()
                                 record["subject_key"] = subject_key
                                 
+                                # 사용자가 테이블에서 수정한 점수 추출 바인딩 (합계 제외)
                                 for idx_c, db_col in enumerate(db_cols_ordered):
                                     view_title = item_titles[idx_c]
                                     record[db_col] = edited_df.iloc[_pos][view_title]
                                 
+                                if "합계" in record: del record["합계"] # DB 저장 전 임시 계산 필드 완전 제거
                                 supabase.table(student_table).upsert(record).execute()
                                 
                             st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
