@@ -58,11 +58,10 @@ st.markdown("""
 
         /* 각 메뉴 제목 밑 구분 라인 디자인 */
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
-        
-        /* 💡 대제목 바로 옆에 안내 가이드라인 문구를 정확히 위치시키는 상단 수평 플렉스 박스 */
-        .title-flex-box { display: flex !important; align-items: center !important; gap: 20px !important; flex-wrap: nowrap !important; }
         .menu-title-text { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; white-space: nowrap !important; }
-        .menu-guide-top-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 6px 14px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 !important; display: inline-block !important; }
+        
+        /* 안내 가이드라인 박스를 오른쪽 테이블 시작선 기점으로 수평 정렬하는 스타일 */
+        .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 8px 16px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 0 15px 0 !important; width: 100% !important; box-sizing: border-box !important; }
 
         .sync-giant-title { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
@@ -129,7 +128,7 @@ def get_subject_item_names(subject_key):
                 row.get("item5_name", "수행평가5")
             ]
             return count, titles
-    return 3, ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행평가5"]
+    return 3, ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행fp가5"]
 
 # =========================================================================
 # ➕ [다이얼로그 팝업창 모듈]
@@ -444,23 +443,10 @@ elif st.session_state["admin_logged_in"]:
             show_profile_popup_dialog()
         if st.sidebar.button("🚪 로그아웃", type="secondary", use_container_width=True): st.session_state.clear(); st.rerun()
 
-    # ---------------------------------------------------------------------
-    # 💡 [핵심 패치 1] 타이틀 라인 정형화 (수행 평가 성적 입력일 때만 문구를 대제목 옆으로 정밀 결합)
-    # ---------------------------------------------------------------------
-    if menu_selection == "수행 평가 성적 입력":
-        st.markdown("""
-            <div class="menu-title-container title-flex-box" style="border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 25px;">
-                <h1 class="header-title-main" style="margin:0;">수행평가 점수 확인 시스템</h1>
-                <p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-            <div class="header-title-main">수행평가 점수 확인 시스템</div>
-            <div class="header-nav-sub">현재 위치: 교사 모드 > 📁 {menu_selection}</div>
-        """, unsafe_allow_html=True)
-
-    if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
+    st.markdown(f"""
+        <div class="header-title-main">수행평가 점수 확인 시스템</div>
+        <div class="header-nav-sub">현재 위치: 교사 모드 > 📁 {menu_selection}</div>
+    """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------------------
     # 1번 메뉴: 학생 조회 현황 모니터링
@@ -530,10 +516,12 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 패널 원상복구, 저장 버튼 크기 최적화 및 완벽 이주)
+    # 2번 메뉴: 수행 평가 성적 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
+            st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 수행 평가 성적 입력</h4></div>', unsafe_allow_html=True)
+            
             registered_dbs = get_active_databases()
             if "마스터" not in st.session_state["allowed_subjects"]:
                 allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
@@ -601,9 +589,13 @@ elif st.session_state["admin_logged_in"]:
                             st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
                         except Exception as e:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
+                            
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 with layout_right:
-                    # 상단 수평 공간으로 문구를 가로 배치했으므로 여기서는 여백 및 표만 로드됩니다.
+                    st.markdown('<p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>', unsafe_allow_html=True)
+                    
                     if excel_loaded_df is not None:
                         df = excel_loaded_df.copy()
                     else:
@@ -645,15 +637,8 @@ elif st.session_state["admin_logged_in"]:
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        # 💡 표 크기를 완전한 500 원상태 규격으로 복구 가동
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
-                        # 💡 [핵심 교정 2] 거대한 폭을 줄이고 학생 정보 저장과 완벽히 동치인 아담한 표준 크기로 테이블 바로 우측 아래에 예쁘게 배치!
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        save_btn_col1, save_btn_col2 = st.columns([8.2, 1.8])
-                        with save_btn_col2:
-                            save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="standard_right_save_btn")
-
                         if save_trigger:
                             if excel_loaded_df is not None:
                                 supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
@@ -702,6 +687,7 @@ elif st.session_state["admin_logged_in"]:
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("**👥 학반 필터링**")
                     class_opts = ["전체"]
+                    # 💡 [버튼 교정 완료] 무의식적으로 썼던 && 연산자를 파이썬 표준 문법인 `and`로 완벽 교체!
                     if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                     sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
