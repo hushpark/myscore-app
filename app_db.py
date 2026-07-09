@@ -208,86 +208,83 @@ def show_profile_popup_dialog():
     edit_mode = st.radio("관리할 항목 선택", ["🔐 비밀번호 변경", "📚 담당과목 변경"], horizontal=True)
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
+    if "pw_step_unlocked" not in st.session_state: st.session_state["pw_step_unlocked"] = False
     if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
-    if "pw_version_key" not in st.session_state: st.session_state["pw_version_key"] = 100
+    if "pw_version_key" not in st.session_state: st.session_state["pw_version_key"] = 500
 
+    is_unlocked = st.session_state["pw_step_unlocked"]
     v_key = str(st.session_state["pw_version_key"])
 
     if edit_mode == "🔐 비밀번호 변경":
-        curr_pw_input = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="cur_pw_v_" + v_key)
+        curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="cur_pw_v_" + v_key, disabled=is_unlocked)
         
-        if not curr_pw_input:
-            st.session_state["pw_save_status"] = "none"
-
-        if curr_pw_input:
-            if curr_pw_input.strip() != st.session_state.get("logged_teacher_pw", ""):
+        if not is_unlocked and curr_pw:
+            actual_pw = st.session_state.get("logged_teacher_pw", "").strip()
+            if curr_pw.strip() != actual_pw:
                 st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
-                st.session_state["pw_save_status"] = "none"
             else:
-                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
-                
-                new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key, on_change=reset_pw_status)
-                new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key, on_change=reset_pw_status)
-                
-                msg_placeholder = st.container()
-                if st.session_state["pw_save_status"] == "success":
-                    msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
-                elif st.session_state["pw_save_status"] == "fail_mismatch":
-                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
-                elif st.session_state["pw_save_status"] == "fail_empty":
-                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
+                st.session_state["pw_step_unlocked"] = True
+                is_unlocked = True
 
-                components.html("""
-                    <script>
-                        setTimeout(function() {
-                            const parentDoc = window.parent.document;
-                            const inputs = parentDoc.querySelectorAll('input[type="password"]');
-                            if(inputs.length >= 3) {
-                                if (parentDoc.activeElement === inputs[0] || parentDoc.activeElement.tagName === "BODY") {
-                                    inputs[1].focus();
-                                }
-                            }
-                        }, 250);
-                    </script>
-                """, height=0, width=0)
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                col1, col2 = st.columns(2)
-                
-                with col1: 
-                    save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
-                with col2: 
-                    close_btn = st.button("닫기", key="close_pw_inner", use_container_width=True)
+        if is_unlocked:
+            st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
+            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
+            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
+            
+            components.html("""
+                <script>
+                    setTimeout(function() {
+                        const parentDoc = window.parent.document;
+                        const inputs = parentDoc.querySelectorAll('input[type="password"]');
+                        if(inputs.length >= 3 && parentDoc.activeElement === inputs[0]) {
+                            inputs[1].focus();
+                        }
+                    }, 150);
+                </script>
+            """, height=0, width=0)
 
-                if close_btn:
-                    st.session_state["pw_save_status"] = "none"
-                    st.session_state["pw_version_key"] += 1
+            if st.session_state["pw_save_status"] == "success":
+                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
+            elif st.session_state["pw_save_status"] == "fail_mismatch":
+                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+            elif st.session_state["pw_save_status"] == "fail_empty":
+                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
+            with col2: close_btn = st.button("닫기", use_container_width=True)
+                
+            if close_btn:
+                st.session_state["pw_step_unlocked"] = False
+                st.session_state["pw_save_status"] = "none"
+                st.session_state["pw_version_key"] += 1
+                st.rerun()
+                
+            if save_btn:
+                clean_new_pw = new_pw.strip()
+                clean_confirm_pw = new_pw_confirm.strip()
+                
+                if not clean_new_pw:
+                    st.session_state["pw_save_status"] = "fail_empty"
                     st.rerun()
-                    
-                if save_btn:
-                    clean_new_pw = new_pw.strip()
-                    clean_confirm_pw = new_pw_confirm.strip()
-                    
-                    if not clean_new_pw:
-                        st.session_state["pw_save_status"] = "fail_empty"
-                        st.rerun()
-                    elif clean_new_pw != clean_confirm_pw:
-                        st.session_state["pw_save_status"] = "fail_mismatch"
-                        st.rerun()
-                    else:
-                        try:
-                            teacher_id = st.session_state.get("logged_teacher_id", "")
-                            if teacher_id:
-                                supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
-                                st.session_state["logged_teacher_pw"] = clean_new_pw
-                                st.session_state["pw_save_status"] = "success"
-                                st.session_state["pw_version_key"] += 1
-                                st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
+                elif clean_new_pw != clean_confirm_pw:
+                    st.session_state["pw_save_status"] = "fail_mismatch"
+                    st.rerun()
+                else:
+                    try:
+                        teacher_id = st.session_state.get("logged_teacher_id", "")
+                        if teacher_id:
+                            supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
+                            st.session_state["logged_teacher_pw"] = clean_new_pw
+                            st.session_state["pw_save_status"] = "success"
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("닫기", key="close_pw_outer", use_container_width=True): 
+                st.session_state["pw_step_unlocked"] = False
                 st.session_state["pw_save_status"] = "none"
                 st.session_state["pw_version_key"] += 1
                 st.rerun()
@@ -439,7 +436,6 @@ elif st.session_state["admin_logged_in"]:
                 allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
                 registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
             
-            # 💡 [핵심 조치] 과목이 없을 때는 아예 레이아웃을 쪼개지 않고 통짜 경고창만 띄웁니다!
             if not registered_dbs:
                 st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다. [평가 대상 과목 구성] 메뉴에서 먼저 과목을 추가해 주세요.")
             else:
@@ -633,7 +629,9 @@ elif st.session_state["admin_logged_in"]:
                                 supabase.table(student_table).upsert(df.loc[r_idx].to_dict()).execute()
                             st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
+    # ---------------------------------------------------------------------
     # 4번 메뉴: 평가 대상 과목 구성
+    # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         with st.container(border=True):
             st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">🎯 평가 대상 과목 및 항목 관리</h4></div>', unsafe_allow_html=True)
@@ -646,34 +644,31 @@ elif st.session_state["admin_logged_in"]:
                     st.caption("과목 설정이 끝나면, 우측에서 수행평가 세부 항목을 구성하세요.")
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    allowed_list = st.session_state.get("allowed_subjects", [])
-                    default_sub = "국어"
-                    if allowed_list and allowed_list[0] != "마스터":
-                        default_sub = allowed_list[0]
-                    
-                    sub_options = []
-                    for group_subs in SUBJECT_MAP.values(): sub_options.extend(group_subs)
-                    
-                    sub_idx = sub_options.index(default_sub) if default_sub in sub_options else 0
-                    predicted_group = "인문·사회군"
-                    for g, s_list in SUBJECT_MAP.items():
-                        if default_sub in s_list: predicted_group = g; break
-                            
-                    group_options = ["인문·사회군", "수리·과학군", "예체능군"]
-                    group_idx = group_options.index(predicted_group) if predicted_group in group_options else 0
-                    
                     grid_c1, grid_c2 = st.columns(2)
                     with grid_c1:
-                        sel_g = st.selectbox("교과군 선택", options=group_options, index=group_idx)
-                        final_sub = st.selectbox("세부 과목", options=SUBJECT_MAP.get(sel_g, ["국어"]))
+                        group_options = ["교과군을 선택하세요.", "인문·사회군", "수리·과학군", "예체능군"]
+                        sel_g = st.selectbox("교과군 선택", options=group_options, index=0)
+
+                        if sel_g != "교과군을 선택하세요.":
+                            sub_options = ["과목을 선택하세요."] + SUBJECT_MAP.get(sel_g, [])
+                        else:
+                            sub_options = ["과목을 선택하세요."]
+                        final_sub = st.selectbox("세부 과목", options=sub_options, index=0)
+
                     with grid_c2:
-                        sel_gr = st.selectbox("학년 지정", options=["1학년", "2학년", "3학년"], index=1)
-                        sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=1)
-                    
-                    subject_key = f"{final_sub}_{sel_gr}_{sel_se}".replace(" ", "_")
+                        sel_gr = st.selectbox("학년 지정", options=["학년을 선택하세요.", "1학년", "2학년", "3학년"], index=0)
+                        sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=0)
+
+            is_step1_complete = (
+                sel_g != "교과군을 선택하세요." and
+                final_sub != "과목을 선택하세요." and
+                sel_gr != "학년을 선택하세요." and
+                sel_se != "학기를 선택하세요."
+            )
 
             with main_col2:
-                if sel_se != "학기를 선택하세요.":
+                if is_step1_complete:
+                    subject_key = f"{final_sub}_{sel_gr}_{sel_se}".replace(" ", "_")
                     cfg_df = load_db_df(config_table)
                     db_match = cfg_df[cfg_df["subject_key"] == subject_key] if not cfg_df.empty else pd.DataFrame()
                     
@@ -693,17 +688,21 @@ elif st.session_state["admin_logged_in"]:
 
                     with st.container(border=True):
                         st.markdown('<div class="sync-giant-title">🎯 2. 수행평가 항목 구성</div>', unsafe_allow_html=True)
+                        st.caption("💡 평가 반영 항목 개수를 선택하시면, 해당 개수만큼 우측에 제목 입력란이 생성됩니다.")
                         st.markdown("<br>", unsafe_allow_html=True)
                         
-                        split_c1, split_c2 = st.columns([1.1, 1.9])
+                        item_titles = []
                         
-                        with split_c1:
+                        r1_c1, r1_c2 = st.columns([1.1, 1.9])
+                        with r1_c1:
                             item_count = st.selectbox("평가 반영 항목 개수 선택", [1, 2, 3, 4, 5], index=(init_count - 1))
+                        with r1_c2:
+                            t1 = st.text_input("항목 1 제목", value=init_titles[0] if init_count >= 1 else "수행평가_1", key="split_item_title_0")
+                            item_titles.append(t1.strip())
                             
-                        with split_c2:
-                            st.markdown("<div style='font-size:14px; font-weight:800; color:#1e293b; margin-bottom: 5px;'>📝 각 항목의 제목을 입력하세요.</div>", unsafe_allow_html=True)
-                            item_titles = []
-                            for i in range(item_count):
+                        for i in range(1, item_count):
+                            r_c1, r_c2 = st.columns([1.1, 1.9])
+                            with r_c2:
                                 default_val = init_titles[i] if i < len(init_titles) else f"수행평가_{i+1}"
                                 t_in = st.text_input(f"항목 {i+1} 제목", value=default_val, key=f"split_item_title_{i}")
                                 item_titles.append(t_in.strip())
@@ -731,7 +730,7 @@ elif st.session_state["admin_logged_in"]:
                     st.markdown(
                         """
                         <div style='border: 2px dashed #cbd5e1; border-radius: 12px; padding: 60px 20px; text-align: center; color: #94a3b8; margin-top: 5px;'>
-                            ⬅️ 왼쪽에서 <b>[교과 과목 및 학기]</b>를 선택하시면<br>
+                            ⬅️ 왼쪽에서 <b>[1. 평가 과목 설정]</b>의 4가지 항목을 모두 선택하시면<br>
                             이 자리에 수행평가 항목을 설정하는 박스가 나타납니다.
                         </div>
                         """, 
