@@ -25,14 +25,19 @@ st.markdown("""
         div[data-testid="stHeader"] { display: none !important; }
         [data-testid="stAppViewContainer"] { margin-left: 0px !important; }
         
-        /* 💡 요구사항 4 & 5번: 사이드바 내부 폰트 크기 +1 확대 및 메뉴 위치 하단 이동 */
+        /* 사이드바 구성 패치 */
         .stSidebar, section[data-testid="stSidebar"] { min-width: 280px !important; max-width: 280px !important; background-color: #1e293b !important; box-shadow: 4px 0 15px rgba(0,0,0,0.1) !important; }
         [data-testid="stSidebar"] .stRadio label p, [data-testid="stSidebar"] .stRadio label span, [data-testid="stSidebar"] .stRadio label div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div[role="radiogroup"] * { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; opacity: 1 !important; }
         
-        /* 사이드바 메뉴 선택 간격 및 폰트 확대 (+1 패치) */
-        [data-testid="stSidebar"] div[role="radiogroup"] { margin-top: 30px !important; } /* 버튼들을 조금 아래로 이동 */
-        [data-testid="stSidebar"] div[role="radiogroup"] p { font-size: 17px !important; font-weight: 700 !important; line-height: 2.3 !important; } /* 글자 크기 기존보다 +1 확대 */
+        /* 💡 메뉴들을 원래 위쪽 위치로 복귀 시키고 폰트 크기는 큰 상태(17px) 유지 */
+        [data-testid="stSidebar"] div[role="radiogroup"] { margin-top: 0px !important; } 
+        [data-testid="stSidebar"] div[role="radiogroup"] p { font-size: 17px !important; font-weight: 700 !important; line-height: 2.3 !important; } 
         [data-testid="stSidebar"] div[role="radiogroup"] label:hover * { color: #60a5fa !important; -webkit-text-fill-color: #60a5fa !important; }
+        
+        /* 💡 요구사항 반영: 메뉴들과 최하단 버튼(내정보 수정, 로그아웃) 사이의 중간 공백을 크게 늘려주는 빈 박스 밀기 장치 */
+        .sidebar-spacer {
+            height: 120px !important; /* 이 수치를 조절하여 공백을 더 늘리거나 줄일 수 있습니다 */
+        }
         
         .sidebar-title { font-size: 24px !important; font-weight: 800 !important; margin-bottom: 5px !important; display: block; }
         .user-info { color: #38bdf8 !important; -webkit-text-fill-color: #38bdf8 !important; font-size: 14px !important; font-weight: 600 !important; margin-bottom: 25px !important; }
@@ -342,7 +347,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                 clean_id = str(user_id_input).strip()
                 clean_pw = str(user_pw_input).strip()
                 if login_mode == "학생":
-                    res = supabase.table(student_table).select("*").eq("school_email", clean_id).eq("password", clean_pw).execute()
+                    res = supabase.table(student_table).select("*").eq("학교 이메일", clean_id).eq("비밀번호", clean_pw).execute()
                     if len(res.data) > 0:
                         st.session_state["student_logged_in"] = True
                         st.session_state["logged_student_id"] = clean_id
@@ -440,7 +445,8 @@ elif st.session_state["admin_logged_in"]:
             
         menu_selection = st.session_state["current_menu"]
         
-        st.markdown("<br>", unsafe_allow_html=True)
+        # 💡 요구사항 5번: 메뉴들과 하단 버튼 사이의 세로 여백을 확실하게 더 늘려주는 전용 공간 패치 박스
+        st.markdown('<div class="sidebar-spacer"></div>', unsafe_allow_html=True)
         
         if st.button("👤 내 정보 수정", type="secondary", use_container_width=True):
             show_profile_popup_dialog()
@@ -521,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항 1, 2, 3 전체 완벽 통합)
+    # 2번 메뉴: 수행 평가 성적 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
@@ -560,7 +566,7 @@ elif st.session_state["admin_logged_in"]:
                     
                     st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
                     
-                    # 💡 요구사항 3번: 문구 깔끔하게 매칭 변경
+                    # 💡 요구사항 3번: 문구 교체 완료
                     st.markdown("💡 **양식을 다운로드하여 성적을 일괄 업로드하세요.**")
                     template_df = pd.DataFrame({
                         "반": [1, 1, 2], "번호": [1, 2, 1], "이름": ["홍길동", "이영희", "강백호"],
@@ -596,13 +602,13 @@ elif st.session_state["admin_logged_in"]:
                         except Exception as e:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
                             
-                    # 💡 선생님의 오리지널 위치 규칙 사수: 왼쪽 분할 패널 하단 구석 자리에 완벽 이주 고정!
+                    # 💡 요구사항 1번 적용: 불필요했던 상단 st.markdown 줄바꿈 코드 완벽하게 흔적도 없이 삭제!
                     btn_space_l, btn_space_r = st.columns([5.0, 5.0])
                     with btn_space_r:
                         save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 with layout_right:
-                    # 💡 요구사항 1번: 짧고 직관적인 핵심 축소 문구로 일괄 전면 교체
+                    # 💡 요구사항 1번: 요청하신 날씬하게 정정된 메시지 가이드 문구 주입 완료!
                     st.markdown('<p class="menu-guide-inline">💡 개인별 성적 입력은 아래 테이블 영역의 점수를 더블클릭하여 점수를 수정한 후, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
                     
                     if excel_loaded_df is not None:
@@ -629,7 +635,7 @@ elif st.session_state["admin_logged_in"]:
                             "학교 이메일": st.column_config.TextColumn(alignment="center")
                         }
                         
-                        # 💡 요구사항 2번: 실시간 연동 합계 계산 로직 복구 가동 체계
+                        # 💡 요구사항 2번: 실시간 연동 합계 계산 필드 완벽하게 복구 가동!
                         df["합계"] = 0
                         for idx in range(item_count):
                             db_col = f"수행평가{idx+1}"
@@ -653,7 +659,7 @@ elif st.session_state["admin_logged_in"]:
                         align_config["최종 확인일시"] = st.column_config.TextColumn(alignment="center")
                         
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
-                        disabled_cols = ["반", "번호", "이름", "학교 이메일", "합계", "성적조회 횟수", "최종 확인일시"] # 합계는 자동계산이므로 수정 불가 락(Lock)
+                        disabled_cols = ["반", "번호", "이름", "학교 이메일", "합계", "성적조회 횟수", "최종 확인일시"]
                         
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
@@ -665,12 +671,11 @@ elif st.session_state["admin_logged_in"]:
                                 record = df.loc[r_idx].to_dict()
                                 record["subject_key"] = subject_key
                                 
-                                # 사용자가 테이블에서 수정한 점수 추출 바인딩 (합계 제외)
                                 for idx_c, db_col in enumerate(db_cols_ordered):
                                     view_title = item_titles[idx_c]
                                     record[db_col] = edited_df.iloc[_pos][view_title]
                                 
-                                if "합계" in record: del record["합계"] # DB 저장 전 임시 계산 필드 완전 제거
+                                if "합계" in record: del record["합계"]
                                 supabase.table(student_table).upsert(record).execute()
                                 
                             st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
