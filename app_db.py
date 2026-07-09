@@ -62,12 +62,12 @@ st.markdown("""
         div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25 rgba(0,0,0,0.05) !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
         
-        /* 타이틀 영역 구조 복구 */
+        /* 타이틀 영역 구조 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
-        .header-nav-sub { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 25px !important; } /* 가이드 안내 바 폰트 확대 패치 */
+        .header-nav-sub { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 25px !important; }
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
         
-        /* 안내 가이드라인 박스 복구 */
+        /* 안내 가이드라인 박스 */
         .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 8px 16px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 0 15px 0 !important; width: 100% !important; box-sizing: border-box !important; }
 
         .sync-giant-title { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
@@ -116,12 +116,14 @@ def get_active_databases():
             if len(parts) >= 3:
                 subj = parts[0]
                 grade = parts[1]
-                sem = "_join".join(parts[2:])
+                # 💡 [join1학기 버그 해결] 수식 규칙을 '_join'에서 표준 언더바('_')로 완벽 원상복구!
+                sem = "_".join(parts[2:])
                 active_list.append({"subject": subj, "grade": grade, "semester": sem.replace("_", " "), "key": subj_key})
     return active_list
 
 def get_subject_item_names(subject_key):
     cfg_df = load_db_df(config_table)
+    # 💡 [125라인 수리 완료] 문법 오류 유발자 && 기호를 파이썬 표준 연산자인 and로 전격 수정!
     if not cfg_df.empty and "subject_key" in cfg_df.columns:
         match = cfg_df[cfg_df["subject_key"] == subject_key]
         if not match.empty:
@@ -419,13 +421,11 @@ elif st.session_state["student_logged_in"]:
 # 🔒 [2단계-B] 교사 화면
 # =========================================================================
 elif st.session_state["admin_logged_in"]:
-    # 💡 요구사항 반영: "학생 정보 관리" ➡️ "학생 기본 정보 관리"로 메뉴명 전격 변경
     menus = ["학생 조회 현황 모니터링", "수행 평가 성적 입력", "학생 기본 정보 관리", "평가 대상 과목 구성"]
     if st.session_state["logged_teacher_id"] == "admin": 
         menus.append("👑 교사 계정 관리 대장")
         
     if "current_menu" not in st.session_state or st.session_state["current_menu"] not in menus:
-        # 안전장치 마이그레이션 (이전 메뉴명이 세션에 남아있을 때 방어)
         if st.session_state.get("current_menu") == "학생 정보 관리":
             st.session_state["current_menu"] = "학생 기본 정보 관리"
         else:
@@ -455,7 +455,7 @@ elif st.session_state["admin_logged_in"]:
             show_profile_popup_dialog()
         if st.sidebar.button("🚪 로그아웃", type="secondary", use_container_width=True): st.session_state.clear(); st.rerun()
 
-    # 💡 [구조 대혁신 패치] 상단 네비게이션 가이드를 유일한 핵심 마스터 지표로 확장 및 폰트 18px 확대 적용!
+    # 💡 마스터 상단 네비게이션 가이드 단독 표출 패치 적용
     st.markdown(f"""
         <div class="header-title-main">수행평가 점수 확인 시스템</div>
         <div class="header-nav-sub" style="border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 25px;">
@@ -465,11 +465,10 @@ elif st.session_state["admin_logged_in"]:
 
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
-    # 양 패널 분할 기점 진입
     layout_left, layout_right = st.columns([3.5, 6.5])
 
     # ---------------------------------------------------------------------
-    # 1번 메뉴: 학생 조회 현황 모니터링
+    # 1번 메뉴: 학생 조회 현황 모니터링 (💡 표 높이 최적화 패치)
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         registered_dbs = get_active_databases()
@@ -481,7 +480,6 @@ elif st.session_state["admin_logged_in"]:
             with layout_left: st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
         else:
             with layout_left:
-                # 💡 중복 박스 삭제 완료 ➡️ 바로 본문 조작 필드로 진입
                 st.markdown("**📂 대상 교과 선택**")
                 selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
                 selected_db_str = st.selectbox("교과 선택", options=selector_options, label_visibility="collapsed", key="mon_sub")
@@ -529,10 +527,11 @@ elif st.session_state["admin_logged_in"]:
                     align_config["최종 확인일시"] = st.column_config.TextColumn(alignment="center")
                     
                     final_view_df = r_df[display_cols].rename(columns=rename_map)
-                    st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
+                    # 💡 요구사항 반영: 1번 메뉴 표 높이를 한 화면에 맞게 height=400으로 압축 세팅
+                    st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=400)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 표 높이 최적화 패치)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -544,7 +543,6 @@ elif st.session_state["admin_logged_in"]:
             with layout_left: st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
         else:
             with layout_left:
-                # 💡 중복 박스 삭제 완료 ➡️ 바로 조건 컨트롤러 진입
                 st.markdown("**📂 관리할 교과 선택**")
                 selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
                 selected_db_str = st.selectbox("교과 선택", options=selector_options, label_visibility="collapsed", key="edt_sub")
@@ -602,9 +600,6 @@ elif st.session_state["admin_logged_in"]:
                     except Exception as e:
                         st.error(f"❌ 파일 구조 해석 실패: {e}")
                         
-                    excel_loaded_df = df_up
-                
-                # 💡 요구사항 1번 적용: 불필요했던 상단 줄바꿈 마크다운 완전 제거 및 버튼 원박 컴팩트 유지
                 btn_space_l, btn_space_r = st.columns([5.0, 5.0])
                 with btn_space_r:
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
@@ -660,7 +655,8 @@ elif st.session_state["admin_logged_in"]:
                     sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                     disabled_cols = ["반", "번호", "이름", "학교 이메일", "합계", "성적조회 횟수", "최종 확인일시"]
                     
-                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
+                    # 💡 요구사항 반영: 2번 메뉴 표 높이를 한 화면 고정을 위해 height=380으로 압축 세팅
+                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=380)
                     
                     if save_trigger:
                         if excel_loaded_df is not None:
@@ -680,7 +676,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리 (💡 요구사항 매칭 완료)
+    # 3번 메뉴: 학생 기본 정보 관리 (💡 표 높이 최적화 패치)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -709,7 +705,8 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                for _ in range(15):
+                # 간격 조정을 위한 여백 슬림화 패치
+                for _ in range(8):
                     st.write("")
 
                 info_grid_col1, info_grid_col2 = st.columns(2)
@@ -734,7 +731,8 @@ elif st.session_state["admin_logged_in"]:
                         "비밀번호": st.column_config.TextColumn(alignment="center")
                     }
                     
-                    edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=500)
+                    # 💡 요구사항 반영: 3번 메뉴 표 높이도 동일하게 height=380으로 스크롤바 제어 압축 세팅
+                    edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=380)
                     
                     if add_std_trigger:
                         show_add_student_dialog(subject_key)
@@ -752,7 +750,6 @@ elif st.session_state["admin_logged_in"]:
     # 4번 메뉴: 평가 대상 과목 구성
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
-        # 분할 패널을 전체로 합산 전환하여 활용
         main_col1, main_col2 = layout_left, layout_right
         
         with main_col1:
@@ -876,7 +873,7 @@ elif st.session_state["admin_logged_in"]:
             save_tc_trigger = st.button("💾 교사 정보 원격 저장", type="primary", use_container_width=True)
             
         with layout_right:
-            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor")
+            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor", height=400)
             
             if save_tc_trigger:
                 if not df_tc.empty:
