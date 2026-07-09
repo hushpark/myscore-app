@@ -49,7 +49,7 @@ st.markdown("""
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
         
         /* 로그인 박스 외곽 폼 */
-        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.06) !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
         div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
         
         /* 담백한 타이틀 영역 설계 */
@@ -58,12 +58,14 @@ st.markdown("""
 
         /* 각 메뉴 제목 밑 구분 라인 디자인 */
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
-        .menu-title-text { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; }
+        
+        /* 💡 그림1과 그림2의 완벽한 수평 배치를 위한 플렉스박스 컨테이너 */
+        .title-flex-box { display: flex !important; align-items: center !important; gap: 20px !important; flex-wrap: nowrap !important; }
+        .menu-title-text { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; white-space: nowrap !important; }
+        .menu-guide-inline { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; background-color: #f8fafc !important; padding: 6px 14px !important; border-left: 4px solid #3b82f6 !important; border-radius: 4px !important; margin: 0 !important; }
+
         .sync-giant-title { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
-
-        /* 가이드라인 박스 스타일링 */
-        .guide-box { background-color: #f8fafc !important; border-left: 4px solid #3b82f6 !important; padding: 12px 16px !important; border-radius: 4px; margin-bottom: 15px; font-size: 14px; color: #334155; font-weight: 600; line-height: 1.5; }
 
         /* 모든 에러/성공/알림 메시지 폰트 일괄 통일 */
         div[data-testid="stAlert"] * {
@@ -108,7 +110,7 @@ def get_active_databases():
             if len(parts) >= 3:
                 subj = parts[0]
                 grade = parts[1]
-                sem = "_join".join(parts[2:]) # 구분자 결합성 복구
+                sem = "_join".join(parts[2:])
                 active_list.append({"subject": subj, "grade": grade, "semester": sem.replace("_", " "), "key": subj_key})
     return active_list
 
@@ -316,9 +318,9 @@ if "student_logged_in" not in st.session_state: st.session_state["student_logged
 if "logged_student_id" not in st.session_state: st.session_state["logged_student_id"] = ""
 if "logged_student_pw" not in st.session_state: st.session_state["logged_student_pw"] = ""
 if "logged_teacher_id" not in st.session_state: st.session_state["logged_teacher_id"] = False
-if "logged_teacher_pw" not in st.session_state: st.session_state["logged_teacher_pw"] = ""
-if "teacher_name" not in st.session_state: st.session_state["teacher_name"] = ""
-if "allowed_subjects" not in st.session_state: st.session_state["allowed_subjects"] = []
+if "logged_teacher_pw" not in st.session_state: st.session_state["logged_teacher_pw"] = []
+
+df = load_db_df(student_table)
 
 # =========================================================================
 # 🔓 [1단계] 로그인 시스템
@@ -411,7 +413,6 @@ elif st.session_state["student_logged_in"]:
 # 🔒 [2단계-B] 교사 화면
 # =========================================================================
 elif st.session_state["admin_logged_in"]:
-    # 💡 5번 일괄 업로드 메뉴를 완전히 도려내고 4개 구조를 유지합니다.
     menus = ["학생 조회 현황 모니터링", "수행 평가 성적 입력", "학생 정보 관리", "평가 대상 과목 구성"]
     if st.session_state["logged_teacher_id"] == "admin": 
         menus.append("👑 교사 계정 관리 대장")
@@ -516,11 +517,17 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항 취사 선택 통합 반영 단두대)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 그림1 옆에 그림2 배치 완료 및 테이블 원래대로 복원)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         with st.container(border=True):
-            st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">📝 수행 평가 성적 입력</h4></div>', unsafe_allow_html=True)
+            # 💡 [핵심 교정 완료] 그림1(수행 평가 성적 입력)과 그림2(안내 가이드박스)를 한 줄에 나란히 배치!
+            st.markdown("""
+                <div class="menu-title-container title-flex-box">
+                    <h4 class="menu-title-text">📝 수행 평가 성적 입력</h4>
+                    <p class="menu-guide-inline">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</p>
+                </div>
+            """, unsafe_allow_html=True)
             
             registered_dbs = get_active_databases()
             if "마스터" not in st.session_state["allowed_subjects"]:
@@ -555,9 +562,8 @@ elif st.session_state["admin_logged_in"]:
                     
                     st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
                     
-                    # 💡 요구사항 2번: 명칭 다운로드 버튼 텍스트 양식 변경
+                    # 💡 양식 다운로드 버튼 명칭 .CSV / .XLSX 로 정밀 변경
                     st.markdown("💡 **맞춤형 업로드 양식 파일 받기**")
-                    template_cols = ["반", "번호", "이름", "학교 이메일", "비밀번호"] + item_titles[:item_count]
                     template_df = pd.DataFrame({
                         "반": [1, 1, 2], "번호": [1, 2, 1], "이름": ["홍길동", "이영희", "강백호"],
                         "학교 이메일": ["hgd@school.kr", "lyh@school.kr", "kbh@school.kr"], "비밀번호": ["1234", "1234", "1234"]
@@ -569,7 +575,7 @@ elif st.session_state["admin_logged_in"]:
                     st.download_button("📥 일괄 업로드용 성적 양식(.CSV / .XLSX) 다운로드", data=csv_buffer, file_name=f"성적일괄업로드양식_{chosen_db['subject']}.csv", mime="text/csv", use_container_width=True)
                     
                     st.markdown("<br>📂 **엑셀/CSV 성적 일괄 가져오기 (덮어쓰기)**", unsafe_allow_html=True)
-                    up_f = st.file_uploader("Guideline File Drop", type=["csv","xlsx"], label_visibility="collapsed", key="integrated_file_uploader")
+                    up_f = st.file_uploader("엑셀 파일 올리기", type=["csv", "xlsx"], label_visibility="collapsed", key="integrated_file_uploader")
                     
                     excel_loaded_df = None
                     if up_f:
@@ -591,23 +597,18 @@ elif st.session_state["admin_logged_in"]:
                             st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
                         except Exception as e:
                             st.error(f"❌ 파일 구조 해석 실패: {e}")
-                    
-                with layout_right:
-                    # 💡 요구사항 1번: 문구 다듬어 배치
-                    st.markdown('<div class="guide-box">💡 개인별로 성적을 입력하고 싶으면 아래 테이블(엑셀) 영역의 점수 칸을 더블클릭하여 직접 점수를 수정하신 뒤, 우측 상단의 [💾 성적 저장하기] 버튼을 누르시면 클라우드에 최종 반영됩니다.</div>', unsafe_allow_html=True)
-                    
-                    # 💡 요구사항 1번: 성적 저장하기 버튼 한 행 위로 정밀 배치 (오른쪽 상단 정렬)
-                    col_spacer, col_btn = st.columns([7.5, 2.5])
-                    with col_btn:
-                        save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="uppermost_save_btn")
-                    
+
+                with r_layout:
                     if excel_loaded_df is not None:
                         df = excel_loaded_df.copy()
                     else:
                         df = df_base.copy()
 
+                    # 💡 [버튼 위치 조정 원상복구] 성적 저장하기 버튼을 원래 상단 테이블 바로 밑단 행으로 깔끔하게 원래 높이 정렬
+                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
+
                     if df.empty: 
-                        st.info("📢 해당 교과에 등록된 학생 데이터가 없습니다.")
+                        st.info("📢 현재 등록된 성적 대장이 없습니다. 왼쪽 하단에서 마스터 엑셀 파일을 업로드해 주세요.")
                     else:
                         if selected_class_ed != "전체 학급 보기":
                             f_idx = df[df["반"].astype(int) == int(selected_class_ed.replace("반", ""))].index
@@ -642,7 +643,8 @@ elif st.session_state["admin_logged_in"]:
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=440)
+                        # 원래 높이 규격 500으로 원복 및 테이블 배치
+                        edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=500)
                         
                         if save_trigger:
                             if excel_loaded_df is not None:
@@ -735,7 +737,7 @@ elif st.session_state["admin_logged_in"]:
                             st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 4번 메뉴: 평가 대상 과목 구성 (💡 완전 수동 통제 로직 원상복구 복원지점)
+    # 4번 메뉴: 평가 대상 과목 구성 (💡 완전 원상복구 복원 및 콤보박스 활성화 완료)
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         with st.container(border=True):
