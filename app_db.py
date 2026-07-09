@@ -122,7 +122,7 @@ def get_active_databases():
 
 def get_subject_item_names(subject_key):
     cfg_df = load_db_df(config_table)
-    if not cfg_df.empty && "subject_key" in cfg_df.columns:
+    if not cfg_df.empty and "subject_key" in cfg_df.columns:
         match = cfg_df[cfg_df["subject_key"] == subject_key]
         if not match.empty:
             row = match.iloc[0]
