@@ -709,26 +709,35 @@ elif st.session_state["admin_logged_in"]:
                         
                         st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 20px 0;'>", unsafe_allow_html=True)
                         
-                        b_sc1, b_space2 = st.columns([3.8, 1.2])
-                        with b_space2:
-                            if st.button("💾 과목 설정 저장", type="primary", use_container_width=True):
-                                allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
-                                if "마스터" not in st.session_state["allowed_subjects"] and final_sub.strip() not in allowed_trimmed:
-                                    st.error(f"❌ 권한 오류: {st.session_state['teacher_name']} 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
-                                else:
-                                    config_record = {
-                                        "subject_key": subject_key, "item_count": item_count,
-                                        "item1_name": item_titles[0] if item_count >= 1 else "-",
-                                        "item2_name": item_titles[1] if item_count >= 2 else "-",
-                                        "item3_name": item_titles[2] if item_count >= 3 else "-",
-                                        "item4_name": item_titles[3] if item_count >= 4 else "-",
-                                        "item5_name": item_titles[4] if item_count >= 5 else "-"
-                                    }
-                                    try:
-                                        supabase.table(config_table).upsert(config_record).execute()
-                                        st.success("🎉 수행평가 구조 셋업 세이브 완료!"); st.rerun()
-                                    except Exception as e:
-                                        st.error("❌ DB 저장 실패! Supabase에 'subject_configs' 테이블이 생성되었는지 확인해주세요.")
+                        # 💡 버튼을 왼쪽으로 옮기고, 오른쪽에 예쁜 안내 문구를 배치합니다.
+                        b_col_btn, b_col_msg = st.columns([1.5, 3.5])
+                        
+                        with b_col_btn:
+                            save_clicked = st.button("💾 과목 설정 저장", type="primary", use_container_width=True)
+                            
+                        with b_col_msg:
+                            st.markdown("<div style='padding-top: 10px; color: #64748b; font-size: 14px; font-weight: 600;'>🚀 과목 설정이 저장되면, 자동으로 [개인별 성적 입력] 화면으로 이동합니다.</div>", unsafe_allow_html=True)
+
+                        if save_clicked:
+                            allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
+                            if "마스터" not in st.session_state["allowed_subjects"] and final_sub.strip() not in allowed_trimmed:
+                                st.error(f"❌ 권한 오류: {st.session_state['teacher_name']} 선생님은 [{final_sub}] 과목에 대한 개설 권한이 없습니다.")
+                            else:
+                                config_record = {
+                                    "subject_key": subject_key, "item_count": item_count,
+                                    "item1_name": item_titles[0] if item_count >= 1 else "-",
+                                    "item2_name": item_titles[1] if item_count >= 2 else "-",
+                                    "item3_name": item_titles[2] if item_count >= 3 else "-",
+                                    "item4_name": item_titles[3] if item_count >= 4 else "-",
+                                    "item5_name": item_titles[4] if item_count >= 5 else "-"
+                                }
+                                try:
+                                    supabase.table(config_table).upsert(config_record).execute()
+                                    # 성공 메시지 생략 후 즉시 화면 이동
+                                    st.session_state["current_menu"] = "개인별 성적 입력"
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error("❌ DB 저장 실패! Supabase에 'subject_configs' 테이블이 제대로 생성되었는지 확인해 주세요.")
                 else:
                     st.markdown(
                         """
