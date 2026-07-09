@@ -706,7 +706,7 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                for _ in range(15):
+                for _ in range(20):
                     st.write("")
 
                 info_grid_col1, info_grid_col2 = st.columns(2)
