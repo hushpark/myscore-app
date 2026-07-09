@@ -331,6 +331,8 @@ if "logged_teacher_pw" not in st.session_state: st.session_state["logged_teacher
 if "teacher_name" not in st.session_state: st.session_state["teacher_name"] = ""
 if "allowed_subjects" not in st.session_state: st.session_state["allowed_subjects"] = []
 
+df = load_db_df(student_table)
+
 # =========================================================================
 # 🔓 [1단계] 로그인 시스템
 # =========================================================================
@@ -422,7 +424,6 @@ elif st.session_state["student_logged_in"]:
 # 🔒 [2단계-B] 교사 화면
 # =========================================================================
 elif st.session_state["admin_logged_in"]:
-    # 💡 5번 일괄 업로드 메뉴를 영구 제외하고 4개로 대폭 다듬었습니다.
     menus = ["학생 조회 현황 모니터링", "개인별 성적 입력", "학생 정보 관리", "평가 대상 과목 구성"]
     if st.session_state["logged_teacher_id"] == "admin": 
         menus.append("👑 교사 계정 관리 대장")
@@ -527,7 +528,7 @@ elif st.session_state["admin_logged_in"]:
                         st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=500)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 대량 일괄 엑셀 업로드 완벽 통합)
+    # 2번 메뉴: 개인별 성적 데이터 입력 (💡 스마트 연동 엑셀 업로드 양식 탑재)
     # ---------------------------------------------------------------------
     elif menu_selection == "개인별 성적 입력":
         with st.container(border=True):
@@ -550,6 +551,7 @@ elif st.session_state["admin_logged_in"]:
                     
                     chosen_db = registered_dbs[selector_options.index(selected_db_str)]
                     subject_key = chosen_db['key']
+                    item_count, item_titles = get_subject_item_names(subject_key)
 
                     # 기존 DB 데이터 로드
                     df_data = supabase.table(student_table).select("*").eq("subject_key", subject_key).execute().data
@@ -565,18 +567,34 @@ elif st.session_state["admin_logged_in"]:
                     
                     st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
                     
-                    # 💡 [통합 패치] 왼쪽에 빌트인된 스마트 엑셀/CSV 업로더 박스
-                    st.markdown("📂 **엑셀/CSV 성적 일괄 가져오기 (덮어쓰기)**")
+                    # 💡 [업로드 예시 파일 기능 탑재] 선택된 수행평가 제목에 부합하는 똑똑한 양식 자동 빌드
+                    st.markdown("💡 **맞춤형 업로드 양식 파일 받기**")
+                    template_cols = ["반", "번호", "이름", "학교 이메일", "비밀번호"] + item_titles[:item_count]
+                    template_df = pd.DataFrame({
+                        "반": [1, 1, 2], "번호": [1, 2, 1], "이름": ["홍길동", "이영희", "강백호"],
+                        "학교 이메일": ["hgd@school.kr", "lyh@school.kr", "kbh@school.kr"], "비밀번호": ["1234", "1234", "1234"]
+                    })
+                    for col in item_titles[:item_count]:
+                        template_df[col] = [20, 18, 15] # 샘플 기본점수 입력
+                        
+                    csv_buffer = template_df.to_csv(index=False).encode('utf-8-sig')
+                    st.download_button("📥 일괄 업로드용 성적 양식(.CSV) 다운로드", data=csv_buffer, file_name=f"성적일괄업로드양식_{chosen_db['subject']}.csv", mime="text/csv", use_container_width=True)
+                    
+                    st.markdown("<br>📂 **엑셀/CSV 성적 일괄 가져오기 (덮어쓰기)**", unsafe_allow_html=True)
                     up_f = st.file_uploader("엑셀 파일 올리기", type=["csv", "xlsx"], label_visibility="collapsed", key="integrated_file_uploader")
                     
-                    # 업로드된 파일이 있으면 임시 결합 로직 작동 (별도 반영 버튼 필요 없음!)
+                    # 파일 매핑 처리
                     excel_loaded_df = None
                     if up_f:
                         try:
                             df_up = pd.read_csv(up_f) if up_f.name.endswith(".csv") else pd.read_excel(up_f)
                             df_up.columns = [c.strip() for c in df_up.columns]
                             
-                            # 기본 필수 컬럼 보정
+                            # 한글 헤더 이름을 시스템용 수행평가1~5 매핑 구조로 치환
+                            for idx_t, title in enumerate(item_titles[:item_count]):
+                                if title in df_up.columns:
+                                    df_up[f"수행평가{idx_t+1}"] = df_up[title]
+                            
                             for col in ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행평가5"]:
                                 if col not in df_up.columns: df_up[col] = 0
                             if "비밀번호" not in df_up.columns: df_up["비밀번호"] = "1234"
@@ -584,9 +602,9 @@ elif st.session_state["admin_logged_in"]:
                             
                             df_up["subject_key"] = subject_key
                             excel_loaded_df = df_up
-                            st.caption("✅ 파일 파싱 성공! 우측 표에 실시간 반영되었습니다. [성적 저장]을 누르면 최종 확정됩니다.")
+                            st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
                         except Exception as e:
-                            st.error(f"❌ 파일 읽기 실패: {e}")
+                            st.error(f"❌ 파일 구조 해석 실패: {e}")
 
                     st.markdown("<br>", unsafe_allow_html=True)
                     score_right_col1, score_right_col2 = st.columns(2)
@@ -594,9 +612,6 @@ elif st.session_state["admin_logged_in"]:
                         save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="side_save_score_btn")
                     
                 with layout_right:
-                    item_count, item_titles = get_subject_item_names(subject_key)
-
-                    # 💡 파일이 업로드된 상태라면 엑셀 데이터를 표에 뿌려주고, 없으면 기존 DB 데이터를 뿌려줍니다.
                     if excel_loaded_df is not None:
                         df = excel_loaded_df.copy()
                     else:
@@ -605,7 +620,6 @@ elif st.session_state["admin_logged_in"]:
                     if df.empty: 
                         st.info("📢 현재 등록된 성적 대장이 없습니다. 왼쪽 하단에서 마스터 엑셀 파일을 업로드해 주세요.")
                     else:
-                        # 반 필터링 적용
                         if selected_class_ed != "전체 학급 보기":
                             f_idx = df[df["반"].astype(int) == int(selected_class_ed.replace("반", ""))].index
                         else:
@@ -629,7 +643,6 @@ elif st.session_state["admin_logged_in"]:
                             rename_map[db_col] = item_titles[idx]
                             align_config[item_titles[idx]] = st.column_config.NumberColumn(alignment="center")
                             
-                        # 조회 기록 컬럼 추가
                         for h_col in ["성적조회 횟수", "최종 확인일시"]:
                             if h_col not in df.columns: df[h_col] = 0 if h_col == "성적조회 횟수" else "-"
                             target_cols.append(h_col)
@@ -640,11 +653,9 @@ elif st.session_state["admin_logged_in"]:
                         sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                         disabled_cols = ["반", "번호", "이름", "학교 이메일", "성적조회 횟수", "최종 확인일시"]
                         
-                        # 💡 엑셀 업로드 미리보기 겸 수정이 가능한 완벽한 그리드 가동
                         edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=520)
                         
                         if save_trigger:
-                            # 만약 엑셀 업로드 상태에서 저장을 누르면 해당 과목의 기존 데이터를 한 번 갈아엎어 싱크를 맞춥니다.
                             if excel_loaded_df is not None:
                                 supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
                                 
@@ -652,7 +663,6 @@ elif st.session_state["admin_logged_in"]:
                                 record = df.loc[r_idx].to_dict()
                                 record["subject_key"] = subject_key
                                 
-                                # 데이터 에디터에서 수정한 항목 매핑
                                 for idx_c, db_col in enumerate(db_cols_ordered):
                                     view_title = item_titles[idx_c]
                                     record[db_col] = edited_df.iloc[_pos][view_title]
