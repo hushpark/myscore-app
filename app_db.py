@@ -170,7 +170,6 @@ def show_add_student_dialog():
             if not new_ban.strip() or not new_num.strip() or not new_name.strip() or not new_email.strip() or not new_pw.strip(): 
                 st.error("❌ 모든 항목을 빠짐없이 입력해 주세요.")
             else:
-                is_ok = False
                 try:
                     clean_ban = new_ban.strip()
                     clean_num = new_num.strip()
@@ -187,14 +186,11 @@ def show_add_student_dialog():
                         "수행평가1": 0, "수행평가2": 0, "수행평가3": 0, 
                         "성적조회 횟수": 0, "최종 확인일시": "-"
                     }).execute()
-                    is_ok = True
+                    st.rerun()
                 except ValueError:
                     st.error("❌ '반'과 '번호', '초기 비밀번호'란에는 숫자만 입력할 수 있습니다.")
                 except Exception as e:
                     st.error(f"❌ 데이터베이스 통신 실패: {e}")
-                
-                if is_ok:
-                    st.rerun()
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_data):
@@ -340,7 +336,7 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 로그인 시스템 (로그인 시 메뉴 자동 제어)
+# 🔓 [1단계] 로그인 시스템
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -431,7 +427,20 @@ elif st.session_state["admin_logged_in"]:
         st.markdown(f'<div class="user-info">👤 {st.session_state["teacher_name"]} 선생님 접속 중</div>', unsafe_allow_html=True)
         st.markdown("---")
         
-        menu_selection = st.radio("메뉴 선택", menus, label_visibility="collapsed", key="current_menu")
+        # 💡 [핵심 버그 수정] 에러 방지를 위해 key 속성을 빼고 명시적인 상태 관리로 전환합니다.
+        try:
+            menu_idx = menus.index(st.session_state["current_menu"])
+        except ValueError:
+            menu_idx = 0
+
+        menu_selection_radio = st.radio("메뉴 선택", menus, index=menu_idx, label_visibility="collapsed")
+        
+        if menu_selection_radio != st.session_state["current_menu"]:
+            st.session_state["current_menu"] = menu_selection_radio
+            st.rerun()
+            
+        menu_selection = st.session_state["current_menu"]
+        
         st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("👤 내 정보 수정", type="secondary", use_container_width=True):
@@ -752,7 +761,6 @@ elif st.session_state["admin_logged_in"]:
                                     "item5_name": item_titles[4] if item_count >= 5 else "-"
                                 }
                                 
-                                # 💡 에러 발생 시 앱이 죽는 것을 막고, 성공했을 때만 안전하게 화면을 넘깁니다.
                                 is_saved = False
                                 try:
                                     supabase.table(config_table).upsert(config_record).execute()
@@ -762,6 +770,7 @@ elif st.session_state["admin_logged_in"]:
                                     
                                 if is_saved:
                                     time.sleep(0.3)
+                                    # 💡 [핵심 버그 수정] 이름표 에러 없이 메뉴 상태를 변경하고 완벽하게 화면을 넘깁니다.
                                     st.session_state["current_menu"] = "개인별 성적 입력"
                                     st.rerun()
                 else:
