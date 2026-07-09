@@ -177,99 +177,69 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 - Rerun 셧다운 버그 완벽 수리 결정판]
+# 💡 [(07.07)버전 로직 완벽 복구] Rerun 없이 st.empty()로 에러만 교체하는 무적의 팝업창
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
     edit_mode = st.radio("관리할 항목 선택", ["🔐 비밀번호 변경", "📚 담당과목 변경"], horizontal=True)
     st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
 
-    if "pw_step_unlocked" not in st.session_state: st.session_state["pw_step_unlocked"] = False
-    if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
-    if "pw_version_key" not in st.session_state: st.session_state["pw_version_key"] = 500
-
-    is_unlocked = st.session_state["pw_step_unlocked"]
-    v_key = str(st.session_state["pw_version_key"])
-
     if edit_mode == "🔐 비밀번호 변경":
-        # 현재 비밀번호 입력 필드 (잠금이 풀리면 입력창을 잠가서 충돌을 방어합니다)
-        curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="cur_pw_v_" + v_key, disabled=is_unlocked)
+        if "pw_step_unlocked" not in st.session_state: st.session_state["pw_step_unlocked"] = False
+        is_unlocked = st.session_state["pw_step_unlocked"]
+
+        curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="curr_pw_input_field", disabled=is_unlocked)
         
+        # 현재 비밀번호 검증 (구글 버전 로직 그대로)
         if not is_unlocked and curr_pw:
-            actual_pw = st.session_state.get("logged_teacher_pw", "").strip()
-            if curr_pw.strip() != actual_pw:
-                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
+            actual_pw = st.session_state.get("logged_teacher_pw", "")
+            if curr_pw != actual_pw:
+                st.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold; margin-top: -10px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
             else:
-                # 🛠️ [무단 닫힘 해결 핵심] 다이얼로그 안에서 st.rerun()을 때려 창을 죽이던 범인을 지우고 메모리 상태만 전개합니다.
+                # 🛠️ 맞았을 때 Rerun하지 않고 상태만 바꾼 뒤 아래를 자연스럽게 전개
                 st.session_state["pw_step_unlocked"] = True
                 is_unlocked = True
 
-        # 💡 현재 암호 검증이 완료되었을 때만 하단에 새 패스워드 입력창들을 자연스럽게 연장 노출합니다.
+        # 새 비밀번호 입력란 전개
         if is_unlocked:
-            st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
-            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
-            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
+            st.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다. 변경할 새 비밀번호를 입력하세요.</p>", unsafe_allow_html=True)
+            new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정")
+            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
             
-            # 현재 비밀번호 입력 후 자동으로 새 비밀번호 입력 상자로 포커스 워프 이동
-            components.html("""
-                <script>
-                    setTimeout(function() {
-                        const parentDoc = window.parent.document;
-                        const inputs = parentDoc.querySelectorAll('input[type="password"]');
-                        if(inputs.length >= 3 && parentDoc.activeElement === inputs[0]) {
-                            inputs[1].focus();
-                        }
-                    }, 150);
-                </script>
-            """, height=0, width=0)
+            # 포커스 점프 JS (과거에 썼던 가장 가벼운 버전)
+            components.html("""<script>setTimeout(function() { const inputs = window.parent.document.querySelectorAll('input[type="password"]:not([disabled])'); if (inputs.length > 0) { inputs[0].focus(); } }, 150);</script>""", height=0, width=0)
 
-            # 요구사항에 부합하는 정밀 알림 폰트 크기 매칭 가동
-            if st.session_state["pw_save_status"] == "success":
-                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
-            elif st.session_state["pw_save_status"] == "fail_mismatch":
-                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
-            elif st.session_state["pw_save_status"] == "fail_empty":
-                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
-
+            # 🛠️ 이게 핵심입니다! 에러 메시지를 띄울 전용 공간(st.empty)을 미리 만들어 둡니다.
+            msg_box = st.empty()
             st.markdown("<br>", unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
-            with col2: close_btn = st.button("닫기", use_container_width=True)
-                
-            # 💡 오직 사용자가 '닫기'를 명시적으로 눌렀을 때만 상태를 청소하고 완전하게 빠져나갑니다.
-            if close_btn:
-                st.session_state["pw_step_unlocked"] = False
-                st.session_state["pw_save_status"] = "none"
-                st.session_state["pw_version_key"] += 1
-                st.rerun()
-                
+            with col2:
+                if st.button("닫기", type="secondary", use_container_width=True):
+                    st.session_state["pw_step_unlocked"] = False
+                    st.rerun()
+                    
             if save_btn:
-                clean_new_pw = new_pw.strip()
-                clean_confirm_pw = new_pw_confirm.strip()
-                
-                # 💡 비밀번호 저장 검사 시 실패하더라도 다이얼로그 강제 Rerun 파괴를 하지 않아 무단 닫힘을 완전 봉쇄합니다!
-                if not clean_new_pw:
-                    st.session_state["pw_save_status"] = "fail_empty"
-                    st.rerun()
-                elif clean_new_pw != clean_confirm_pw:
-                    st.session_state["pw_save_status"] = "fail_mismatch"
-                    st.rerun()
+                # 🛠️ 검증 과정에서 st.rerun()을 쓰지 않고 msg_box에 글씨만 바꿔치기 하므로 창이 절대 안닫힘!
+                if not new_pw or new_pw != new_pw_confirm:
+                    msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 새 비밀번호가 비어있거나 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+                elif new_pw == st.session_state.get("logged_teacher_pw", ""):
+                    msg_box.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 현재 사용 중인 비밀번호와 동일합니다.</p>", unsafe_allow_html=True)
                 else:
                     try:
                         teacher_id = st.session_state.get("logged_teacher_id", "")
                         if teacher_id:
-                            supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
-                            st.session_state["logged_teacher_pw"] = clean_new_pw
-                            st.session_state["pw_save_status"] = "success"
-                            st.rerun()
+                            # DB 저장만 Supabase 버전으로 교체
+                            supabase.table(teacher_table).update({"비밀번호": new_pw.strip()}).eq("교사_ID", teacher_id).execute()
+                            st.session_state["logged_teacher_pw"] = new_pw.strip()
+                            msg_box.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
                     except Exception as e:
-                        st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
+                        msg_box.markdown(f"<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 오류가 발생했습니다: {e}</p>", unsafe_allow_html=True)
         else:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("닫기", key="close_pw_outer", use_container_width=True): 
+            if st.button("닫기", type="secondary", use_container_width=True):
                 st.session_state["pw_step_unlocked"] = False
-                st.session_state["pw_save_status"] = "none"
-                st.session_state["pw_version_key"] += 1
                 st.rerun()
 
     elif edit_mode == "📚 담당과목 변경":
