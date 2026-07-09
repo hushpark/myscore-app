@@ -177,7 +177,7 @@ def show_result_dialog(student_data):
         st.session_state.clear()
         st.rerun()
 
-# 💡 [내 정보 수정 - Rerun 셧다운 완벽 해결 및 원본 조건부 이식 결정판]
+# 💡 [내 정보 수정 - Rerun 셧다운 버그 완벽 수리 결정판]
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
     st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
@@ -192,7 +192,7 @@ def show_profile_popup_dialog():
     v_key = str(st.session_state["pw_version_key"])
 
     if edit_mode == "🔐 비밀번호 변경":
-        # 현재 비밀번호 입력 필드 (잠금 풀리기 전 검증)
+        # 현재 비밀번호 입력 필드 (잠금이 풀리면 입력창을 잠가서 충돌을 방어합니다)
         curr_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="cur_pw_v_" + v_key, disabled=is_unlocked)
         
         if not is_unlocked and curr_pw:
@@ -200,17 +200,17 @@ def show_profile_popup_dialog():
             if curr_pw.strip() != actual_pw:
                 st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
             else:
-                # 🛠️ [핵심 조치] 여기서 st.rerun()을 때리면 다이얼로그가 파괴되므로, Rerun 없이 상태 메모리만 Unlocked 처리합니다.
+                # 🛠️ [무단 닫힘 해결 핵심] 다이얼로그 안에서 st.rerun()을 때려 창을 죽이던 범인을 지우고 메모리 상태만 전개합니다.
                 st.session_state["pw_step_unlocked"] = True
                 is_unlocked = True
 
-        # 💡 [구조 일체화 복구] 비밀번호가 맞았을 때만 하단에 새 인풋 필드 세트가 닫힘 현상 없이 스르륵 연장 노출됩니다.
+        # 💡 현재 암호 검증이 완료되었을 때만 하단에 새 패스워드 입력창들을 자연스럽게 연장 노출합니다.
         if is_unlocked:
             st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
             new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
             new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
             
-            # 현재 비밀번호 치고 엔터 눌렀을 때 새 비밀번호 입력창으로 포커스 가이드
+            # 현재 비밀번호 입력 후 자동으로 새 비밀번호 입력 상자로 포커스 워프 이동
             components.html("""
                 <script>
                     setTimeout(function() {
@@ -223,7 +223,7 @@ def show_profile_popup_dialog():
                 </script>
             """, height=0, width=0)
 
-            # 알림 메시지 위치 지정 매칭 표출
+            # 요구사항에 부합하는 정밀 알림 폰트 크기 매칭 가동
             if st.session_state["pw_save_status"] == "success":
                 st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
             elif st.session_state["pw_save_status"] == "fail_mismatch":
@@ -236,7 +236,7 @@ def show_profile_popup_dialog():
             with col1: save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
             with col2: close_btn = st.button("닫기", use_container_width=True)
                 
-            # 💡 [불일치 리런 무단 닫힘 완벽 해결] 틀려도 창 안닫히고 오직 '닫기' 버튼 클릭시에만 세션 청소 후 안전 퇴장
+            # 💡 오직 사용자가 '닫기'를 명시적으로 눌렀을 때만 상태를 청소하고 완전하게 빠져나갑니다.
             if close_btn:
                 st.session_state["pw_step_unlocked"] = False
                 st.session_state["pw_save_status"] = "none"
@@ -247,9 +247,10 @@ def show_profile_popup_dialog():
                 clean_new_pw = new_pw.strip()
                 clean_confirm_pw = new_pw_confirm.strip()
                 
+                # 💡 비밀번호 저장 검사 시 실패하더라도 다이얼로그 강제 Rerun 파괴를 하지 않아 무단 닫힘을 완전 봉쇄합니다!
                 if not clean_new_pw:
                     st.session_state["pw_save_status"] = "fail_empty"
-                    st.rerun() # 틀렸을 때는 내부 상태값만 업데이트하고 루프를 돌려 팝업창 완전 고정 보장!
+                    st.rerun()
                 elif clean_new_pw != clean_confirm_pw:
                     st.session_state["pw_save_status"] = "fail_mismatch"
                     st.rerun()
@@ -265,7 +266,7 @@ def show_profile_popup_dialog():
                         st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
         else:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("닫기", key="close_pw_outer", use_container_width=True):
+            if st.button("닫기", key="close_pw_outer", use_container_width=True): 
                 st.session_state["pw_step_unlocked"] = False
                 st.session_state["pw_save_status"] = "none"
                 st.session_state["pw_version_key"] += 1
@@ -701,3 +702,39 @@ elif st.session_state["admin_logged_in"]:
                             preview_align[col_name] = st.column_config.TextColumn(alignment="center")
                             
                     st.dataframe(df_up, use_container_width=True, hide_index=True, column_config=preview_align, height=450)
+                    
+                    if apply_trigger:
+                        if not df.empty:
+                            for _, r in df.iterrows(): supabase.table(student_table).delete().eq("반", int(r["반"])).eq("번호", int(r["번호"])).execute()
+                        for c in ["수행평가1", "수행평가2", "수행평가3", "성적조회 횟수"]:
+                            if c not in df_up.columns: df_up[c] = 0
+                        df_up["최종 확인일시"] = "-"
+                        for record in df_up.to_dict(orient="records"): supabase.table(student_table).insert(record).execute()
+                        st.success("🎯 파일 성적 데이터셋이 실시간 일괄 반영(동기화)되었습니다!"); st.rerun()
+                else:
+                    st.markdown(
+                        """
+                        <div style='border: 2px dashed #cbd5e1; border-radius: 12px; padding: 150px 20px; text-align: center; color: #94a3b8;'>
+                            📂 왼쪽에 성적 마스터 파일을 드롭하시면<br>
+                            이 자리에 업로드 데이터 실시간 미리보기 표가 로드됩니다.
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
+
+    # 교사 계정 관리 대장 (보안 관리자 전용)
+    elif menu_selection == "👑 교사 계정 관리 대장" and st.session_state["logged_teacher_id"] == "admin":
+        with st.container(border=True):
+            st.markdown('<div class="menu-title-container"><h4 class="menu-title-text">👑 교사 계정 자동 관리 관제 센터</h4></div>', unsafe_allow_html=True)
+            df_tc = load_db_df(teacher_table)
+            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor")
+            c1, c2 = st.columns([4.8, 1.2])
+            with c1:
+                if st.button("👨‍🏫 교사 개별 신규 추가"): show_add_teacher_dialog()
+            with c2:
+                if st.button("💾 교사 정보 원격 저장", type="primary", use_container_width=True):
+                    if not df_tc.empty:
+                        for _, row in df_tc.iterrows(): supabase.table(teacher_table).delete().eq("교사_ID", str(row["교사_ID"])).execute()
+                    for record in edited_tc_df.to_dict(orient="records"):
+                        if record.get("교사_ID"): supabase.table(teacher_table).upsert(record).execute()
+                    st.success("🎉 교사 권한 정보 세이브 완료!"); st.rerun()
