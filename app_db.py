@@ -2,6 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
 from datetime import datetime
+import time
 import io
 import re
 from supabase import create_client, Client
@@ -58,10 +59,14 @@ st.markdown("""
         /* 각 메뉴 제목 밑 구분 라인 디자인 */
         .menu-title-container { border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; margin-bottom: 25px !important; }
         .menu-title-text { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin: 0 !important; }
-
         .sync-giant-title { font-size: 24px !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
-
         .stButton button { white-space: nowrap !important; word-break: keep-all !important; }
+
+        /* 💡 모든 에러/성공/알림 메시지 폰트 14px, 600(Semi-bold) 일괄 통일 */
+        div[data-testid="stAlert"] * {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -91,7 +96,6 @@ def load_db_df(table_name):
         return pd.DataFrame()
 
 def get_active_databases():
-    """구성된 과목 목록을 Supabase subject_configs 테이블에서 불러옵니다."""
     cfg_df = load_db_df(config_table)
     active_list = []
     if not cfg_df.empty and "subject_key" in cfg_df.columns:
@@ -221,13 +225,13 @@ def show_profile_popup_dialog():
         if not is_unlocked and curr_pw:
             actual_pw = st.session_state.get("logged_teacher_pw", "").strip()
             if curr_pw.strip() != actual_pw:
-                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
             else:
                 st.session_state["pw_step_unlocked"] = True
                 is_unlocked = True
 
         if is_unlocked:
-            st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
             new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key)
             new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key)
             
@@ -244,11 +248,11 @@ def show_profile_popup_dialog():
             """, height=0, width=0)
 
             if st.session_state["pw_save_status"] == "success":
-                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: bold; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
             elif st.session_state["pw_save_status"] == "fail_mismatch":
-                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
             elif st.session_state["pw_save_status"] == "fail_empty":
-                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: bold; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
             col1, col2 = st.columns(2)
@@ -301,10 +305,10 @@ def show_profile_popup_dialog():
             if st.button("닫기", type="secondary", use_container_width=True): st.rerun()
                 
         if save_sub_btn:
-            if not new_subs_str.strip(): msg_box_sub.markdown("<p style='color: #ef4444; font-size: 13px; font-weight: bold;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
+            if not new_subs_str.strip(): msg_box_sub.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
             else:
                 st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
-                msg_box_sub.markdown("<p style='color: #10b981; font-size: 13px; font-weight: bold;'>🎉 담당 과목 권한이 임시 조정되었습니다.</p>", unsafe_allow_html=True)
+                msg_box_sub.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>🎉 담당 과목 권한이 임시 조정되었습니다.</p>", unsafe_allow_html=True)
 
 # 세션 제어 상태 초기화
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
@@ -319,7 +323,7 @@ if "allowed_subjects" not in st.session_state: st.session_state["allowed_subject
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 로그인 시스템 (로그인 시 메뉴 자동 제어)
+# 🔓 [1단계] 로그인 시스템
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -709,7 +713,6 @@ elif st.session_state["admin_logged_in"]:
                         
                         st.markdown("<hr style='border: 1px dashed #cbd5e1; margin: 20px 0;'>", unsafe_allow_html=True)
                         
-                        # 💡 버튼을 왼쪽으로 옮기고, 오른쪽에 예쁜 안내 문구를 배치합니다.
                         b_col_btn, b_col_msg = st.columns([1.5, 3.5])
                         
                         with b_col_btn:
@@ -733,11 +736,11 @@ elif st.session_state["admin_logged_in"]:
                                 }
                                 try:
                                     supabase.table(config_table).upsert(config_record).execute()
-                                    # 성공 메시지 생략 후 즉시 화면 이동
+                                    time.sleep(0.3)
                                     st.session_state["current_menu"] = "개인별 성적 입력"
                                     st.rerun()
                                 except Exception as e:
-                                    st.error("❌ DB 저장 실패! Supabase에 'subject_configs' 테이블이 제대로 생성되었는지 확인해 주세요.")
+                                    st.error("❌ DB 저장 실패! Supabase에 'subject_configs' 테이블이 제대로 생성되지 않았습니다. 관리자에게 문의해 주세요.")
                 else:
                     st.markdown(
                         """
