@@ -700,4 +700,4 @@ elif st.session_state["admin_logged_in"]:
                         else:
                             preview_align[col_name] = st.column_config.TextColumn(alignment="center")
                             
-                    st.dataframe(df_up, use_container_width=True, hide_index=True, column_config=preview_align, height=
+                    st.dataframe(df_up, use_container_width=True, hide_index=True, column_config=preview_align, height=450)
