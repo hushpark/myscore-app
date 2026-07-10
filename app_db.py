@@ -602,7 +602,7 @@ elif st.session_state["admin_logged_in"]:
                         st.error(f"❌ 파일 구조 해석 실패: {e}")
                         
                 # 💡 [요구사항 원상복구 확정] 수동 빈 줄 여백 밀기 6회 처리 완벽 복사!
-                for _ in range(6):
+                for _ in range(5):
                     st.write("")
                 
                 # 💡 오른쪽 아래 유령 중복 버튼을 박멸하고 원래 위치인 왼쪽 패널 하단 구석으로 컴팩트 정렬 안착!
