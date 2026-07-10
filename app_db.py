@@ -657,7 +657,7 @@ elif st.session_state["admin_logged_in"]:
                     disabled_cols = ["반", "번호", "이름", "학교 이메일", "합계", "성적조회 횟수", "최종 확인일시"]
                     
                     # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=650 확장 고정
-                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=600)
+                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=650)
                     
                     if save_trigger:
                         if excel_loaded_df is not None:
@@ -747,7 +747,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 4번 메뉴: 평가 대상 과목 구성
+    # 4번 메뉴: 평가 대상 과목 구성 (💡 담당 교사 권한 매칭 필터 시스템 완벽 탑재)
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         main_col1, main_col2 = layout_left, layout_right
@@ -763,17 +763,37 @@ elif st.session_state["admin_logged_in"]:
                     group_options = ["교과군을 선택하세요.", "인문·사회군", "수리·과학군", "예체능군"]
                     sel_g = st.selectbox("교과군 선택", options=group_options, index=0)
 
+                    # 💡 [교사 권한 바인딩 기믹] 교과군의 전체 과목 중 해당 선생님에게 권한이 부여된 과목만 교차 검증 매칭
+                    allowed_trimmed = [str(x).strip() for x in st.session_state.get("allowed_subjects", [])]
+                    
                     if sel_g != "교과군을 선택하세요.":
-                        sub_options = ["과목을 선택하세요."] + SUBJECT_MAP.get(sel_g, [])
+                        raw_subjects = SUBJECT_MAP.get(sel_g, [])
+                        # 최고관리자(admin) 및 마스터 권한은 전체 프리패스 권한 매칭
+                        if "마스터" in allowed_trimmed or st.session_state.get("logged_teacher_id") == "admin":
+                            filtered_subjects = raw_subjects
+                        else:
+                            filtered_subjects = [s for s in raw_subjects if s in allowed_trimmed]
+                        
+                        if not filtered_subjects:
+                            sub_options = ["⚠️ 해당 교과군에 부여된 교사 권한 과목이 없습니다."]
+                        else:
+                            sub_options = ["과목을 선택하세요."] + filtered_subjects
                     else:
                         sub_options = ["과목을 선택하세요."]
+                        
                     final_sub = st.selectbox("세부 과목", options=sub_options, index=0)
 
                 with grid_c2:
                     sel_gr = st.selectbox("학년 지정", options=["학년을 선택하세요.", "1학년", "2학년", "3학년"], index=0)
                     sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=0)
 
-        is_step1_complete = (sel_g != "교과군을 선택하세요." and final_sub != "과목을 선택하세요." and sel_gr != "학년을 선택하세요." and sel_se != "학기를 선택하세요.")
+        is_step1_complete = (
+            sel_g != "교과군을 선택하세요." and 
+            final_sub != "과목을 선택하세요." and 
+            not final_sub.startswith("⚠️") and 
+            sel_gr != "학년을 선택하세요." and 
+            sel_se != "학기를 선택하세요."
+        )
 
         with main_col2:
             if is_step1_complete:
@@ -827,36 +847,28 @@ elif st.session_state["admin_logged_in"]:
                         st.markdown("<div style='padding-top: 10px; color: #64748b; font-size: 14px; font-weight: 600;'>🚀 과목 설정이 저장되면, 자동으로 [수행 평가 성적 입력] 화면으로 이동합니다.</div>", unsafe_allow_html=True)
 
                     if save_clicked:
-                        allowed_trimmed = [str(x).strip() for x in st.session_state["allowed_subjects"]]
-                        if "마스터" not in st.session_state["allowed_subjects"] and final_sub.strip() not in allowed_trimmed:
-                            st.error(f"❌ 권한 오류: 과목 개설 권한이 없습니다.")
-                        else:
-                            config_record = {
-                                "subject_key": subject_key, "item_count": item_count,
-                                "item1_name": item_titles[0] if item_count >= 1 else "-",
-                                "item2_name": item_titles[1] if item_count >= 2 else "-",
-                                "item3_name": item_titles[2] if item_count >= 3 else "-",
-                                "item4_name": item_titles[3] if item_count >= 4 else "-",
-                                "item5_name": item_titles[4] if item_count >= 5 else "-"
-                            }
-                            
-                            is_saved = False
-                            try:
-                                supabase.table(config_table).upsert(config_record).execute()
-                                is_saved = True
-                            except Exception as e:
-                                st.error("❌ DB 저장 실패! 관리자에게 문의해 주세요.")
-                                
-                            if is_saved:
-                                time.sleep(0.3)
-                                st.session_state["current_menu"] = "수행 평가 성적 입력"
-                                st.rerun()
+                        config_record = {
+                            "subject_key": subject_key, "item_count": item_count,
+                            "item1_name": item_titles[0] if item_count >= 1 else "-",
+                            "item2_name": item_titles[1] if item_count >= 2 else "-",
+                            "item3_name": item_titles[2] if item_count >= 3 else "-",
+                            "item4_name": item_titles[3] if item_count >= 4 else "-",
+                            "item5_name": item_titles[4] if item_count >= 5 else "-"
+                        }
+                        
+                        try:
+                            supabase.table(config_table).upsert(config_record).execute()
+                            time.sleep(0.3)
+                            st.session_state["current_menu"] = "수행 평가 성적 입력"
+                            st.rerun()
+                        except Exception as e:
+                            st.error("❌ DB 저장 실패! 관리자에게 문의해 주세요.")
             else:
                 st.markdown(
                     """
                     <div style='border: 2px dashed #cbd5e1; border-radius: 12px; padding: 60px 20px; text-align: center; color: #94a3b8; margin-top: 5px;'>
-                        ⬅️ 왼쪽에서 <b>[1. 평가 과목 설정]</b>의 4가지 항목을 모두 선택하시면<br>
-                        이 자리에 수행평가 항목을 설정하는 박스가 나타납니다.
+                        ⬅️ 왼쪽에서 <b>[1. 평가 과목 설정]</b>의 교과군과 <b>나의 담당 과목</b>을 선택하시면<br>
+                        이 자리에 수행평가 세부 세팅 상자가 실시간 매칭됩니다.
                     </div>
                     """, 
                     unsafe_allow_html=True
@@ -873,7 +885,6 @@ elif st.session_state["admin_logged_in"]:
             save_tc_trigger = st.button("💾 교사 정보 원격 저장", type="primary", use_container_width=True)
             
         with layout_right:
-            # 👑 관리 대장 그리드 높이도 height=650 확장 고정 싱크 패치
             edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="fixed", hide_index=True, key="master_tc_editor", height=650)
             
             if save_tc_trigger:
