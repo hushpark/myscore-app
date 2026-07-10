@@ -473,11 +473,10 @@ elif st.session_state["admin_logged_in"]:
     layout_left, layout_right = st.columns([3.5, 6.5])
 
     # ---------------------------------------------------------------------
-    # 1번 메뉴: 학생 조회 현황 모니터링 (💡 최고관리자 전교생 프리패스 해제 수리)
+    # 1번 메뉴: 학생 조회 현황 모니터링
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         registered_dbs = get_active_databases()
-        # 💡 최고관리자(admin/마스터)인 경우, 기존의 바인딩 필터링 구속을 풀고 원격 DB의 모든 과목을 다 볼 수 있도록 프리패스 활성화!
         if not is_admin:
             registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
         
@@ -535,11 +534,10 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 최고관리자 전교생 프리패스 해제 수리)
+    # 2번 메뉴: 수행 평가 성적 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
-        # 💡 최고관리자(admin/마스터)인 경우, 원격 DB에 등록된 모든 개설 과목의 성적판을 프리패스로 다 제어 가능!
         if not is_admin:
             registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
 
@@ -633,11 +631,10 @@ elif st.session_state["admin_logged_in"]:
                             except Exception as e: st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리 (💡 최고관리자 전교생 프리패스 해제 수리)
+    # 3번 메뉴: 학생 기본 정보 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
-        # 💡 최고관리자(admin/마스터)인 경우, 개설된 모든 과목의 인적사항 명단을 다 통제할 수 있도록 프리패스 가동!
         if not is_admin:
             registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
 
@@ -734,9 +731,16 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 과목 구성 완료!"); time.sleep(0.3); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 👑 학생 계정 관리
+    # 5번 메뉴: 👑 학생 계정 관리 (💡 세션 캐싱 기반 일괄 임시 로드 및 안전 분리 저장 패치)
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 학생 계정 관리" and is_admin:
+        # 최초 메모리 격리 저장소 초기화
+        if "cached_student_df" not in st.session_state:
+            db_df = load_db_df(master_student_table)
+            if not db_df.empty:
+                db_df = db_df.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
+            st.session_state["cached_student_df"] = db_df
+
         with layout_left:
             st.markdown("📂 **전교생 명단 일과 가져오기**")
             st.caption("나이스 학적 기초 대장을 아래 예시 양식에 맞춰 빌드 후 일괄 파일 업로드 하세요.")
@@ -749,17 +753,25 @@ elif st.session_state["admin_logged_in"]:
             st.download_button("📥 일괄 업로드용 마스터 양식 다운로드", data=mst_csv_buffer, file_name="전교생_마스터_일괄업로드_양식.csv", mime="text/csv", use_container_width=True)
             
             mst_f = st.file_uploader("전교생 마스터 엑셀 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="mst_uploader_box")
+            
+            # 💡 [핵심 패치 기믹] 파일이 감지되면 즉시 데이터 가공 후 세션 캐시 버퍼에 임시 주입 (오른쪽 표 실시간 갱신)
             if mst_f:
                 try:
                     df_mst = pd.read_csv(mst_f) if mst_f.name.endswith(".csv") else pd.read_excel(mst_f)
                     df_mst.columns = [c.strip() for c in df_mst.columns]
-                    if st.button("🚀 전교생 마스터 명단 일괄 동기화 실행", type="primary", use_container_width=True):
-                        with st.spinner("마스터 데이터 동기화 중..."):
-                            supabase.table(master_student_table).delete().neq("반", 0).execute()
-                            for _, r in df_mst.iterrows():
-                                supabase.table(master_student_table).upsert({"학년": int(r.get("학년", 1)), "반": int(r["반"]), "번호": int(r["번호"]), "이름": str(r["이름"]).strip(), "school_email": str(r["school_email"]).strip(), "password": str(r.get("password", "1234")).strip()}).execute()
-                            st.success("🎉 전교생 마스터 명단 일괄 로드 완료!"); time.sleep(0.5); st.rerun()
-                except Exception as e: st.error(f"❌ 해석 실패: {e}")
+                    
+                    parsed_df = pd.DataFrame()
+                    parsed_df["학년"] = df_mst["학년"].astype(int)
+                    parsed_df["반"] = df_mst["반"].astype(int)
+                    parsed_df["번호"] = df_mst["번호"].astype(int)
+                    parsed_df["이름"] = df_mst["이름"].astype(str)
+                    parsed_df["school_email"] = df_mst["school_email"].astype(str)
+                    parsed_df["password"] = df_mst["password"].astype(str)
+                    
+                    st.session_state["cached_student_df"] = parsed_df.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
+                    st.toast("📥 엑셀 데이터가 오른쪽 표에 임시 로드되었습니다. [학생 계정 저장]을 눌러 반영하세요!")
+                except Exception as e: 
+                    st.error(f"❌ 파일 해석 실패: {e}")
             
             for _ in range(4): st.write("")
                 
@@ -773,27 +785,53 @@ elif st.session_state["admin_logged_in"]:
                 show_add_master_student_single_dialog()
                 
         with layout_right:
-            df_mst_view = load_db_df(master_student_table)
-            if not df_mst_view.empty: df_mst_view = df_mst_view.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
-            edited_all_std_df = st.data_editor(df_mst_view, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_all_student_editor", height=650)
+            # 세션 캐시에 올라온 데이터 바인딩 (없을 경우 뼈대만 출력)
+            target_render_df = st.session_state["cached_student_df"]
+            if target_render_df.empty:
+                target_render_df = pd.DataFrame(columns=["학년", "반", "번호", "이름", "school_email", "password"])
+                
+            # 그리드 편집 내용을 수집
+            edited_all_std_df = st.data_editor(target_render_df, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_all_student_editor", height=650)
             
+            # 💡 [핵심 저장 분리] 수동 변경 내용이나 파일 로드 내용을 최종 확인 후 수동 트리거 버튼 시점에만 Supabase 원격 전송
             if save_all_std_trigger:
                 with st.spinner("원격 데이터베이스에 마스터 인적사항 갱신 중..."):
                     try:
+                        # 멱등성 보장을 위해 전교생 리셋 후 안전하게 원격 빌드 실행
                         supabase.table(master_student_table).delete().neq("반", 0).execute()
+                        
+                        clean_records = []
                         for record in edited_all_std_df.to_dict(orient="records"):
-                            if record.get("school_email") and record.get("이름"):
+                            if record.get("school_email") and record.get("이름") and str(record.get("이름")).strip() != "None":
                                 record["학년"] = int(record.get("학년", 1))
                                 record["반"] = int(record.get("반", 1))
                                 record["번호"] = int(record.get("번호", 1))
-                                supabase.table(master_student_table).upsert(record).execute()
+                                record["이름"] = str(record["이름"]).strip()
+                                record["school_email"] = str(record["school_email"]).strip()
+                                record["password"] = str(record.get("password", "1234")).strip()
+                                if "id" in record: del record["id"]
+                                clean_records.append(record)
+                        
+                        if clean_records:
+                            supabase.table(master_student_table).insert(clean_records).execute()
+                            
+                        # 세션 캐시 동기화 초기화
+                        st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
                         st.success("🎉 학생 계정 마스터 정보가 실시간 반영 완료되었습니다!"); time.sleep(0.5); st.rerun()
-                    except Exception as e: st.error(f"❌ 저장 실패: {e}")
+                    except Exception as e: 
+                        st.error(f"❌ 저장 실패: {e}")
 
     # ---------------------------------------------------------------------
-    # 6번 메뉴: 👑 교사 계정 관리 
+    # 6번 메뉴: 👑 교사 계정 관리 (💡 세션 캐싱 기반 일괄 임시 로드 및 안전 분리 저장 패치)
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 교사 계정 관리" and is_admin:
+        # 최초 교직원 메모리 격리 저장소 초기화
+        if "cached_teacher_df" not in st.session_state:
+            db_tc_df = load_db_df(teacher_table)
+            if not db_tc_df.empty:
+                db_tc_df = db_tc_df.sort_values(by=["교사_성명"]).reset_index(drop=True)
+            st.session_state["cached_teacher_df"] = db_tc_df
+
         with layout_left:
             st.markdown("📂 **교사 명단 일과 가져오기**")
             st.caption("학교 교직원 권한 정보 대장을 아래 예시 양식에 맞춰 빌드 후 일괄 파일 업로드 하세요.")
@@ -806,23 +844,23 @@ elif st.session_state["admin_logged_in"]:
             st.download_button("📥 일괄 업로드용 교사 양식 다운로드", data=tc_csv_buffer, file_name="교사_권한대장_일괄업로드_양식.csv", mime="text/csv", use_container_width=True)
             
             tc_f = st.file_uploader("교사 마스터 엑셀 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key="tc_uploader_box")
+            
+            # 💡 [핵심 패치 기믹] 교사용 파일이 감지되면 즉시 데이터 가공 후 세션 캐시 버퍼에 임시 주입 (오른쪽 표 실시간 갱신)
             if tc_f:
                 try:
                     df_tc_up = pd.read_csv(tc_f) if tc_f.name.endswith(".csv") else pd.read_excel(tc_f)
                     df_tc_up.columns = [c.strip() for c in df_tc_up.columns]
-                    if st.button("🚀 교사 명단 일괄 동기화 실행", type="primary", use_container_width=True):
-                        with st.spinner("교사 계정 동기화 중..."):
-                            supabase.table(teacher_table).delete().neq("교사_ID", "admin").execute()
-                            for _, r in df_tc_up.iterrows():
-                                if str(r["교사_ID"]).strip() != "admin":
-                                    supabase.table(teacher_table).upsert({
-                                        "교사_ID": str(r["교사_ID"]).strip(),
-                                        "교사_성명": str(r["교사_성명"]).strip(),
-                                        "비밀번호": str(r.get("비밀번호", "1234")).strip(),
-                                        "담당_과목": str(r["담당_과목"]).strip()
-                                    }).execute()
-                            st.success("🎉 교사 계정 명단 일괄 로드 완료!"); time.sleep(0.5); st.rerun()
-                except Exception as e: st.error(f"❌ 해석 실패: {e}")
+                    
+                    parsed_tc_df = pd.DataFrame()
+                    parsed_tc_df["교사_ID"] = df_tc_up["교사_ID"].astype(str)
+                    parsed_tc_df["교사_성명"] = df_tc_up["교사_성명"].astype(str)
+                    parsed_tc_df["비밀번호"] = df_tc_up["비밀번호"].astype(str)
+                    parsed_tc_df["담당_과목"] = df_tc_up["담당_과목"].astype(str)
+                    
+                    st.session_state["cached_teacher_df"] = parsed_tc_df.sort_values(by=["교사_성명"]).reset_index(drop=True)
+                    st.toast("📥 교사 데이터가 오른쪽 표에 임시 로드되었습니다. [교사 계정 저장]을 눌러 반영하세요!")
+                except Exception as e: 
+                    st.error(f"❌ 파일 해석 실패: {e}")
             
             for _ in range(4): st.write("")
                 
@@ -836,15 +874,34 @@ elif st.session_state["admin_logged_in"]:
                 show_add_teacher_dialog()
                 
         with layout_right:
-            df_tc = load_db_df(teacher_table)
-            edited_tc_df = st.data_editor(df_tc, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_tc_editor", height=650)
+            # 세션 캐시에 올라온 교사 데이터 바인딩
+            target_tc_render_df = st.session_state["cached_teacher_df"]
+            if target_tc_render_df.empty:
+                target_tc_render_df = pd.DataFrame(columns=["교사_ID", "교사_성명", "비밀번호", "담당_과목"])
+                
+            edited_tc_df = st.data_editor(target_tc_render_df, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_tc_editor", height=650)
             
+            # 💡 [핵심 저장 분리] 교사 계정 대장도 최종 확정 버튼 입력 시점에만 Supabase에 안전 업로드 반영
             if save_tc_trigger:
                 with st.spinner("원격 데이터베이스에 교사 권한사항 갱신 중..."):
                     try:
+                        # 최고관리자 계정 유실을 방지하고 일반 등록 교직원만 전면 정제 리셋
                         supabase.table(teacher_table).delete().neq("교사_ID", "admin").execute()
+                        
+                        clean_teachers = []
                         for record in edited_tc_df.to_dict(orient="records"):
-                            if record.get("교사_ID") and record.get("교사_성명"):
-                                supabase.table(teacher_table).upsert(record).execute()
+                            if record.get("교사_ID") and record.get("교사_성명") and str(record.get("교사_성명")).strip() != "None":
+                                if str(record["교사_ID"]).strip() != "admin":
+                                    record["교사_ID"] = str(record["교사_ID"]).strip()
+                                    record["교사_성명"] = str(record["교사_성명"]).strip()
+                                    record["비밀번호"] = str(record.get("비밀번호", "1234")).strip()
+                                    record["담당_과목"] = str(record["담당_과목"]).strip()
+                                    clean_teachers.append(record)
+                        
+                        if clean_teachers:
+                            supabase.table(teacher_table).insert(clean_teachers).execute()
+                            
+                        st.session_state["cached_teacher_df"] = pd.DataFrame(clean_teachers)
                         st.success("🎉 교사 계정 관리 정보가 실시간 반영 완료되었습니다!"); time.sleep(0.5); st.rerun()
-                    except Exception as e: st.error(f"❌ 저장 실패: {e}")
+                    except Exception as e: 
+                        st.error(f"❌ 저장 실패: {e}")
