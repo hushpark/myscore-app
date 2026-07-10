@@ -465,7 +465,7 @@ elif st.session_state["admin_logged_in"]:
     layout_left, layout_right = st.columns([3.5, 6.5])
 
     # ---------------------------------------------------------------------
-    # 1번 메뉴: 학생 조회 현황 모니터링 (💡 요구사항 반영: 세로 높이 시원하게 650으로 확장)
+    # 1번 메뉴: 학생 조회 현황 모니터링
     # ---------------------------------------------------------------------
     if menu_selection == "학생 조회 현황 모니터링":
         registered_dbs = get_active_databases()
@@ -524,11 +524,10 @@ elif st.session_state["admin_logged_in"]:
                     align_config["최종 확인일시"] = st.column_config.TextColumn(alignment="center")
                     
                     final_view_df = r_df[display_cols].rename(columns=rename_map)
-                    # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=650 확장 고정
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항 반영: 세로 높이 시원하게 650 확장)
+    # 2번 메뉴: 수행 평가 성적 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -677,7 +676,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리 (💡 요구사항 반영: 세로 높이 시원하게 650 확장)
+    # 3번 메뉴: 학생 기본 정보 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -747,7 +746,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 4번 메뉴: 평가 대상 과목 구성 (💡 담당 교사 권한 매칭 필터 시스템 완벽 탑재)
+    # 4번 메뉴: 평가 대상 과목 구성 (💡 요구사항: 1과목 교사 자동 입력 및 학기->학년 순서 패치)
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         main_col1, main_col2 = layout_left, layout_right
@@ -758,34 +757,59 @@ elif st.session_state["admin_logged_in"]:
                 st.caption("과목 설정이 끝나면, 우측에서 수행평가 세부 항목을 구성하세요.")
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                grid_c1, grid_c2 = st.columns(2)
-                with grid_c1:
-                    group_options = ["교과군을 선택하세요.", "인문·사회군", "수리·과학군", "예체능군"]
-                    sel_g = st.selectbox("교과군 선택", options=group_options, index=0)
-
-                    # 💡 [교사 권한 바인딩 기믹] 교과군의 전체 과목 중 해당 선생님에게 권한이 부여된 과목만 교차 검증 매칭
-                    allowed_trimmed = [str(x).strip() for x in st.session_state.get("allowed_subjects", [])]
+                # 교사 담당 과목 권한 목록 확인
+                allowed_trimmed = [str(x).strip() for x in st.session_state.get("allowed_subjects", []) if str(x).strip()]
+                is_admin = (st.session_state.get("logged_teacher_id") == "admin" or "마스터" in allowed_trimmed)
+                
+                # 💡 [스마트 핵심 기믹] 담당 과목이 정확히 딱 1개인 일반 선생님인 경우 자동 빌드 모드 발동!
+                if not is_admin and len(allowed_trimmed) == 1:
+                    single_subject = allowed_trimmed[0]
                     
-                    if sel_g != "교과군을 선택하세요.":
-                        raw_subjects = SUBJECT_MAP.get(sel_g, [])
-                        # 최고관리자(admin) 및 마스터 권한은 전체 프리패스 권한 매칭
-                        if "마스터" in allowed_trimmed or st.session_state.get("logged_teacher_id") == "admin":
-                            filtered_subjects = raw_subjects
-                        else:
-                            filtered_subjects = [s for s in raw_subjects if s in allowed_trimmed]
-                        
-                        if not filtered_subjects:
-                            sub_options = ["⚠️ 해당 교과군에 부여된 교사 권한 과목이 없습니다."]
-                        else:
-                            sub_options = ["과목을 선택하세요."] + filtered_subjects
-                    else:
-                        sub_options = ["과목을 선택하세요."]
-                        
-                    final_sub = st.selectbox("세부 과목", options=sub_options, index=0)
-
-                with grid_c2:
-                    sel_gr = st.selectbox("학년 지정", options=["학년을 선택하세요.", "1학년", "2학년", "3학년"], index=0)
+                    # 해당 과목이 어느 교과군에 속해있는지 역추적 자동 매칭
+                    detected_group = "인문·사회군"
+                    for group_name, sub_list in SUBJECT_MAP.items():
+                        if single_subject in sub_list:
+                            detected_group = group_name
+                            break
+                    
+                    # 화면에 자동 주입되어 고정된 텍스트박스로 안내
+                    st.text_input("교과군 (자동 지정 완료)", value=detected_group, disabled=True)
+                    st.text_input("세부 과목 (자동 지정 완료)", value=single_subject, disabled=True)
+                    
+                    sel_g = detected_group
+                    final_sub = single_subject
+                    
+                    # 💡 요구사항 반영: 순서를 뒤바꾸어 [학기 선택]을 먼저 표출한 뒤 [학년 지정] 배치
                     sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=0)
+                    sel_gr = st.selectbox("학년 지정", options=["학년을 선택하세요.", "1학년", "2학년", "3학년"], index=0)
+                    
+                else:
+                    # 기존 다과목 교사나 최고 관리자는 수동 드롭다운 체계 유지
+                    grid_c1, grid_c2 = st.columns(2)
+                    with grid_c1:
+                        group_options = ["교과군을 선택하세요.", "인문·사회군", "수리·과학군", "예체능군"]
+                        sel_g = st.selectbox("교과군 선택", options=group_options, index=0)
+
+                        if sel_g != "교과군을 선택하세요.":
+                            raw_subjects = SUBJECT_MAP.get(sel_g, [])
+                            if is_admin:
+                                filtered_subjects = raw_subjects
+                            else:
+                                filtered_subjects = [s for s in raw_subjects if s in allowed_trimmed]
+                            
+                            if not filtered_subjects:
+                                sub_options = ["⚠️ 해당 교과군에 부여된 교사 권한 과목이 없습니다."]
+                            else:
+                                sub_options = ["과목을 선택하세요."] + filtered_subjects
+                        else:
+                            sub_options = ["과목을 선택하세요."]
+                            
+                        final_sub = st.selectbox("세부 과목", options=sub_options, index=0)
+
+                    with grid_c2:
+                        # 💡 요구사항 반영: 수동 선택 창에서도 순서를 변경하여 [학기 선택] ➡️ [학년 지정] 구조 배치
+                        sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=0)
+                        sel_gr = st.selectbox("학년 지정", options=["학년을 선택하세요.", "1학년", "2학년", "3학년"], index=0)
 
         is_step1_complete = (
             sel_g != "교과군을 선택하세요." and 
@@ -867,7 +891,7 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown(
                     """
                     <div style='border: 2px dashed #cbd5e1; border-radius: 12px; padding: 60px 20px; text-align: center; color: #94a3b8; margin-top: 5px;'>
-                        ⬅️ 왼쪽에서 <b>[1. 평가 과목 설정]</b>의 교과군과 <b>나의 담당 과목</b>을 선택하시면<br>
+                        ⬅️ 왼쪽에서 <b>[1. 평가 과목 설정]</b>의 조건들을 선택하시면<br>
                         이 자리에 수행평가 세부 세팅 상자가 실시간 매칭됩니다.
                     </div>
                     """, 
