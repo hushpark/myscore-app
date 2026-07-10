@@ -655,8 +655,8 @@ elif st.session_state["admin_logged_in"]:
                     sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                     disabled_cols = ["반", "번호", "이름", "학교 이메일", "합계", "성적조회 횟수", "최종 확인일시"]
                     
-                    # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=650 확장 고정
-                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=650)
+                    # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=600 확장 고정
+                    edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=600)
                     
                     if save_trigger:
                         if excel_loaded_df is not None:
