@@ -822,7 +822,7 @@ elif st.session_state["admin_logged_in"]:
                 st.success("🎉 전교생 학생 계정 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!")
                 st.session_state["student_save_success_flag"] = False 
             
-            for _ in range(4): st.write("")
+            for _ in range(3): st.write("")
                 
             info_grid_col1, info_grid_col2 = st.columns(2)
             with info_grid_col1:
