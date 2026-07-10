@@ -468,7 +468,7 @@ elif st.session_state["admin_logged_in"]:
     st.markdown(f"""
         <div class="header-title-main">수행평가 점수 확인 시스템</div>
         <div class="header-nav-sub" style="border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 25px;">
-            📍 현재 위치: 최고관리자 모드 > <span style="color: #3b82f6;">📂 {menu_selection}</span>
+            📍 현재 위치: {"최고관리자 모드" if is_admin else "교사 모드"} > <span style="color: #3b82f6;">📂 {menu_selection}</span>
         </div>
     """, unsafe_allow_html=True)
 
@@ -491,10 +491,8 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown("**📂 대상 교과 선택**")
                 selector_options = [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in registered_dbs]
                 selected_db_str = st.selectbox("교과 선택", options=selector_options, label_visibility="collapsed", key="mon_sub")
-                
                 chosen_db = registered_dbs[selector_options.index(selected_db_str)]
                 subject_key = chosen_db['key']
-                
                 df_data = supabase.table(student_table).select("*").eq("subject_key", subject_key).execute().data
                 df = pd.DataFrame(df_data)
                 if not df.empty: df = df.sort_values(by=["반", "번호"]).reset_index(drop=True)
@@ -507,33 +505,20 @@ elif st.session_state["admin_logged_in"]:
                 
             with layout_right:
                 item_count, item_titles = get_subject_item_names(subject_key)
-
                 if df.empty: st.info("📢 해당 교과에 등록된 데이터가 없습니다.")
                 else:
                     r_df = df.copy()
                     if selected_class != "전체 학급 보기": r_df = r_df[r_df['반'].astype(int) == int(selected_class.replace("반",""))]
-                    
                     display_cols = ["반", "번호", "이름", "school_email"]
                     rename_map = {"school_email": "학교 이메일"}
-                    align_config = {
-                        "반": st.column_config.TextColumn(alignment="center"),
-                        "번호": st.column_config.TextColumn(alignment="center"),
-                        "이름": st.column_config.TextColumn(alignment="center"),
-                        "학교 이메일": st.column_config.TextColumn(alignment="center")
-                    }
-                    
+                    align_config = {"반": st.column_config.TextColumn(alignment="center"), "번호": st.column_config.TextColumn(alignment="center"), "이름": st.column_config.TextColumn(alignment="center"), "학교 이메일": st.column_config.TextColumn(alignment="center")}
                     for idx in range(item_count):
                         db_col = f"수행평가{idx+1}"
-                        view_title = item_titles[idx]
                         if db_col in r_df.columns:
                             display_cols.append(db_col)
-                            rename_map[db_col] = view_title
-                            align_config[view_title] = st.column_config.NumberColumn(alignment="center")
-                            
+                            rename_map[db_col] = item_titles[idx]
+                            align_config[item_titles[idx]] = st.column_config.NumberColumn(alignment="center")
                     display_cols += ["성적조회 횟수", "최종 확인일시"]
-                    align_config["성적조회 횟수"] = st.column_config.NumberColumn(alignment="center")
-                    align_config["최종 확인일시"] = st.column_config.TextColumn(alignment="center")
-                    
                     final_view_df = r_df[display_cols].rename(columns=rename_map)
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
@@ -735,7 +720,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 과목 구성 완료!"); time.sleep(0.3); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 👑 학생 계정 관리
+    # 5번 메뉴: 👑 학생 계정 관리 (💡 요구사항 완벽 반영: 순서 뒤집기 및 성공 알림 스위칭 완료)
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 학생 계정 관리" and is_admin:
         # 최초 메모리 격리 저장소 초기화
@@ -745,6 +730,7 @@ elif st.session_state["admin_logged_in"]:
                 db_df = db_df.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
             st.session_state["cached_student_df"] = db_df
             st.session_state["show_student_toast"] = False  
+            st.session_state["student_save_success_flag"] = False # 💡 성공 감지기 플래그 신설
 
         if "student_file_uploader_key" not in st.session_state:
             st.session_state["student_file_uploader_key"] = "st_uploader_init_100"
@@ -753,8 +739,31 @@ elif st.session_state["admin_logged_in"]:
         if "mst_filter_ban" not in st.session_state: st.session_state["mst_filter_ban"] = "전체 반"
 
         with layout_left:
+            # 💡 [요구사항 반영 1] '학년과 반별 필터링' 파트 최상단 강제 전진 배치!
+            st.markdown("**🔍 학년과 반별 필터링**")
+            cached_data_src = st.session_state["cached_student_df"]
+            
+            g_opts = ["전체 학년"]
+            b_opts = ["전체 반"]
+            if not cached_data_src.empty:
+                g_opts += [f"{x}학년" for x in sorted(cached_data_src["학년"].unique())]
+                b_opts += [f"{x}반" for x in sorted(cached_data_src["반"].unique())]
+                
+            try: g_idx_sel = g_opts.index(st.session_state["mst_filter_grade"])
+            except: g_idx_sel = 0
+            try: b_idx_sel = b_opts.index(st.session_state["mst_filter_ban"])
+            except: b_idx_sel = 0
+                
+            sel_mst_g = st.selectbox("학년 필터", options=g_opts, index=g_idx_sel, label_visibility="collapsed", key="mst_grade_sb")
+            sel_mst_b = st.selectbox("반 필터", options=b_opts, index=b_idx_sel, label_visibility="collapsed", key="mst_ban_sb")
+            
+            st.session_state["mst_filter_grade"] = sel_g_track = sel_mst_g
+            st.session_state["mst_filter_ban"] = sel_b_track = sel_mst_b
+            
+            st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
+            
+            # 💡 [요구사항 반영 2] '학생 계정 일괄 업로드' 파트를 2번째 순서로 소폭 하강 배치!
             st.markdown("📂 **학생 계정 일괄 업로드**")
-            st.caption("나이스 학적 기초 대장을 아래 예시 양식에 맞춰 빌드 후 일괄 파일 업로드 하세요.")
             
             template_mst_df = pd.DataFrame({
                 "학년": [3, 3], "반": [2, 2], "번호": [1, 2], "이름": ["홍길동", "이영희"],
@@ -778,40 +787,28 @@ elif st.session_state["admin_logged_in"]:
                     parsed_df["school_email"] = df_mst["school_email"].astype(str)
                     parsed_df["password"] = df_mst["password"].astype(str)
                     
-                    current_cached = st.session_state["cached_student_df"]
-                    if current_cached.empty or not current_cached.equals(parsed_df):
+                    if "last_loaded_file_name_student" not in st.session_state or st.session_state["last_loaded_file_name_student"] != mst_f.name:
                         st.session_state["cached_student_df"] = parsed_df.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
                         st.session_state["show_student_toast"] = True  
-                except Exception as e: 
-                    st.error(f"❌ 파일 해석 실패: {e}")
+                        st.session_state["last_loaded_file_name_student"] = mst_f.name
+                except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
 
             if st.session_state.get("show_student_toast", False):
                 st.toast("📥 엑셀 데이터가 오른쪽 표에 임시 로드되었습니다. [학생 계정 저장]을 눌러 반영하세요!")
                 st.session_state["show_student_toast"] = False  
             
-            st.markdown("<br>**🔍 명단 정밀 필터 관제**", unsafe_allow_html=True)
-            cached_data_src = st.session_state["cached_student_df"]
+            st.markdown("<br>", unsafe_allow_html=True)
             
-            g_opts = ["전체 학년"]
-            b_opts = ["전체 반"]
-            if not cached_data_src.empty:
-                g_opts += [f"{x}학년" for x in sorted(cached_data_src["학년"].unique())]
-                b_opts += [f"{x}반" for x in sorted(cached_data_src["반"].unique())]
+            # 💡 [요구사항 반영 3 & 4: 완벽 스위칭 존]
+            # 저장이 성공했을 때는 그림1의 이 박스 자리에 역동적으로 표출되고, 평소에는 그림2의 안내문이 같은 자리에 가동 고정
+            if st.session_state.get("student_save_success_flag", False):
+                st.success("🎉 전교생 학생 계정 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!")
+                st.session_state["student_save_success_flag"] = False # 1회 출력 후 자연 진화
+            else:
+                st.markdown('<p class="menu-guide-inline">💡 개인별 인적사항을 에디터 상에서 수정하거나 행을 추가한 후, 아래 [💾 학생 계정 저장] 버튼을 누르셔야 원격 클라우드 DB에 안전하게 일괄 저장 반영됩니다.</p>', unsafe_allow_html=True)
+            
+            for _ in range(4): st.write("")
                 
-            try: g_idx_sel = g_opts.index(st.session_state["mst_filter_grade"])
-            except: g_idx_sel = 0
-            try: b_idx_sel = b_opts.index(st.session_state["mst_filter_ban"])
-            except: b_idx_sel = 0
-                
-            sel_mst_g = st.selectbox("학년 필터", options=g_opts, index=g_idx_sel)
-            sel_mst_b = st.selectbox("반 필터", options=b_opts, index=b_idx_sel)
-            
-            st.session_state["mst_filter_grade"] = sel_g_track = sel_mst_g
-            st.session_state["mst_filter_ban"] = sel_b_track = sel_mst_b
-            
-            # 💡 [요구사항 적극 주입] 우측 아래에 덜렁 있던 메세지 박스를 왼쪽 조작 패널 중간 여백 공간으로 이동!
-            st.markdown('<p class="menu-guide-inline">💡 개인별 인적사항을 에디터 상에서 수정하거나 행을 추가한 후, 아래 [💾 학생 계정 저장] 버튼을 누르셔야 원격 클라우드 DB에 안전하게 일괄 저장 반영됩니다.</p>', unsafe_allow_html=True)
-            
             info_grid_col1, info_grid_col2 = st.columns(2)
             with info_grid_col1:
                 add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
@@ -856,12 +853,13 @@ elif st.session_state["admin_logged_in"]:
                         st.session_state["student_file_uploader_key"] = f"st_uploader_init_{int(time.time())}"
                         st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
                         st.session_state["show_student_toast"] = False
+                        st.session_state["student_save_success_flag"] = True # 성공 플래그 장전!
                         
-                        st.success("🎉 전교생 학생 계정 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!"); time.sleep(0.7); st.rerun()
+                        time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
 
     # ---------------------------------------------------------------------
-    # 6번 메뉴: 👑 교사 계정 관리
+    # 6번 메뉴: 👑 교사 계정 관리 (💡 요구사항 완벽 반영: 순서 뒤집기 및 성공 알림 스위칭 대칭 완료)
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 교사 계정 관리" and is_admin:
         if "cached_teacher_df" not in st.session_state:
@@ -870,13 +868,24 @@ elif st.session_state["admin_logged_in"]:
                 db_tc_df = db_tc_df.sort_values(by=["교사_성명"]).reset_index(drop=True)
             st.session_state["cached_teacher_df"] = db_tc_df
             st.session_state["show_teacher_toast"] = False  
+            st.session_state["teacher_save_success_flag"] = False
 
         if "teacher_file_uploader_key" not in st.session_state:
             st.session_state["teacher_file_uploader_key"] = "tc_uploader_init_100"
 
         with layout_left:
+            # 💡 [요구사항 반영 1] 학생 계정과 디자인 대칭성을 맞추어 '교사별 정밀 검색' 파트를 맨 위로 배치
+            st.markdown("**🔍 교사 계정 필터링**")
+            cached_tc_src = st.session_state["cached_teacher_df"]
+            tc_opts = ["전체 교직원 보기"]
+            if not cached_tc_src.empty:
+                tc_opts += sorted(list(cached_tc_src["교사_성명"].unique()))
+            sel_tc_name = st.selectbox("교사 선택", options=tc_opts, label_visibility="collapsed", key="master_tc_filter_sb")
+            
+            st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
+            
+            # 💡 [요구사항 반영 2] 일괄 업로드 파트를 학생 메뉴 규격과 동기화하여 2번째로 하강 배치
             st.markdown("📂 **교사 계정 일괄 업로드**")
-            st.caption("학교 교직원 권한 정보 대장을 아래 예시 양식에 맞춰 빌드 후 일괄 파일 업로드 하세요.")
             
             template_tc_df = pd.DataFrame({
                 "교사_ID": ["math_master", "eng_queen"], "교사_성명": ["박수학", "이영어"],
@@ -901,29 +910,39 @@ elif st.session_state["admin_logged_in"]:
                     if "last_loaded_file_name_teacher" not in st.session_state or st.session_state["last_loaded_file_name_teacher"] != tc_f.name:
                         st.session_state["cached_teacher_df"] = parsed_tc_df.sort_values(by=["교사_성명"]).reset_index(drop=True)
                         st.session_state["show_teacher_toast"] = True
-                except Exception as e: 
-                    st.error(f"❌ 파일 해석 실패: {e}")
+                        st.session_state["last_loaded_file_name_teacher"] = tc_f.name
+                except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
             
             if st.session_state.get("show_teacher_toast", False):
                 st.toast("📥 교사 데이터가 오른쪽 표에 임시 로드되었습니다. [교사 계정 저장]을 눌러 반영하세요!")
                 st.session_state["show_teacher_toast"] = False
             
-            # 💡 [요구사항 적극 주입] 교사 계정 관리 메뉴도 똑같이 가이드 메시지를 왼쪽 패널 버튼 상단 빈공간으로 정밀 정렬!
-            st.markdown('<p class="menu-guide-inline">💡 교과 교사진의 아이디 및 권한 변경 사항을 표 상에서 수정한 후, 아래 [💾 교사 계정 저장] 버튼을 누르셔야 원격 데이터베이스에 일괄 적용 세이브 완료됩니다.</p>', unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             
+            # 💡 [요구사항 반영 3 & 4: 완벽 스위칭 존] 교사 대장도 동일하게 알림 메시지 교차 컴포넌트 맵핑 주입
+            if st.session_state.get("teacher_save_success_flag", False):
+                st.success("🎉 교사 전체 권한 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!")
+                st.session_state["teacher_save_success_flag"] = False
+            else:
+                st.markdown('<p class="menu-guide-inline">💡 교사들의 아이디 및 담당과목 권한을 에디터 상에서 수정한 후, 아래 [💾 교사 계정 저장] 버튼을 누르셔야 원격 데이터베이스에 일괄 적용 세이브 완료됩니다.</p>', unsafe_allow_html=True)
+            
+            for _ in range(4): st.write("")
+                
             tc_grid_col1, tc_grid_col2 = st.columns(2)
             with tc_grid_col1:
                 add_tc_trigger = st.button("➕ 교사 개별 신규 추가", use_container_width=True, key="m_single_add_tc_btn")
             with tc_grid_col2:
                 save_tc_trigger = st.button("💾 교사 계정 저장", type="primary", use_container_width=True, key="master_teacher_save_btn")
                 
-            if add_tc_trigger:
-                show_add_teacher_dialog()
+            if add_tc_trigger: show_add_teacher_dialog()
                 
         with layout_right:
-            target_tc_render_df = st.session_state["cached_teacher_df"]
+            target_tc_render_df = st.session_state["cached_teacher_df"].copy()
             if target_tc_render_df.empty:
                 target_tc_render_df = pd.DataFrame(columns=["교사_ID", "교사_성명", "비밀번호", "담당_과목"])
+                
+            if sel_tc_name != "전체 교직원 보기":
+                target_tc_render_df = target_tc_render_df[target_tc_render_df["교사_성명"] == sel_tc_name]
                 
             edited_tc_df = st.data_editor(target_tc_render_df, use_container_width=True, num_rows="dynamic", hide_index=True, key="master_tc_editor", height=650)
             
@@ -948,6 +967,7 @@ elif st.session_state["admin_logged_in"]:
                         st.session_state["teacher_file_uploader_key"] = f"tc_uploader_init_{int(time.time())}"
                         st.session_state["cached_teacher_df"] = pd.DataFrame(clean_teachers)
                         st.session_state["show_teacher_toast"] = False
+                        st.session_state["teacher_save_success_flag"] = True # 성공 플래그 장전!
                         
-                        st.success("🎉 교사 전체 권한 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!"); time.sleep(0.7); st.rerun()
+                        time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
