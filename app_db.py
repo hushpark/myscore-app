@@ -584,7 +584,7 @@ elif st.session_state["admin_logged_in"]:
                         for idx_t, title in enumerate(item_titles[:item_count]):
                             if title in df_up.columns: df_up[f"수행평가{idx_t+1}"] = df_up[title]
                         excel_loaded_df = df_up
-                        st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
+                        st.caption("✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.")
                     except Exception as e: st.error(f"❌ 파일 구조 해석 실패: {e}")
                         
                 for _ in range(4): st.write("")
@@ -755,7 +755,7 @@ elif st.session_state["admin_logged_in"]:
 
         with layout_left:
             # 💡 [요구사항 반영 완료 ★] 그림 1 안내문 가이드 박스를 왼쪽 패널 최상단(맨 위)으로 완벽 이동 배치!
-            st.markdown('<p class="menu-guide-inline">💡 개인별 인적사항을 에디터 상에서 수정하거나 행을 추가한 후, 아래 [💾 학생 계정 저장] 버튼을 누르셔야 원격 클라우드 DB에 안전하게 일괄 저장 반영됩니다.</p>', unsafe_allow_html=True)
+            st.markdown('<p class="menu-guide-inline">💡 개인별 인적사항을 테이블에서 수정하거나 행을 추가한 후, 아래 [💾 학생 계정 저장] 버튼을 누르셔야 원격 클라우드 DB에 안전하게 일괄 저장 반영됩니다.</p>', unsafe_allow_html=True)
             
             # 그 다음 필터링 배치
             st.markdown("**🔍 학년과 반별 필터링**")
@@ -890,7 +890,7 @@ elif st.session_state["admin_logged_in"]:
 
         with layout_left:
             # 💡 [교사용 동일 대칭] 안내 가이드 박스를 왼쪽 패널 가장 맨 위(최상단)로 이동 배치!
-            st.markdown('<p class="menu-guide-inline">💡 교사들의 아이디 및 담당과목 권한을 에디터 상에서 수정한 후, 아래 [💾 교사 계정 저장] 버튼을 누르셔야 원격 데이터베이스에 일괄 적용 세이브 완료됩니다.</p>', unsafe_allow_html=True)
+            st.markdown('<p class="menu-guide-inline">💡 교사들의 아이디 및 담당과목 권한을 테이블에서 수정한 후, 아래 [💾 교사 계정 저장] 버튼을 누르셔야 원격 데이터베이스에 일괄 적용 세이브 완료됩니다.</p>', unsafe_allow_html=True)
             
             # 교사 계정 필터링 배치
             st.markdown("**🔍 교사 계정 필터링**")
