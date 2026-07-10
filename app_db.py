@@ -187,8 +187,8 @@ def show_add_student_dialog(subject_key):
                         "반": int(new_ban.strip()), 
                         "번호": int(new_num.strip()), 
                         "이름": new_name.strip(), 
-                        "school_email": new_email.strip(), # 영문 컬럼 동기화
-                        "password": new_pw.strip(), # 영문 컬럼 동기화
+                        "school_email": new_email.strip(), 
+                        "password": new_pw.strip(), 
                         "수행평가1": 0, "수행평가2": 0, "수행평가3": 0, "수행평가4": 0, "수행평가5": 0,
                         "성적조회 횟수": 0, "최종 확인일시": "-"
                     }).execute()
@@ -527,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 Supabase 컬럼명 매핑 및 저장 버그 완벽 패치)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항 최종 마스터 수리: 중복 제거 및 왼쪽 하단 복귀)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -551,7 +551,6 @@ elif st.session_state["admin_logged_in"]:
                 df_data = supabase.table(student_table).select("*").eq("subject_key", subject_key).execute().data
                 df_base = pd.DataFrame(df_data)
                 
-                # 원격 DB의 영문 필드 명칭을 한국어 화면 표식 양식으로 안전 캐싱 역매핑
                 if not df_base.empty:
                     if "school_email" in df_base.columns:
                         df_base = df_base.rename(columns={"school_email": "학교 이메일"})
@@ -601,9 +600,18 @@ elif st.session_state["admin_logged_in"]:
                         st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
                     except Exception as e:
                         st.error(f"❌ 파일 구조 해석 실패: {e}")
+                        
+                # 💡 [요구사항 원상복구 확정] 수동 빈 줄 여백 밀기 6회 처리 완벽 복사!
+                for _ in range(6):
+                    st.write("")
+                
+                # 💡 오른쪽 아래 유령 중복 버튼을 박멸하고 원래 위치인 왼쪽 패널 하단 구석으로 컴팩트 정렬 안착!
+                btn_space_l, btn_space_r = st.columns([5.0, 5.0])
+                with btn_space_r:
+                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
             with layout_right:
-                st.markdown('<p class="menu-guide-inline">💡 개인별 성적 입력은 아래 테이블 영역의 점수를 더블클릭하여 점수를 수정한 후, 우측 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
+                st.markdown('<p class="menu-guide-inline">💡 개인별 성적 입력은 아래 테이블 영역의 점수를 더블클릭하여 점수를 수정한 후, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
                 
                 if excel_loaded_df is not None:
                     df = excel_loaded_df.copy()
@@ -643,7 +651,6 @@ elif st.session_state["admin_logged_in"]:
                     target_cols.append("합계")
                     align_config["합계"] = st.column_config.NumberColumn(alignment="center", format="%d 점")
                     
-                    # 비밀번호 복구 주입 (데이터 전송 시 누락 방지용)
                     if "비밀번호" not in target_cols and "비밀번호" in df.columns:
                         target_cols.append("비밀번호")
                         align_config["비밀번호"] = st.column_config.TextColumn(alignment="center")
@@ -660,37 +667,23 @@ elif st.session_state["admin_logged_in"]:
                     
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=600)
                     
-                    # 💡 [버튼 위치 동기화 기믹 확정 완성] 
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    info_grid_col1, info_grid_col2 = st.columns([8.0, 2.0])
-                    with info_grid_col2:
-                        save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="dashboard_right_bottom_save_btn")
-                    
                     if save_trigger:
                         with st.spinner("원격 데이터베이스에 동기화 중..."):
                             try:
-                                # 💡 기존 동일 subject_key 데이터 깔끔하게 전체 밀어버리기 청소 가동
                                 supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
                                 
-                                # 에디터 화면 가공 배열 루프 파싱
                                 for _pos in range(len(edited_df)):
-                                    # 역매핑용 딕셔너리 추출
                                     view_row = edited_df.iloc[_pos].to_dict()
-                                    
-                                    # 원본 레코드 역매핑 매칭 빌드
                                     orig_idx = f_idx[_pos]
                                     record = df.loc[orig_idx].to_dict()
                                     
-                                    # 화면 가공 데이터 갱신
                                     record["반"] = int(view_row["반"])
                                     record["번호"] = int(view_row["번호"])
                                     record["이름"] = str(view_row["이름"]).strip()
                                     
-                                    # 💡 [핵심 교정 기믹] Supabase 실명 컬럼 규칙 매핑 바인딩 처리
                                     record["school_email"] = str(view_row.get("학교 이메일", record.get("school_email", "-"))).strip()
                                     record["password"] = str(view_row.get("비밀번호", record.get("password", "1234"))).strip()
                                     
-                                    # 수행 점수 매핑 처리
                                     for idx_c, db_col in enumerate(db_cols_ordered):
                                         view_title = item_titles[idx_c]
                                         record[db_col] = int(view_row[view_title])
@@ -699,11 +692,9 @@ elif st.session_state["admin_logged_in"]:
                                     record["성적조회 횟수"] = int(view_row.get("성적조회 횟수", 0))
                                     record["최종 확인일시"] = str(view_row.get("최종 확인일시", "-"))
                                     
-                                    # 쓰레기 파생 파라미터 소거 작업
                                     for garbage in ["학교 이메일", "비밀번호", "합계"]:
                                         if garbage in record: del record[garbage]
                                         
-                                    # Upsert 원격 전송 실행
                                     supabase.table(student_table).upsert(record).execute()
                                     
                                 st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!")
@@ -789,7 +780,6 @@ elif st.session_state["admin_logged_in"]:
                                     record["번호"] = int(view_row["번호"])
                                     record["이름"] = str(view_row["이름"]).strip()
                                     
-                                    # 💡 영문 실제 데이터 컬럼으로 교정 주입
                                     record["school_email"] = str(view_row["학교 이메일"]).strip()
                                     record["password"] = str(view_row["비밀번호"]).strip()
                                     record["subject_key"] = subject_key
