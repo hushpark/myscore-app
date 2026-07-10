@@ -39,7 +39,7 @@ st.markdown("""
             height: 120px !important;
         }
         
-        .sidebar-title { font-size: 24px !important; font-weight: 800 !important; margin-bottom: 5px !important; display: block; }
+        .sidebar-title { font-size: 24px !important; margin-bottom: 5px !important; display: block; }
         .user-info { color: #38bdf8 !important; -webkit-text-fill-color: #38bdf8 !important; font-size: 14px !important; font-weight: 600 !important; margin-bottom: 25px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
@@ -527,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항 완벽 반영: [성적 저장하기] 우측 정밀 재배치)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -595,17 +595,9 @@ elif st.session_state["admin_logged_in"]:
                         st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
                     except Exception as e:
                         st.error(f"❌ 파일 구조 해석 실패: {e}")
-                        
-                # 10번 정도 반복하며 빈 줄을 만들어 컴포넌트를 아래로 밀어내는 방식
-                for _ in range(6):
-                    st.write("")  # 혹은 st.text("")
-                
-                btn_space_l, btn_space_r = st.columns([5.0, 5.0])
-                with btn_space_r:
-                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
             with layout_right:
-                st.markdown('<p class="menu-guide-inline">💡 개인별 성적 입력은 아래 테이블 영역의 점수를 더블클릭하여 점수를 수정한 후, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
+                st.markdown('<p class="menu-guide-inline">💡 개인별 성적 입력은 아래 테이블 영역의 점수를 더블클릭하여 점수를 수정한 후, 우측 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
                 
                 if excel_loaded_df is not None:
                     df = excel_loaded_df.copy()
@@ -655,8 +647,15 @@ elif st.session_state["admin_logged_in"]:
                     sub_df = df.loc[f_idx, target_cols].rename(columns=rename_map)
                     disabled_cols = ["반", "번호", "이름", "학교 이메일", "합계", "성적조회 횟수", "최종 확인일시"]
                     
-                    # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=650 확장 고정
+                    # 데이터 에디터 출력
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=disabled_cols, hide_index=True, key="grid_ed_sc", column_config=align_config, height=650)
+                    
+                    # 💡 [요구사항 원천 수리] 학생 기본 정보 관리의 "💾 학생 정보 저장" 버튼과 칼같이 일치하는 우측 하단 절대 기점 매칭 완료!
+                    # 왼쪽 패널 밑에 있던 버튼을 통째로 이주하여 우측 2분할 레이아웃 중 오른쪽 구석(col2)에 컴팩트 정렬 안착했습니다.
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    info_grid_col1, info_grid_col2 = st.columns([8.0, 2.0])
+                    with info_grid_col2:
+                        save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="dashboard_right_bottom_save_btn")
                     
                     if save_trigger:
                         if excel_loaded_df is not None:
@@ -676,7 +675,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리
+    # 3번 메뉴: 학생 기본 정보 관리 (💡 저장 버튼 레이아웃의 절대 기준점 오리지널 모델)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -705,15 +704,6 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts = ["전체"] + [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                for _ in range(24):
-                    st.write("")
-
-                info_grid_col1, info_grid_col2 = st.columns(2)
-                with info_grid_col1:
-                    add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
-                with info_grid_col2:
-                    save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="side_save_info_btn")
-
             with layout_right:
                 if df.empty:
                     st.info("📢 해당 교과에 등록된 학생이 없습니다.")
@@ -730,8 +720,14 @@ elif st.session_state["admin_logged_in"]:
                         "비밀번호": st.column_config.TextColumn(alignment="center")
                     }
                     
-                    # 💡 세로로 시원하게 내용을 더 볼 수 있도록 height=650 확장 고정
                     edited_df = st.data_editor(df.loc[f_idx, info_cols], use_container_width=True, hide_index=True, key="grid_ed_inf", column_config=align_config, height=650)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    info_grid_col1, info_grid_col2 = st.columns([8.0, 2.0])
+                    with info_grid_col1:
+                        add_std_trigger = st.button("➕ 학생 개별 추가", use_container_width=True, key="side_add_student_btn")
+                    with info_grid_col2:
+                        save_info_trigger = st.button("💾 학생 정보 저장", type="primary", use_container_width=True, key="fine_tuned_info_save_btn")
                     
                     if add_std_trigger:
                         show_add_student_dialog(subject_key)
@@ -746,7 +742,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 학생 신상정보 저장 완료!"); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 4번 메뉴: 평가 대상 과목 구성 (💡 요구사항: 1과목 교사 자동 입력 및 학기->학년 순서 패치)
+    # 4번 메뉴: 평가 대상 과목 구성
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         main_col1, main_col2 = layout_left, layout_right
@@ -757,34 +753,28 @@ elif st.session_state["admin_logged_in"]:
                 st.caption("과목 설정이 끝나면, 우측에서 수행평가 세부 항목을 구성하세요.")
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # 교사 담당 과목 권한 목록 확인
                 allowed_trimmed = [str(x).strip() for x in st.session_state.get("allowed_subjects", []) if str(x).strip()]
                 is_admin = (st.session_state.get("logged_teacher_id") == "admin" or "마스터" in allowed_trimmed)
                 
-                # 💡 [스마트 핵심 기믹] 담당 과목이 정확히 딱 1개인 일반 선생님인 경우 자동 빌드 모드 발동!
                 if not is_admin and len(allowed_trimmed) == 1:
                     single_subject = allowed_trimmed[0]
                     
-                    # 해당 과목이 어느 교과군에 속해있는지 역추적 자동 매칭
                     detected_group = "인문·사회군"
                     for group_name, sub_list in SUBJECT_MAP.items():
                         if single_subject in sub_list:
                             detected_group = group_name
                             break
                     
-                    # 화면에 자동 주입되어 고정된 텍스트박스로 안내
                     st.text_input("교과군 (자동 지정 완료)", value=detected_group, disabled=True)
                     st.text_input("세부 과목 (자동 지정 완료)", value=single_subject, disabled=True)
                     
                     sel_g = detected_group
                     final_sub = single_subject
                     
-                    # 💡 요구사항 반영: 순서를 뒤바꾸어 [학기 선택]을 먼저 표출한 뒤 [학년 지정] 배치
                     sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=0)
                     sel_gr = st.selectbox("학년 지정", options=["학년을 선택하세요.", "1학년", "2학년", "3학년"], index=0)
                     
                 else:
-                    # 기존 다과목 교사나 최고 관리자는 수동 드롭다운 체계 유지
                     grid_c1, grid_c2 = st.columns(2)
                     with grid_c1:
                         group_options = ["교과군을 선택하세요.", "인문·사회군", "수리·과학군", "예체능군"]
@@ -807,7 +797,6 @@ elif st.session_state["admin_logged_in"]:
                         final_sub = st.selectbox("세부 과목", options=sub_options, index=0)
 
                     with grid_c2:
-                        # 💡 요구사항 반영: 수동 선택 창에서도 순서를 변경하여 [학기 선택] ➡️ [학년 지정] 구조 배치
                         sel_se = st.selectbox("학기 선택", options=["학기를 선택하세요.", "2026학년도 1학기", "2026학년도 2학기"], index=0)
                         sel_gr = st.selectbox("학년 지정", options=["학년을 선택하세요.", "1학년", "2학년", "3학년"], index=0)
 
@@ -891,7 +880,7 @@ elif st.session_state["admin_logged_in"]:
                 st.markdown(
                     """
                     <div style='border: 2px dashed #cbd5e1; border-radius: 12px; padding: 60px 20px; text-align: center; color: #94a3b8; margin-top: 5px;'>
-                        ⬅️ 왼쪽에서 <b>[1. 평가 과목 설정]</b>의 조건들을 선택하시면<br>
+                        ⬅️ 왼쪽에서 <b>[1. 평가 과목 설정]</b>의 교과군과 <b>나의 담당 과목</b>을 선택하시면<br>
                         이 자리에 수행평가 세부 세팅 상자가 실시간 매칭됩니다.
                     </div>
                     """, 
