@@ -468,7 +468,7 @@ elif st.session_state["admin_logged_in"]:
     st.markdown(f"""
         <div class="header-title-main">수행평가 점수 확인 시스템</div>
         <div class="header-nav-sub" style="border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 25px;">
-            📍 현재 위치: {"최고관리자 모드" if is_admin else "교사 모드"} > <span style="color: #3b82f6;">📂 {menu_selection}</span>
+            📍 현재 위치: 최고관리자 모드 > <span style="color: #3b82f6;">📂 {menu_selection}</span>
         </div>
     """, unsafe_allow_html=True)
 
@@ -720,7 +720,7 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 과목 구성 완료!"); time.sleep(0.3); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 👑 학생 계정 관리 (💡 요구사항 완벽 반영: 순서 뒤집기 및 성공 알림 스위칭 완료)
+    # 5번 메뉴: 👑 학생 계정 관리 (💡 요구사항 최종 반영 완벽 구조 수리)
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 학생 계정 관리" and is_admin:
         # 최초 메모리 격리 저장소 초기화
@@ -730,7 +730,7 @@ elif st.session_state["admin_logged_in"]:
                 db_df = db_df.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
             st.session_state["cached_student_df"] = db_df
             st.session_state["show_student_toast"] = False  
-            st.session_state["student_save_success_flag"] = False # 💡 성공 감지기 플래그 신설
+            st.session_state["student_save_success_flag"] = False 
 
         if "student_file_uploader_key" not in st.session_state:
             st.session_state["student_file_uploader_key"] = "st_uploader_init_100"
@@ -739,7 +739,7 @@ elif st.session_state["admin_logged_in"]:
         if "mst_filter_ban" not in st.session_state: st.session_state["mst_filter_ban"] = "전체 반"
 
         with layout_left:
-            # 💡 [요구사항 반영 1] '학년과 반별 필터링' 파트 최상단 강제 전진 배치!
+            # 💡 [요구사항 반영 1] 문구를 '학년과 반별 필터링'으로 교정하고 최상단 배치
             st.markdown("**🔍 학년과 반별 필터링**")
             cached_data_src = st.session_state["cached_student_df"]
             
@@ -762,7 +762,10 @@ elif st.session_state["admin_logged_in"]:
             
             st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
             
-            # 💡 [요구사항 반영 2] '학생 계정 일괄 업로드' 파트를 2번째 순서로 소폭 하강 배치!
+            # 💡 [요구사항 반영 2] 그림1 안내문 박스를 일괄 업로드 상자보다 '더 위(맨 위 아래)' 격자로 전격 이동 안착!
+            st.markdown('<p class="menu-guide-inline">💡 개인별 인적사항을 에디터 상에서 수정하거나 행을 추가한 후, 아래 [💾 학생 계정 저장] 버튼을 누르셔야 원격 클라우드 DB에 안전하게 일괄 저장 반영됩니다.</p>', unsafe_allow_html=True)
+            
+            # 💡 [요구사항 반영 3] 일괄 업로드 파트를 안내문 박스 아래로 이동 배치
             st.markdown("📂 **학생 계정 일괄 업로드**")
             
             template_mst_df = pd.DataFrame({
@@ -799,13 +802,10 @@ elif st.session_state["admin_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 💡 [요구사항 반영 3 & 4: 완벽 스위칭 존]
-            # 저장이 성공했을 때는 그림1의 이 박스 자리에 역동적으로 표출되고, 평소에는 그림2의 안내문이 같은 자리에 가동 고정
+            # 💡 [요구사항 반영 4] 성공 알림 메시지는 평소엔 숨어있다가 버튼 클릭 성공 시에만 이 지정 구역에 정확하게 대두됩니다!
             if st.session_state.get("student_save_success_flag", False):
                 st.success("🎉 전교생 학생 계정 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!")
-                st.session_state["student_save_success_flag"] = False # 1회 출력 후 자연 진화
-            else:
-                st.markdown('<p class="menu-guide-inline">💡 개인별 인적사항을 에디터 상에서 수정하거나 행을 추가한 후, 아래 [💾 학생 계정 저장] 버튼을 누르셔야 원격 클라우드 DB에 안전하게 일괄 저장 반영됩니다.</p>', unsafe_allow_html=True)
+                st.session_state["student_save_success_flag"] = False 
             
             for _ in range(4): st.write("")
                 
@@ -853,13 +853,13 @@ elif st.session_state["admin_logged_in"]:
                         st.session_state["student_file_uploader_key"] = f"st_uploader_init_{int(time.time())}"
                         st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
                         st.session_state["show_student_toast"] = False
-                        st.session_state["student_save_success_flag"] = True # 성공 플래그 장전!
+                        st.session_state["student_save_success_flag"] = True 
                         
                         time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
 
     # ---------------------------------------------------------------------
-    # 6번 메뉴: 👑 교사 계정 관리 (💡 요구사항 완벽 반영: 순서 뒤집기 및 성공 알림 스위칭 대칭 완료)
+    # 6번 메뉴: 👑 교사 계정 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 교사 계정 관리" and is_admin:
         if "cached_teacher_df" not in st.session_state:
@@ -874,7 +874,7 @@ elif st.session_state["admin_logged_in"]:
             st.session_state["teacher_file_uploader_key"] = "tc_uploader_init_100"
 
         with layout_left:
-            # 💡 [요구사항 반영 1] 학생 계정과 디자인 대칭성을 맞추어 '교사별 정밀 검색' 파트를 맨 위로 배치
+            # 💡 교사용 메뉴도 격전의 대칭 동기화 가동! 필터 검색 최상단 배치
             st.markdown("**🔍 교사 계정 필터링**")
             cached_tc_src = st.session_state["cached_teacher_df"]
             tc_opts = ["전체 교직원 보기"]
@@ -884,7 +884,10 @@ elif st.session_state["admin_logged_in"]:
             
             st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
             
-            # 💡 [요구사항 반영 2] 일괄 업로드 파트를 학생 메뉴 규격과 동기화하여 2번째로 하강 배치
+            # 안내문 박스 맨 위(필터 아래) 배치
+            st.markdown('<p class="menu-guide-inline">💡 교사들의 아이디 및 담당과목 권한을 에디터 상에서 수정한 후, 아래 [💾 교사 계정 저장] 버튼을 누르셔야 원격 데이터베이스에 일괄 적용 세이브 완료됩니다.</p>', unsafe_allow_html=True)
+            
+            # 일괄 업로드 상자 하강 배치
             st.markdown("📂 **교사 계정 일괄 업로드**")
             
             template_tc_df = pd.DataFrame({
@@ -919,12 +922,9 @@ elif st.session_state["admin_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 💡 [요구사항 반영 3 & 4: 완벽 스위칭 존] 교사 대장도 동일하게 알림 메시지 교차 컴포넌트 맵핑 주입
             if st.session_state.get("teacher_save_success_flag", False):
                 st.success("🎉 교사 전체 권한 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!")
                 st.session_state["teacher_save_success_flag"] = False
-            else:
-                st.markdown('<p class="menu-guide-inline">💡 교사들의 아이디 및 담당과목 권한을 에디터 상에서 수정한 후, 아래 [💾 교사 계정 저장] 버튼을 누르셔야 원격 데이터베이스에 일괄 적용 세이브 완료됩니다.</p>', unsafe_allow_html=True)
             
             for _ in range(4): st.write("")
                 
@@ -967,7 +967,7 @@ elif st.session_state["admin_logged_in"]:
                         st.session_state["teacher_file_uploader_key"] = f"tc_uploader_init_{int(time.time())}"
                         st.session_state["cached_teacher_df"] = pd.DataFrame(clean_teachers)
                         st.session_state["show_teacher_toast"] = False
-                        st.session_state["teacher_save_success_flag"] = True # 성공 플래그 장전!
+                        st.session_state["teacher_save_success_flag"] = True 
                         
                         time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
