@@ -123,7 +123,7 @@ def get_active_databases():
 
 def get_subject_item_names(subject_key):
     cfg_df = load_db_df(config_table)
-    if not cfg_df.empty wildlife and "subject_key" in cfg_df.columns:
+    if not cfg_df.empty and "subject_key" in cfg_df.columns:
         match = cfg_df[cfg_df["subject_key"] == subject_key]
         if not match.empty:
             row = match.iloc[0]
@@ -186,7 +186,8 @@ def show_add_student_dialog(subject_key):
                         st.error("❌ 오류: 전교생 마스터 대장에 해당 학생이 존재하지 않습니다. 최고관리자에게 마스터 데이터 등록을 먼저 요망하세요.")
                 except Exception as e: st.error(f"❌ 데이터베이스 연동 실패: {e}")
 
-@st.dialog("➕ 전교생 마스터 개별 신규 추가")
+# 💡 [요구사항 반영] 다이얼로그 팝업 제목 및 하단 버튼 문구 리네임 교정 완결
+@st.dialog("➕ 학생 개별 추가")
 def show_add_master_student_single_dialog():
     st.markdown("마스터 대장에 새로 개별 추가할 학생의 기본 학적 정보를 정확히 기입하세요.")
     with st.form("add_mst_student_form", border=False):
@@ -197,7 +198,7 @@ def show_add_master_student_single_dialog():
         with c4: name = st.text_input("이름", placeholder="홍길동")
         email = st.text_input("학교 이메일 계정 (ID)", placeholder="student@school.kr")
         pw = st.text_input("초기 조회 비밀번호", value="1234")
-        if st.form_submit_button("💾 전교생 마스터에 한 명 추가하기", use_container_width=True):
+        if st.form_submit_button("추가", use_container_width=True):
             if grade and ban and num and name and email and pw:
                 try:
                     supabase.table(master_student_table).upsert({
@@ -208,9 +209,8 @@ def show_add_master_student_single_dialog():
                     st.session_state["mst_filter_grade"] = f"{grade.strip()}학년"
                     st.session_state["mst_filter_ban"] = f"{ban.strip()}반"
                     
-                    # 💡 강제 초기화하여 수동 입력 건이 실시간 즉시 렌더링되도록 캐시 초기화 스위칭
                     if "cached_student_df" in st.session_state: del st.session_state["cached_student_df"]
-                    st.success(f"🎉 {name.strip()} 학생 마스터 추가 완료! 우측 화면이 해당 학급({grade.strip()}학년 {ban.strip()}반)으로 자동 스크롤 추적되었습니다."); time.sleep(1.0); st.rerun()
+                    st.success(f"🎉 {name.strip()} 학생 마스터 추가 완료!"); time.sleep(1.0); st.rerun()
                 except Exception as e: st.error(f"❌ 추가 실패: {e}")
             else: st.error("❌ 공란이 있습니다.")
 
@@ -469,7 +469,7 @@ elif st.session_state["admin_logged_in"]:
     st.markdown(f"""
         <div class="header-title-main">수행평가 점수 확인 시스템</div>
         <div class="header-nav-sub" style="border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 25px;">
-            📍 현재 위치: 최고관리자 모드 > <span style="color: #3b82f6;">📂 {menu_selection}</span>
+            📍 현재 위치: {"최고관리자 모드" if is_admin else "교사 모드"} > <span style="color: #3b82f6;">📂 {menu_selection}</span>
         </div>
     """, unsafe_allow_html=True)
 
@@ -548,7 +548,7 @@ elif st.session_state["admin_logged_in"]:
 
                 st.markdown("<br>**🎯 필터링할 학급 선택**", unsafe_allow_html=True)
                 class_options_ed = ["전체 학급 보기"]
-                if not df_base.empty and "반" in df_base.columns: class_options_ed += [f"{x}반" for x in sorted(df_base['unique_id', '반'].unique())]
+                if not df_base.empty and "반" in df_base.columns: class_options_ed += [f"{x}반" for x in sorted(df_base['반'].unique())]
                 selected_class_ed = st.selectbox("학급 선택", options=class_options_ed, label_visibility="collapsed", key="edt_class")
                 
                 st.markdown("<hr style='margin: 15px 0; border: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
@@ -721,10 +721,9 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 과목 구성 완료!"); time.sleep(0.3); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 👑 학생 계정 관리 (💡 업로드 컴포넌트 세션 키 리셋 완전 해결 패치)
+    # 5번 메뉴: 👑 학생 계정 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 학생 계정 관리" and is_admin:
-        # 최초 메모리 격리 저장소 초기화
         if "cached_student_df" not in st.session_state:
             db_df = load_db_df(master_student_table)
             if not db_df.empty:
@@ -732,7 +731,6 @@ elif st.session_state["admin_logged_in"]:
             st.session_state["cached_student_df"] = db_df
             st.session_state["show_student_toast"] = False  
 
-        # 💡 [업로드 상자 완전 초기화용 난수 키 발급]
         if "student_file_uploader_key" not in st.session_state:
             st.session_state["student_file_uploader_key"] = "st_uploader_init_100"
 
@@ -740,7 +738,8 @@ elif st.session_state["admin_logged_in"]:
         if "mst_filter_ban" not in st.session_state: st.session_state["mst_filter_ban"] = "전체 반"
 
         with layout_left:
-            st.markdown("📂 **전교생 명단 일과 가져오기**")
+            # 💡 [요구사항 반영] 문구를 가이드 매뉴얼에 맞춰 '학생 계정 일괄 업로드'로 완전히 정정 완료!
+            st.markdown("📂 **학생 계정 일괄 업로드**")
             st.caption("나이스 학적 기초 대장을 아래 예시 양식에 맞춰 빌드 후 일괄 파일 업로드 하세요.")
             
             template_mst_df = pd.DataFrame({
@@ -750,7 +749,6 @@ elif st.session_state["admin_logged_in"]:
             mst_csv_buffer = template_mst_df.to_csv(index=False).encode('utf-8-sig')
             st.download_button("📥 일괄 업로드용 마스터 양식 다운로드", data=mst_csv_buffer, file_name="전교생_마스터_일괄업로드_양식.csv", mime="text/csv", key="mst_down_btn", use_container_width=True)
             
-            # 💡 [핵심 패치] 업로더 상자에 고유 동적 key 전달하여 수동 파쇄 제어권 확보
             mst_f = st.file_uploader("전교생 마스터 엑셀 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key=st.session_state["student_file_uploader_key"])
             
             if mst_f:
@@ -766,10 +764,10 @@ elif st.session_state["admin_logged_in"]:
                     parsed_df["school_email"] = df_mst["school_email"].astype(str)
                     parsed_df["password"] = df_mst["password"].astype(str)
                     
-                    current_cached = st.session_state["cached_student_df"]
-                    if current_cached.empty or not current_cached.equals(parsed_df):
+                    if "last_loaded_file_name_student" not in st.session_state or st.session_state["last_loaded_file_name_student"] != mst_f.name:
                         st.session_state["cached_student_df"] = parsed_df.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
                         st.session_state["show_student_toast"] = True  
+                        st.session_state["last_loaded_file_name_student"] = mst_f.name
                 except Exception as e: 
                     st.error(f"❌ 파일 해석 실패: {e}")
 
@@ -840,7 +838,6 @@ elif st.session_state["admin_logged_in"]:
                         if clean_records:
                             supabase.table(master_student_table).insert(clean_records).execute()
                             
-                        # 💡 [핵심 버그 파쇄] 파일 컴포넌트 강제 리셋용 동적 키 변경 및 캐시 소멸 처리
                         st.session_state["student_file_uploader_key"] = f"st_uploader_init_{int(time.time())}"
                         st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
                         st.session_state["show_student_toast"] = False
@@ -849,7 +846,7 @@ elif st.session_state["admin_logged_in"]:
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
 
     # ---------------------------------------------------------------------
-    # 6번 메뉴: 👑 교사 계정 관리 (💡 업로드 컴포넌트 세션 키 리셋 완전 해결 패치)
+    # 6번 메뉴: 👑 교사 계정 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 교사 계정 관리" and is_admin:
         if "cached_teacher_df" not in st.session_state:
@@ -859,12 +856,12 @@ elif st.session_state["admin_logged_in"]:
             st.session_state["cached_teacher_df"] = db_tc_df
             st.session_state["show_teacher_toast"] = False  
 
-        # 💡 [업로드 상자 완전 초기화용 난수 키 발급]
         if "teacher_file_uploader_key" not in st.session_state:
             st.session_state["teacher_file_uploader_key"] = "tc_uploader_init_100"
 
         with layout_left:
-            st.markdown("📂 **교사 명단 일과 가져오기**")
+            # 💡 [요구사항 반영] 문구를 설계 매뉴얼에 맞춰 '교사 계정 일괄 업로드'로 완전히 정정 완료!
+            st.markdown("📂 **교사 계정 일괄 업로드**")
             st.caption("학교 교직원 권한 정보 대장을 아래 예시 양식에 맞춰 빌드 후 일괄 파일 업로드 하세요.")
             
             template_tc_df = pd.DataFrame({
@@ -874,7 +871,6 @@ elif st.session_state["admin_logged_in"]:
             tc_csv_buffer = template_tc_df.to_csv(index=False).encode('utf-8-sig')
             st.download_button("📥 일괄 업로드용 교사 양식 다운로드", data=tc_csv_buffer, file_name="교사_권한대장_일괄업로드_양식.csv", mime="text/csv", use_container_width=True)
             
-            # 💡 [핵심 패치] 업로더 상자에 고유 동적 key 전달하여 수동 파쇄 제어권 확보
             tc_f = st.file_uploader("교사 마스터 엑셀 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key=st.session_state["teacher_file_uploader_key"])
             
             if tc_f:
@@ -891,6 +887,7 @@ elif st.session_state["admin_logged_in"]:
                     if "last_loaded_file_name_teacher" not in st.session_state or st.session_state["last_loaded_file_name_teacher"] != tc_f.name:
                         st.session_state["cached_teacher_df"] = parsed_tc_df.sort_values(by=["교사_성명"]).reset_index(drop=True)
                         st.session_state["show_teacher_toast"] = True
+                        st.session_state["last_loaded_file_name_teacher"] = tc_f.name
                 except Exception as e: 
                     st.error(f"❌ 파일 해석 실패: {e}")
             
@@ -934,7 +931,6 @@ elif st.session_state["admin_logged_in"]:
                         if clean_teachers:
                             supabase.table(teacher_table).insert(clean_teachers).execute()
                             
-                        # 💡 [핵심 버그 파쇄] 파일 컴포넌트 강제 리셋용 동적 키 변경 및 캐시 소멸 처리
                         st.session_state["teacher_file_uploader_key"] = f"tc_uploader_init_{int(time.time())}"
                         st.session_state["cached_teacher_df"] = pd.DataFrame(clean_teachers)
                         st.session_state["show_teacher_toast"] = False
