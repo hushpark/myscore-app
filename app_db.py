@@ -681,7 +681,7 @@ elif st.session_state["admin_logged_in"]:
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
                 # 우측 대형 표 구조와 레이아웃 밸런스를 맞추기 위한 수동 눈높이 마진 확보
-                for _ in range(13): st.write("")
+                for _ in range(17): st.write("")
                 
                 # 💡 [2x2 - 1행 잠금 전광판 구역] 30px 크기의 투명 상태창 선점
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
