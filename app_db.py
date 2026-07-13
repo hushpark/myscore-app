@@ -84,44 +84,53 @@ st.markdown("""
             box-sizing: border-box !important;
         }
         
-        /* 타이틀 가운데 정렬 */
+        /* 타이틀 정형 스케일 고정 */
         .student-mobile-card h2 { 
-            font-size: 26px !important; 
-            text-align: center !important; 
+            font-size: 24px !important; 
+            text-align: left !important; 
             font-weight: 800 !important; 
             color: #0f172a !important; 
-            margin-bottom: 15px !important; 
-            letter-spacing: -0.5px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 40px !important;
         }
         
-        /* 🎨 [그림 2 기반 최종 패치] 로그아웃 버튼을 완벽한 흰색 배경에 테두리 없는 붉은색 글씨 디자인으로 개조 */
-        div.student-mobile-card div[data-testid="stHorizontalBlock"] div.stFormSubmitButton button {
+        /* 🎨 [그림 2 완벽 구현 CSS 요격] 로그아웃 버튼을 '테두리 없는 흰색바탕 붉은글씨'로 변모 */
+        div.student-mobile-card button[key="std_form_logout"],
+        div.student-mobile-card button#std_form_logout,
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button {
             background-color: #ffffff !important;
             border: none !important;
-            color: #dc2626 !important; /* 수려한 붉은색 계열 */
+            color: #ef4444 !important; /* 붉은색 계열 글씨 지정 */
             font-size: 14px !important;
             font-weight: 700 !important;
             box-shadow: none !important;
-            padding: 4px 8px !important;
+            padding: 8px 0 !important;
             width: 100% !important;
-            text-align: right !important; /* 행열 내 우측 밀착 */
+            text-align: right !important; /* 우측 끝으로 밀착 정렬 */
+            height: auto !important;
+            line-height: 24px !important;
         }
-        div.student-mobile-card div[data-testid="stHorizontalBlock"] div.stFormSubmitButton button:hover {
-            color: #b91c1c !important;
-            background-color: #f8fafc !important; /* 부드러운 호버 배경효과 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button:hover {
+            color: #dc2626 !important;
+            text-decoration: underline !important;
+            background-color: #ffffff !important;
         }
         
-        /* 🚀 하단 성적 확인 버튼 디자인 잠금 */
-        div.student-mobile-card > div.stFormSubmitButton button {
-            background-color: #3b82f6 !important;
+        /* 🚀 [가운데 정렬 잠금 CSS] 성적 확인 버튼이 뚱뚱해지지 않도록 자동 패딩 잠금 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type div.stFormSubmitButton button {
+            background-color: #3b82f6 !important; /* 마스터 파란색 단추 사수 */
             color: #ffffff !important;
-            font-size: 16px !important;
+            font-size: 15px !important;
             font-weight: 700 !important;
             border: none !important;
             border-radius: 6px !important;
-            padding: 10px 16px !important;
-            width: 100% !important;
-            margin-top: 15px !important;
+            padding: 10px 20px !important;
+            width: 100% !important; /* 지정된 2열 영역을 가득 채움 */
+            box-shadow: none !important;
+        }
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type div.stFormSubmitButton button:hover {
+            background-color: #2563eb !important;
         }
         
         div[data-testid="InputInstructions"] { display: none !important; }
@@ -195,7 +204,7 @@ def get_active_databases():
 
 def get_subject_item_names(subject_key):
     cfg_df = load_db_df(config_table)
-    if not cfg_df.empty and "subject_key" in cfg_df.columns:
+    if not cfg_df.empty && "subject_key" in cfg_df.columns:
         match = cfg_df[cfg_df["subject_key"] == subject_key]
         if not match.empty:
             row = match.iloc[0]
@@ -205,7 +214,7 @@ def get_subject_item_names(subject_key):
     return 3, ["수행평가1", "수행평가2", "수행평가3", "수행평가4", "수행평가5"]
 
 # =========================================================================
-# ➕ [다이얼로그 팝업창 모듈] (안전한 컴포넌트 위치 이동 완료)
+# ➕ [다이얼로그 팝업창 모듈]
 # =========================================================================
 @st.dialog("➕ 교사 개별 추가")
 def show_add_teacher_dialog():
@@ -282,10 +291,8 @@ def show_add_master_student_single_dialog():
                 except Exception as e: st.error(f"❌ 추가 실패: {e}")
             else: st.error("❌ 공란이 있습니다.")
 
-# 💡 [순정 격자 대변신 완결판] 평가 항목 및 취득 점수 전격 가운데 정렬 적용
 @st.dialog("🎉 실시간 성적표 대장")
 def show_result_dialog(student_data, subject_name):
-    # 💡 [문구 요구사항 반영 완료] 홍길동 학생의 과목명 실시간 성적 내역입니다.
     st.markdown(f"<div><b>{student_data['이름']}</b> 학생의 <b>{subject_name}</b> 실시간 성적 내역입니다.</div><br>", unsafe_allow_html=True)
     
     sc1 = int(student_data.get('수행평가1', 0))
@@ -293,13 +300,11 @@ def show_result_dialog(student_data, subject_name):
     sc3 = int(student_data.get('수행평가3', 0))
     total_score = sc1 + sc2 + sc3
     
-    # ⬜ 해석 에러를 원천 차단하는 순정 데이터프레임 빌드
     score_table_df = pd.DataFrame({
         "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 총점 합계"],
         "취득 점수": [f"{sc1} 점", f"{sc2} 점", f"{sc3} 점", f"{total_score} 점"]
     })
     
-    # 💡 [가운데 정렬 잠금] column_config를 활용해 양쪽 열 모두 칼같이 가운데 배치 및 테두리 격자 실현!
     st.dataframe(
         score_table_df, 
         use_container_width=True, 
@@ -495,20 +500,20 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 1행 4열 구조 및 그림 2 무테 붉은색 링크 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 1행 4열 구조 및 1행 3열 정중앙 성적확인 패치 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
         # 💡 [피드백 정밀 완결] 1행 4열 구조 생성 (1, 2, 3열은 타이틀이 점령 / 4열에 로그아웃 안착)
-        row1_col1, row1_col2 = st.columns([7.5, 2.5])
+        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([2.5, 2.5, 2.5, 2.5])
         
         with row1_col1:
-            st.markdown("<h2 style='text-align:left; margin:0; padding:0;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='white-space:nowrap;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
             
-        with row1_col2:
-            # 💡 [그림 2 완벽 이식] 테두리 없고 흰색 배경에 글씨만 붉은색 계열인 링크형 단추
+        with row1_col4:
+            # 💡 [그림 2 이식] 무테 흰색 바탕 붉은 글씨 로그아웃 링크 버튼
             logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
                 st.session_state.clear()
@@ -526,8 +531,10 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 💡 뚱뚱하게 찢어지지 않도록 너비를 자동 가둔 뒤, 상단 CSS 요격으로 격자 "정중앙" 정렬 고정!
-            submit_active = st.form_submit_button("🚀 성적 확인", key="std_form_verify")
+            # 💡 [피드백 정밀 완결] 1행 3열 구조 생성하여 2열(가운데)에만 성적 확인 버튼 안착
+            row2_col1, row2_col2, row2_col3 = st.columns([1.5, 7.0, 1.5])
+            with row2_col2:
+                submit_active = st.form_submit_button("🚀 성적 확인", key="std_form_verify")
 
         if submit_active and sel_s != "과목을 선택하세요.":
             chosen_db = active_dbs[opts_s.index(sel_s)-1]
