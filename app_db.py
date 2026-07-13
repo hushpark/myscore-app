@@ -955,7 +955,7 @@ elif st.session_state["admin_logged_in"]:
             else:
                 tc_status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
             
-            for _ in range(10): st.write("")
+            for _ in range(8): st.write("")
             
             # 💡 [2x2 완전 교정] 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             teacher_grid_cols = st.columns([5.0, 5.0])
