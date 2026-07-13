@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit st
 import streamlit.components.v1 as components
 import pandas as pd
 from datetime import datetime
@@ -526,7 +526,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (1행 전광판 존, 2행 1열 공백, 2행 2열 저장 버튼)
+    # 2번 메뉴: 수행 평가 성적 입력
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -576,7 +576,6 @@ elif st.session_state["admin_logged_in"]:
                         file_just_loaded = True
                     except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
                 
-                # 💡 [2x2 - 1행 잠금 구역]
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -589,7 +588,6 @@ elif st.session_state["admin_logged_in"]:
                 else:
                     status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
 
-                # 💡 [2x2 - 2행] 1열 공백, 2열 성적 저장하기 버튼 홀더 배치
                 row2_cols = st.columns([5.0, 5.0])
                 with row2_cols[0]:
                     st.write("") 
@@ -657,7 +655,7 @@ elif st.session_state["admin_logged_in"]:
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=["반", "번호", "이름", "합계"], hide_index=True, key="grid_ed_sc", column_config=align_config, height=600)
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리 (🛠️ [버그 수정 완료] 오타 완벽 제거)
+    # 3번 메뉴: 학생 기본 정보 관리 (💡 [완벽 교정] 2행 1열 전입생 추가 / 2행 2열 정보 저장 매칭)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -682,15 +680,10 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # ➕ 전입생 추가 단추는 상단의 쾌적하고 넉넉한 공간으로 먼저 배치 처리!
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("➕ 전입생 추가 배정", use_container_width=True): 
-                    show_add_student_dialog(subject_key)
-
-                # 우측 표와의 높이 매칭 밸런스 마진 확보
+                # 우측 대형 표 구조와 레이아웃 밸런스를 맞추기 위한 수동 눈높이 마진 확보
                 for _ in range(8): st.write("")
                 
-                # 💡 [2x2 - 1행 잠금 구역] 30px 크기의 투명한 무색 상태 전광판 세팅
+                # 💡 [2x2 - 1행 잠금 전광판 구역] 30px 크기의 투명 상태창 선점
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -699,15 +692,18 @@ elif st.session_state["admin_logged_in"]:
                     status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>🎉 학생 기본 정보를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["info_save_success_flag"] = False
                 else:
-                    # 박스가 접혀서 버튼이 위로 들썩이는 것을 완벽 방지하는 투명 HTML 공백 결합
+                    # 상자가 접히는 현상을 전격 차단하기 위한 투명 HTML 공백 태그 상시 로드
                     status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
                 
-                # 💡 [그림2 구조 교정 완결] 2행 1열은 무조건 비워두고(공백), 2행 2열(오른쪽)에 최종 정보 저장 단추 고정!
+                # 💡 [캡처 화면 2열 완벽 이행] 2행 1열에 전입생 추가 단추 마운트 / 2행 2열에 최종 정보 저장 단추 고정!
                 row2_cols = st.columns([5.0, 5.0])
                 with row2_cols[0]:
-                    st.write("")
+                    add_std_trigger = st.button("➕ 전입생 추가 배정", use_container_width=True)
                 with row2_cols[1]:
                     save_info_trigger = st.button("💾 학생 기본 정보 저장", type="primary", use_container_width=True, key="fine_tuned_info_save_btn")
+
+                if add_std_trigger: 
+                    show_add_student_dialog(subject_key)
 
             with layout_right:
                 st.markdown('<p class="menu-guide-inline">💡 개인별 인적사항을 수정한 후, 왼쪽 패널 하단의 [💾 학생 기본 정보 저장] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
@@ -822,7 +818,7 @@ elif st.session_state["admin_logged_in"]:
             st.markdown("📂 **학생 계정 일괄 업로드**")
             
             template_mst_df = pd.DataFrame({
-                "학년": [3, 3], "반": [2, 2], "번호": [1, 2], "이름": ["홍길동", "이영희"],
+                "학년": [3, 3], "반", [2, 2], "번호": [1, 2], "이름": ["홍길동", "이영희"],
                 "school_email": ["hgd@school.kr", "lyh@school.kr"], "password": ["1234", "1234"]
             })
             mst_csv_buffer = template_mst_df.to_csv(index=False).encode('utf-8-sig')
