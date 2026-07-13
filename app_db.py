@@ -44,23 +44,59 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 마스터 푸른색 계열 버튼 규격화 */
-        div.stButton > button[kind="primary"], button[data-testid="stFormSubmitButton"] { background-color: #3b82f6 !important; color: #ffffff !important; font-weight: 700 !important; border: none !important; border-radius: 6px !important; padding: 8px 16px !important; }
-        div.stButton > button[kind="primary"]:hover, button[data-testid="stFormSubmitButton"]:hover { background-color: #2563eb !important; }
+        /* 💾 [핵심 피드백 반영] 마스터 푸른색 계열 버튼 규격화 및 빨간색 필터링 원천 타파 */
+        div.stButton > button[kind="primary"], 
+        button[data-testid="stFormSubmitButton"],
+        div.stForm [data-testid="stFormSubmitButton"] > button { 
+            background-color: #3b82f6 !important; 
+            color: #ffffff !important; 
+            font-weight: 700 !important; 
+            border: none !important; 
+            border-radius: 6px !important; 
+            padding: 8px 16px !important; 
+        }
+        div.stButton > button[kind="primary"]:hover, 
+        button[data-testid="stFormSubmitButton"]:hover,
+        div.stForm [data-testid="stFormSubmitButton"] > button:hover { 
+            background-color: #2563eb !important; 
+        }
         div.stButton > button[kind="secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
         
-        /* 로그인 화면 및 📱 학생 스마트폰 가두리 사각형 통합 CSS */
+        /* 로그인 화면 전용 스타일 */
         div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
         div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
+        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
+        
+        /* 📱 학생 스마트폰 사각형 가두리 독립 스타일 */
+        .student-mobile-container {
+            max-width: 440px !important;
+            margin: 60px auto 0 auto !important;
+            padding: 10px !important;
+        }
+        .student-mobile-card { 
+            background-color: #ffffff !important; 
+            border: 1px solid #cbd5e1 !important; 
+            padding: 40px 35px !important; 
+            border-radius: 24px !important; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; 
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .student-mobile-card h2 { 
+            font-size: 24px !important; 
+            text-align: center !important; 
+            font-weight: 800 !important; 
+            color: #0f172a !important; 
+            margin-bottom: 25px !important; 
+            letter-spacing: -0.5px !important;
+        }
         
         div[data-testid="InputInstructions"] { display: none !important; }
         div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
         div[data-testid="stTextInput"] > div, div[data-testid="stSelectbox"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
-        
-        div[data-testid="stForm"], .student-mobile-card { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
-        div[data-testid="stForm"] h2, .student-mobile-card h2 { font-size: 24px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; margin-bottom: 10px !important; }
         
         /* 타이틀 영역 구조 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
@@ -345,7 +381,7 @@ if "logged_teacher_pw" not in st.session_state: st.session_state["logged_teacher
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 로그인 화면 (💡 안내문구 최적화 및 파란색 단추 바인딩 완료)
+# 🔓 [1단계] 로그인 화면 (안내문구 최적화 및 파란색 단추 바인딩 완료)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -353,13 +389,10 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
             login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
-            # 💡 [UX 최적화 완료] 교사와 학생의 입력 포맷 혼선 완전 퇴치 문구
             user_id_input = st.text_input("ID / 이메일", placeholder="학생은 이메일, 교사는 ID를 입력하세요.", label_visibility="collapsed")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
             b_col2 = st.columns([1.0, 1.8, 1.0])[1]
-            
-            # 💡 [파란색 깔맞춤 완료] 로그인 버튼을 우리의 영롱한 시그니처 파란색으로 전격 개편!
             submit_active = b_col2.form_submit_button("로그인", type="primary", use_container_width=True)
             
             if submit_active:
@@ -408,17 +441,16 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 스마트폰 사이즈 맞춤 최적화 & 하얀 사각형 내부 가두기)
+# 🎓 [2단계-A] 학생 화면 (스마트폰 전용 가두리 및 하얀 사각형 완벽 구속)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
-    # 💡 하얀 사각형 카드 시작
+    st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     st.markdown('<div class="student-mobile-card">', unsafe_allow_html=True)
-    
     st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
     
     active_dbs = get_active_databases()
     if not active_dbs:
-        st.warning("현재 평가 데이터베이스에 활성화된 과목이 없습니다.")
+        st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
     else:
         opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
         sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible")
@@ -442,11 +474,11 @@ elif st.session_state["student_logged_in"]:
         st.session_state.clear()
         st.rerun()
         
-    # 💡 콘텐츠가 모두 끝난 뒤 하얀 사각형 카드를 여기서 마감!
+    st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================================================================
-# 🔒 [2단계-B] 교사 화면 (⚠️ 화강암 고정 구역 - 절대 변경 금지 지침 완벽 완수)
+# 🔒 [2단계-B] 교사 화면 (화강암 고정 구역 - 절대 변경 금지 지침 완벽 완수)
 # =========================================================================
 elif st.session_state["admin_logged_in"]:
     menus = ["학생 조회 현황 모니터링", "수행 평가 성적 입력", "학생 기본 정보 관리", "평가 대상 과목 구성"]
