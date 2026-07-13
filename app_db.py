@@ -818,7 +818,7 @@ elif st.session_state["admin_logged_in"]:
             st.markdown("📂 **학생 계정 일괄 업로드**")
             
             template_mst_df = pd.DataFrame({
-                "학년": [3, 3], "반", [2, 2], "번호": [1, 2], "이름": ["홍길동", "이영희"],
+                "학년": [3, 3], "반": [2, 2], "번호": [1, 2], "이름": ["홍길동", "이영희"],
                 "school_email": ["hgd@school.kr", "lyh@school.kr"], "password": ["1234", "1234"]
             })
             mst_csv_buffer = template_mst_df.to_csv(index=False).encode('utf-8-sig')
