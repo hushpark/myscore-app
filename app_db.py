@@ -79,7 +79,7 @@ st.markdown("""
             font-weight: 600 !important;
         }
         
-        /* 전광판 높이 잠금 CSS */
+        /* 💡 [완벽 수리] 전광판 높이를 강제로 잠금 처리하여 텍스트가 있든 없든 하단 버튼의 물리적 마진을 사수하는 CSS 기믹 */
         .fixed-status-container {
             min-height: 52px !important;
             max-height: 52px !important;
@@ -527,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항: 52px 고정형 가두리 상자 주입으로 흔들림 최종 진압)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -577,10 +577,12 @@ elif st.session_state["admin_logged_in"]:
                         file_just_loaded = True
                     except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
                 
+                # 💡 [요구사항 대전제 완성] 전광판 위치를 버튼 상단으로 복구시키고, 52px 고정 컨테이너 내부 래핑을 주입하여 처음 상태의 단추 마진을 절대 사수!
                 st.markdown('<div class="fixed-status-container">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
                 
+                # 내부 세션 및 분기값 실시간 매핑
                 if st.session_state.get("score_input_success_flag", False):
                     status_placeholder.success("🎉 수행 평가 점수를 저장하였습니다.")
                     st.session_state["score_input_success_flag"] = False
@@ -705,7 +707,7 @@ elif st.session_state["admin_logged_in"]:
                         except Exception as e: st.error(f"❌ 명단 저장 실패: {e}")
 
     # ---------------------------------------------------------------------
-    # 4번 메뉴: 평가 대상 과목 구성 (💡 요구사항: 가로 5열 격자 빌드 후 중앙 3열 배정 완료)
+    # 4번 메뉴: 평가 대상 과목 구성
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         main_col1, main_col2 = layout_left, layout_right
@@ -749,9 +751,8 @@ elif st.session_state["admin_logged_in"]:
                         st.success("🎉 과목 구성 완료!")
                         st.session_state["config_save_success_flag"] = False
                     
-                    # 💡 [요구사항 마감] 가로 5개 격자 열로 나누어 정확히 정중앙인 3번째 열에 단추 배치!
                     btn_cols = st.columns(5)
-                    with btn_cols[2]: # 인덱스 2번 = 3번째 열 (정중앙 수평 정렬)
+                    with btn_cols[2]:
                         config_save_btn_trigger = st.button("💾 과목 설정 저장", type="primary", use_container_width=True)
                         
                     if config_save_btn_trigger:
@@ -767,15 +768,12 @@ elif st.session_state["admin_logged_in"]:
     elif menu_selection == "👑 학생 계정 관리" and is_admin:
         if "cached_student_df" not in st.session_state:
             db_df = load_db_df(master_student_table)
-            if not db_df.empty:
-                db_df = db_df.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
+            if not db_df.empty: db_df = db_df.sort_values(by=["학년", "반", "번호"]).reset_index(drop=True)
             st.session_state["cached_student_df"] = db_df
             st.session_state["show_student_toast"] = False  
             st.session_state["student_save_success_flag"] = False 
 
-        if "student_file_uploader_key" not in st.session_state:
-            st.session_state["student_file_uploader_key"] = "st_uploader_init_100"
-
+        if "student_file_uploader_key" not in st.session_state: st.session_state["student_file_uploader_key"] = "st_uploader_init_100"
         if "mst_filter_grade" not in st.session_state: st.session_state["mst_filter_grade"] = "전체 학년"
         if "mst_filter_ban" not in st.session_state: st.session_state["mst_filter_ban"] = "전체 반"
 
@@ -809,7 +807,6 @@ elif st.session_state["admin_logged_in"]:
             })
             mst_csv_buffer = template_mst_df.to_csv(index=False).encode('utf-8-sig')
             st.download_button("📥 일괄 업로드용 마스터 양식 다운로드", data=mst_csv_buffer, file_name="전교생_마스터_일괄업로드_양식.csv", mime="text/csv", key="mst_down_btn", use_container_width=True)
-            
             mst_f = st.file_uploader("전교생 마스터 엑셀 파일 업로드", type=["csv", "xlsx"], label_visibility="collapsed", key=st.session_state["student_file_uploader_key"])
             
             if mst_f:
@@ -841,10 +838,8 @@ elif st.session_state["admin_logged_in"]:
             
             for _ in range(4): st.write("")
             info_grid_col1, info_grid_col2 = st.columns(2)
-            with info_grid_col1:
-                add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
-            with info_grid_col2:
-                save_all_std_trigger = st.button("💾 학생 계정 저장", type="primary", use_container_width=True, key="master_all_student_save_btn")
+            with info_grid_col1: add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
+            with info_grid_col2: save_all_std_trigger = st.button("💾 학생 계정 저장", type="primary", use_container_width=True, key="master_all_student_save_btn")
             if add_mst_std_trigger: show_add_master_student_single_dialog()
                 
         with layout_right:
