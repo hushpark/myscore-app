@@ -94,8 +94,7 @@ st.markdown("""
             letter-spacing: -0.5px !important;
         }
         
-        /* 🎨 [학생화면 버튼 전용 튜닝 CSS] 로그아웃 우측 끝 / 검증 단추 정중앙 가두기 정렬법 */
-        /* 1) 로그아웃 버튼 전용 (첫 번째 폼버튼 강제 우측 정렬) */
+        /* 🎨 로그아웃 버튼 우측 끝 정렬 */
         div.student-mobile-card div.stFormSubmitButton:first-of-type {
             display: flex !important;
             justify-content: flex-end !important;
@@ -103,7 +102,7 @@ st.markdown("""
             margin-bottom: 15px !important;
         }
         div.student-mobile-card div.stFormSubmitButton:first-of-type button {
-            background-color: #ef4444 !important; /* 붉은색 계열 일반 버튼 지정 */
+            background-color: #ef4444 !important; 
             color: #ffffff !important;
             border: none !important;
             border-radius: 6px !important;
@@ -116,7 +115,7 @@ st.markdown("""
             background-color: #dc2626 !important;
         }
         
-        /* 2) 실시간 검증 버튼 전용 (두 번째 폼버튼 강제 가운데 정렬) */
+        /* 🚀 실시간 검증 버튼 정중앙 가두기 정렬법 */
         div.student-mobile-card div.stFormSubmitButton:last-of-type {
             display: flex !important;
             justify-content: center !important;
@@ -124,14 +123,14 @@ st.markdown("""
             margin-top: 20px !important;
         }
         div.student-mobile-card div.stFormSubmitButton:last-of-type button {
-            background-color: #3b82f6 !important; /* 마스터 파란색 단추 사수 */
+            background-color: #3b82f6 !important; 
             color: #ffffff !important;
             font-size: 15px !important;
             font-weight: 700 !important;
             border: none !important;
             border-radius: 6px !important;
             padding: 10px 24px !important;
-            width: auto !important; /* 뚱뚱하게 찢어지지 않고 글씨 크기에 맞게 가둠 */
+            width: auto !important; 
         }
         div.student-mobile-card div.stFormSubmitButton:last-of-type button:hover {
             background-color: #2563eb !important;
@@ -295,63 +294,34 @@ def show_add_master_student_single_dialog():
                 except Exception as e: st.error(f"❌ 추가 실패: {e}")
             else: st.error("❌ 공란이 있습니다.")
 
-@st.dialog("🎉 성적 조회 결과")
-def show_result_dialog(student_data):
-    st.markdown(f"<div><b>{student_data['이름']}</b> 학생의 실시간 성적 내역입니다.</div><br>", unsafe_allow_html=True)
-    
-    st.markdown("""
-        <style>
-            .score-grid-container {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                border: 1px solid #cbd5e1;
-                border-radius: 8px;
-                overflow: hidden;
-                text-align: center;
-                background-color: #ffffff;
-            }
-            .score-header-box {
-                background-color: #f8fafc;
-                font-size: 13px;
-                font-weight: 800;
-                color: #475569;
-                padding: 10px 0;
-                border-bottom: 1px solid #cbd5e1;
-            }
-            .score-header-box:not(:last-child), .score-value-box:not(:last-child) {
-                border-right: 1px solid #cbd5e1;
-            }
-            .score-value-box {
-                font-size: 20px;
-                font-weight: 800;
-                color: #0f172a;
-                padding: 15px 0;
-            }
-            .score-total-value {
-                color: #3b82f6 !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+# 💡 [HTML 버그 정밀 교정 완결판] 스트림릿 순정 격자 표 엔진으로 안전하게 대대체
+@st.dialog("🎉 실시간 성적표 대장")
+def show_result_dialog(student_data, subject_name):
+    # 💡 [피드백 완벽 반영] 교과명이 동적으로 치고 들어오는 명확한 헤드라인 가이드라인 설정
+    st.markdown(f"<div><b>{student_data['이름']}</b> 학생의 <b>{subject_name}</b> 실시간 성적 내역입니다.</div><br>", unsafe_allow_html=True)
     
     sc1 = int(student_data.get('수행평가1', 0))
     sc2 = int(student_data.get('수행평가2', 0))
     sc3 = int(student_data.get('수행평가3', 0))
     total_score = sc1 + sc2 + sc3
     
-    st.markdown(f"""
-        <div class="score-grid-container">
-            <div class="score-header-box">수행평가 1차</div>
-            <div class="score-header-box">수행평가 2차</div>
-            <div class="score-header-box">수행평가 3차</div>
-            <div class="score-header-box" style="background-color: #eff6ff; color: #1e40af;">합계</div>
-            
-            <div class="score-value-box">{sc1}점</div>
-            <div class="score-value-box">{sc2}점</div>
-            <div class="score-value-box">{sc3}점</div>
-            <div class="score-value-box score-total-value" style="background-color: #f0f9ff;">{total_score}점</div>
-        </div>
-        <br>
-    """, unsafe_allow_html=True)
+    # ⬜ [테두리 격자 잠금] 해석 에러가 전혀 없는 순정 데이터프레임 빌드
+    score_table_df = pd.DataFrame({
+        "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 총점 합계"],
+        "취득 점수": [f"{sc1} 점", f"{sc2} 점", f"{sc3} 점", f"{total_score} 점"]
+    })
+    
+    # 테두리와 정렬 선을 자석처럼 이쁘게 맞춰주는 column_config 주입
+    st.dataframe(
+        score_table_df, 
+        use_container_width=True, 
+        hide_index=True,
+        column_config={
+            "평가 항목": st.column_config.TextColumn(alignment="center"),
+            "취득 점수": st.column_config.TextColumn(alignment="center")
+        }
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
     
     if "has_counted" not in st.session_state:
         new_count = int(student_data.get("성적조회 횟수", 0)) + 1
@@ -545,7 +515,6 @@ elif st.session_state["student_logged_in"]:
     with st.form("student_mobile_form", border=True):
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # 💡 [피드백 정밀 반영] 테두리 있는 안전 버튼 형식 유지하되, CSS 요격으로 "오른쪽 정렬" 안착!
         logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
         if logout_clicked:
             st.session_state.clear()
@@ -562,18 +531,19 @@ elif st.session_state["student_logged_in"]:
             sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible", key="std_subject_select")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            
-            # 💡 [피드백 정밀 반영] 좌우로 안 늘어나게 너비를 가두고, CSS 요격으로 박스 "정중앙" 배치!
             submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증", key="std_form_verify")
 
         if submit_active and sel_s != "과목을 선택하세요.":
+            # 💡 연동을 위해 선택한 과목명 문자열 분리 추출
             chosen_db = active_dbs[opts_s.index(sel_s)-1]
             subject_key = chosen_db['key']
+            extracted_subject_name = chosen_db['subject'] # 예: "정보"
 
             res = supabase.table(student_table).select("*").eq("subject_key", subject_key).eq("school_email", st.session_state["logged_student_id"]).execute()
             
             if len(res.data) > 0:
-                show_result_dialog(res.data[0])
+                # 💡 함수 인자에 교과 과목명을 추가 전달하여 실시간 연동 완성!
+                show_result_dialog(res.data[0], extracted_subject_name)
             else:
                 st.error("❌ 해당 과목에 등록된 선생님의 성적 데이터가 아직 없습니다.")
                 
@@ -831,7 +801,7 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 🔒 황금 마진 수치range(19) 완벽 고정
+                # 🔒 황금 마진 수치 range(19) 완벽 고정
                 for _ in range(19): st.write("")
                 
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
