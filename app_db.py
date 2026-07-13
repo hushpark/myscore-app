@@ -330,7 +330,11 @@ def show_profile_popup_dialog():
                 st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
                 msg_box_sub.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>🎉 담당 과목 권한이 임시 조정되었습니다.</p>", unsafe_allow_html=True)
 
-# 세션 제어 상태 초기화
+# 세션 플래그 영구 제어 초기화 체계 구축 (새로고침 시 전송 레이아웃 홀딩 방지)
+if "score_input_success_flag" not in st.session_state: st.session_state["score_input_success_flag"] = False
+if "info_save_success_flag" not in st.session_state: st.session_state["info_save_success_flag"] = False
+if "config_save_success_flag" not in st.session_state: st.session_state["config_save_success_flag"] = False
+
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "student_logged_in" not in st.session_state: st.session_state["student_logged_in"] = False
 if "logged_student_id" not in st.session_state: st.session_state["logged_student_id"] = ""
@@ -523,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항 적극 반영: 성공 알림 박스 동선 튜닝)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -573,10 +577,17 @@ elif st.session_state["admin_logged_in"]:
                     except Exception as e: st.error(f"❌ 파일 구조 해석 실패: {e}")
                         
                 for _ in range(4): st.write("")
+                
+                # 💡 [요구사항 완벽 구현] 최고관리자 학생 계정 관리 메뉴와 똑같은 위치(버튼 바로 위)에 성공 구역 개설!
+                if st.session_state.get("score_input_success_flag", False):
+                    st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!")
+                    st.session_state["score_input_success_flag"] = False # 플래그 사용 소멸
+                
                 btn_space_l, btn_space_r = st.columns([5.0, 5.0])
                 with btn_space_r: save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
             with layout_right:
+                # 우측 상단의 지저분한 안내 상자는 기획 통일성에 맞게 유지하되, 완료 메시지만 왼쪽 패널로 확실하게 축출
                 st.markdown('<p class="menu-guide-inline">💡 개인별 점수를 수정한 후, 왼쪽 패널 하단의 [💾 성적 저장하기] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
                 df = excel_loaded_df.copy() if excel_loaded_df is not None else df_base.copy()
 
@@ -616,11 +627,12 @@ elif st.session_state["admin_logged_in"]:
                                     for idx_c, db_col in enumerate(db_cols_ordered): record[db_col] = int(view_row[item_titles[idx_c]])
                                     supabase.table(student_table).upsert(record).execute()
                                     
-                                st.success("🎉 수행 점수 대장이 원격 클라우드 DB에 철컥 동기화 완료되었습니다!"); time.sleep(0.5); st.rerun()
+                                st.session_state["score_input_success_flag"] = True # 성공 낙인 낙관 활성화
+                                time.sleep(0.2); st.rerun()
                             except Exception as e: st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리
+    # 3번 메뉴: 학생 기본 정보 관리 (💡 요구사항 적극 반영: 성공 알림 박스 동선 튜닝)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -646,6 +658,12 @@ elif st.session_state["admin_logged_in"]:
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
                 for _ in range(15): st.write("")
+                
+                # 💡 [요구사항 완벽 구현] 가로 2열 단추 배치 바로 위 가용공간에 성공 알림 정밀 바인딩!
+                if st.session_state.get("info_save_success_flag", False):
+                    st.success("🎉 과목 학적 명단 변경 완료!")
+                    st.session_state["info_save_success_flag"] = False
+                
                 info_grid_col1, info_grid_col2 = st.columns(2)
                 with info_grid_col1:
                     if st.button("➕ 전입생 추가 배정", use_container_width=True): show_add_student_dialog(subject_key)
@@ -664,13 +682,15 @@ elif st.session_state["admin_logged_in"]:
                                 orig_r = df.loc[f_idx[_pos]].to_dict()
                                 orig_r["반"], orig_r["번호"], orig_r["이름"] = int(vr["반"]), int(vr["번호"]), str(vr["이름"]).strip()
                                 supabase.table(student_table).upsert(orig_r).execute()
-                            st.success("🎉 과목 학적 명단 변경 완료!"); time.sleep(0.3); st.rerun()
+                            st.session_state["info_save_success_flag"] = True
+                            time.sleep(0.2); st.rerun()
                         except Exception as e: st.error(f"❌ 명단 저장 실패: {e}")
 
     # ---------------------------------------------------------------------
-    # 4번 메뉴: 평가 대상 과목 구성
+    # 4번 메뉴: 평가 대상 과목 구성 (💡 요구사항 적극 반영: 패널 컨테이너 시원하게 격자 확장 대수술)
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
+        # 💡 성공 메시지를 수용하기 위해 패널 가동 격자 비율을 세로로 쾌적하고 넉넉하게 빌드
         main_col1, main_col2 = layout_left, layout_right
         with main_col1:
             with st.container(border=True):
@@ -713,11 +733,20 @@ elif st.session_state["admin_logged_in"]:
                     for i in range(item_count):
                         t_in = st.text_input(f"항목 {i+1} 제목", value=f"수행평가{i+1}", key=f"cfg_t_{i}")
                         item_titles.append(t_in.strip())
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # 💡 [요구사항 완벽 구현] 짧았던 왼쪽 레이아웃 컨테이너 내부에 성공 알림 위치 정밀 동기화 수리!
+                    if st.session_state.get("config_save_success_flag", False):
+                        st.success("🎉 과목 구성 완료!")
+                        st.session_state["config_save_success_flag"] = False
+                    
                     if st.button("💾 과목 설정 저장", type="primary", use_container_width=True):
                         rec = {"subject_key": subject_key, "item_count": item_count}
                         for idx_c in range(5): rec[f"item{idx_c+1}_name"] = item_titles[idx_c] if idx_c < len(item_titles) else "-"
                         supabase.table(config_table).upsert(rec).execute()
-                        st.success("🎉 과목 구성 완료!"); time.sleep(0.3); st.rerun()
+                        st.session_state["config_save_success_flag"] = True
+                        time.sleep(0.2); st.rerun()
 
     # ---------------------------------------------------------------------
     # 5번 메뉴: 👑 학생 계정 관리
