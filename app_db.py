@@ -84,7 +84,7 @@ st.markdown("""
             box-sizing: border-box !important;
         }
         
-        /* 💡 타이틀 원래 정형 스케일 및 가운데 정렬 복귀 */
+        /* 타이틀 원래 정형 스케일 및 가운데 정렬 복귀 */
         .student-mobile-card h2 { 
             font-size: 26px !important; 
             text-align: center !important; 
@@ -94,7 +94,7 @@ st.markdown("""
             letter-spacing: -0.5px !important;
         }
         
-        /* 🎨 [완벽 세팅] 첫 번째 로그아웃 버튼을 완벽한 "일반 붉은색 글씨 링크"로 강제 리모델링 */
+        /* 🎨 첫 번째 로그아웃 버튼을 완벽한 "일반 붉은색 글씨 링크"로 강제 리모델링 */
         div.student-mobile-card div.stFormSubmitButton:first-of-type button {
             background-color: transparent !important;
             border: none !important;
@@ -533,36 +533,34 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 타이틀 가운데 정렬 및 붉은색 글씨 형태 링크 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 ID 중복 고유 키 배정 및 붉은 글씨 로그아웃 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
-        # 1. 시원한 마스터 크기로 완벽하게 복귀한 가운데 정렬 타이틀
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # 2. 타이틀 밑으로 겹치지 않게 안착시킨 붉은색 글씨 링크 형태의 로그아웃 제출문
-        logout_clicked = st.form_submit_button("🚪 로그아웃")
+        # 💡 [버그 완벽 박멸] 충돌 예방용 유니크 key 주입 완료!
+        logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
         if logout_clicked:
             st.session_state.clear()
             st.rerun()
             
         st.markdown("<hr style='margin: 10px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
-        # 3. 그다음 순서로 수려하게 밀려 올라오는 교과과정 선택부
         active_dbs = get_active_databases()
         if not active_dbs:
             st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
             submit_active = False
         else:
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
-            
-            # 💡 [버그 예방 고유 세팅] 중복 ID 충돌을 방어하기 위해 key 명시 주입 완료
             sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible", key="std_subject_select")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증")
+            
+            # 💡 [버그 완벽 박멸] 충돌 예방용 유니크 key 주입 완료!
+            submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증", key="std_form_verify")
 
         if submit_active and sel_s != "과목을 선택하세요.":
             chosen_db = active_dbs[opts_s.index(sel_s)-1]
@@ -826,7 +824,7 @@ elif st.session_state["admin_logged_in"]:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 class_opts = ["전체"]
-                if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
+                if not df.empty && "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
                 for _ in range(19): st.write("")
@@ -1004,6 +1002,7 @@ elif st.session_state["admin_logged_in"]:
             
             for _ in range(4): st.write("")
             
+            # 💡 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             student_grid_cols = st.columns([5.0, 5.0])
             with student_grid_cols[0]:
                 add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
