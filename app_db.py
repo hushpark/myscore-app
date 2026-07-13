@@ -381,7 +381,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                     else:
                         df_tc = load_db_df(teacher_table)
                         id_match = df_tc[df_tc['교사_ID'] == clean_id] if not df_tc.empty else pd.DataFrame()
-                        if not id_match.empty and str(id_match.iloc[0]['비밀번호']) == clean_pw:
+                        if not id_match.empty && str(id_match.iloc[0]['비밀번호']) == clean_pw:
                             row = id_match.iloc[0]
                             st.session_state["admin_logged_in"] = True
                             st.session_state["logged_teacher_id"] = clean_id
@@ -394,7 +394,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                             if "마스터" not in allowed:
                                 active_dbs = [d for d in active_dbs if d['subject'].strip() in allowed]
                             
-                            if not active_dbs and "마스터" not in allowed:
+                            if not active_dbs && "마스터" not in allowed:
                                 st.session_state["current_menu"] = "평가 대상 과목 구성"
                             else:
                                 st.session_state["current_menu"] = "학생 조회 현황 모니터링"
@@ -655,7 +655,7 @@ elif st.session_state["admin_logged_in"]:
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=["반", "번호", "이름", "합계"], hide_index=True, key="grid_ed_sc", column_config=align_config, height=600)
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리 (💡 [완벽 교정] 2행 1열 전입생 추가 / 2행 2열 정보 저장 매칭)
+    # 3번 메뉴: 학생 기본 정보 관리
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -680,10 +680,8 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 우측 대형 표 구조와 레이아웃 밸런스를 맞추기 위한 수동 눈높이 마진 확보
                 for _ in range(19): st.write("")
                 
-                # 💡 [2x2 - 1행 잠금 전광판 구역] 30px 크기의 투명 상태창 선점
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -692,10 +690,8 @@ elif st.session_state["admin_logged_in"]:
                     status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>🎉 학생 기본 정보를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["info_save_success_flag"] = False
                 else:
-                    # 상자가 접히는 현상을 전격 차단하기 위한 투명 HTML 공백 태그 상시 로드
                     status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
                 
-                # 💡 [캡처 화면 2열 완벽 이행] 2행 1열에 전입생 추가 단추 마운트 / 2행 2열에 최종 정보 저장 단추 고정!
                 row2_cols = st.columns([5.0, 5.0])
                 with row2_cols[0]:
                     add_std_trigger = st.button("➕ 전입생 추가 배정", use_container_width=True)
@@ -779,7 +775,7 @@ elif st.session_state["admin_logged_in"]:
                         time.sleep(0.2); st.rerun()
 
     # ---------------------------------------------------------------------
-    # 5번 메뉴: 👑 학생 계정 관리
+    # 5번 메뉴: 👑 학생 계정 관리 (💡 [정밀 수리완료] 2행 1열 추가 / 2행 2열 저장)
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 학생 계정 관리" and is_admin:
         if "cached_student_df" not in st.session_state:
@@ -859,14 +855,14 @@ elif st.session_state["admin_logged_in"]:
             
             for _ in range(4): st.write("")
             
+            # 💡 [2x2 완전 교정] 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             student_grid_cols = st.columns([5.0, 5.0])
             with student_grid_cols[0]:
-                st.write("")
+                add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
             with student_grid_cols[1]:
                 save_all_std_trigger = st.button("💾 학생 계정 저장", type="primary", use_container_width=True, key="master_all_student_save_btn")
-            
-            if st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn"):
-                show_add_master_student_single_dialog()
+                
+            if add_mst_std_trigger: show_add_master_student_single_dialog()
                 
         with layout_right:
             target_render_df = st.session_state["cached_student_df"].copy()
@@ -899,7 +895,7 @@ elif st.session_state["admin_logged_in"]:
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
 
     # ---------------------------------------------------------------------
-    # 6번 메뉴: 👑 교사 계정 관리
+    # 6번 메뉴: 👑 교사 계정 관리 (💡 [정밀 수리완료] 2행 1열 추가 / 2행 2열 저장)
     # ---------------------------------------------------------------------
     elif menu_selection == "👑 교사 계정 관리" and is_admin:
         if "cached_teacher_df" not in st.session_state:
@@ -961,14 +957,14 @@ elif st.session_state["admin_logged_in"]:
             
             for _ in range(4): st.write("")
             
+            # 💡 [2x2 완전 교정] 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             teacher_grid_cols = st.columns([5.0, 5.0])
             with teacher_grid_cols[0]:
-                st.write("")
+                add_tc_trigger = st.button("➕ 교사 개별 신규 추가", use_container_width=True, key="m_single_add_tc_btn")
             with teacher_grid_cols[1]:
                 save_tc_trigger = st.button("💾 교사 계정 저장", type="primary", use_container_width=True, key="master_teacher_save_btn")
-            
-            if st.button("➕ 교사 개별 신규 추가", use_container_width=True, key="m_single_add_tc_btn"):
-                show_add_teacher_dialog()
+                
+            if add_tc_trigger: show_add_teacher_dialog()
                 
         with layout_right:
             target_tc_render_df = st.session_state["cached_teacher_df"].copy()
