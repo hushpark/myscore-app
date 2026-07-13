@@ -44,7 +44,7 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 💾 [핵심 피드백 반영] 마스터 푸른색 계열 버튼 규격화 및 빨간색 필터링 원천 타파 */
+        /* 💾 마스터 푸른색 계열 버튼 규격화 및 일반 폼 제출 버튼 속성 고정 */
         div.stButton > button[kind="primary"], 
         button[data-testid="stFormSubmitButton"],
         div.stForm [data-testid="stFormSubmitButton"] > button { 
@@ -83,13 +83,54 @@ st.markdown("""
             width: 100% !important;
             box-sizing: border-box !important;
         }
+        
+        /* 💡 타이틀 원래 정형 스케일 및 가운데 정렬 복귀 */
         .student-mobile-card h2 { 
-            font-size: 24px !important; 
+            font-size: 26px !important; 
             text-align: center !important; 
             font-weight: 800 !important; 
             color: #0f172a !important; 
-            margin-bottom: 25px !important; 
+            margin-bottom: 8px !important; 
             letter-spacing: -0.5px !important;
+        }
+        
+        /* 🎨 [완벽 세팅] 첫 번째 로그아웃 버튼을 완벽한 "일반 붉은색 글씨 링크"로 강제 리모델링 */
+        div.student-mobile-card div.stFormSubmitButton:first-of-type button {
+            background-color: transparent !important;
+            border: none !important;
+            color: #ef4444 !important; /* 부드럽고 수려한 붉은색 */
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            margin: 0 auto 15px auto !important;
+            display: block !important;
+            width: auto !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            height: auto !important;
+            text-decoration: none !important;
+        }
+        div.student-mobile-card div.stFormSubmitButton:first-of-type button:hover {
+            color: #dc2626 !important;
+            text-decoration: underline !important; /* 마우스 올리면 밑줄 */
+            background-color: transparent !important;
+        }
+        
+        /* 🚀 마지막 대형 성적 검증 버튼은 마스터 푸른색 단추 속성 완벽 영구 격리 수호 */
+        div.student-mobile-card div.stFormSubmitButton:last-of-type button {
+            background-color: #3b82f6 !important;
+            color: #ffffff !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
+            border: none !important;
+            border-radius: 6px !important;
+            padding: 10px 16px !important;
+            width: 100% !important;
+            display: block !important;
+            box-shadow: none !important;
+            margin-top: 15px !important;
+        }
+        div.student-mobile-card div.stFormSubmitButton:last-of-type button:hover {
+            background-color: #2563eb !important;
         }
         
         div[data-testid="InputInstructions"] { display: none !important; }
@@ -254,7 +295,6 @@ def show_add_master_student_single_dialog():
 def show_result_dialog(student_data):
     st.markdown(f"<div><b>{student_data['이름']}</b> 학생의 실시간 성적 내역입니다.</div><br>", unsafe_allow_html=True)
     
-    # 테두리 격자 스타일 강제 주입
     st.markdown("""
         <style>
             .score-grid-container {
@@ -289,13 +329,11 @@ def show_result_dialog(student_data):
         </style>
     """, unsafe_allow_html=True)
     
-    # 점수 파싱 및 합계 계산
     sc1 = int(student_data.get('수행평가1', 0))
     sc2 = int(student_data.get('수행평가2', 0))
     sc3 = int(student_data.get('수행평가3', 0))
     total_score = sc1 + sc2 + sc3
     
-    # 4열 격자 표 렌더링
     st.markdown(f"""
         <div class="score-grid-container">
             <div class="score-header-box">수행평가 1차</div>
@@ -322,6 +360,9 @@ def show_result_dialog(student_data):
     if st.button("닫기", type="secondary", use_container_width=True):
         if "has_counted" in st.session_state: del st.session_state["has_counted"]
         st.rerun()
+
+def reset_pw_status():
+    st.session_state["pw_save_status"] = "none"
 
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
@@ -492,102 +533,36 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 타이틀 가운데 정렬 & 에러 차단 붉은색 글씨 로그아웃)
+# 🎓 [2단계-A] 학생 화면 (📱 타이틀 가운데 정렬 및 붉은색 글씨 형태 링크 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
-        # 1. 시원한 크기로 중앙 정렬된 타이틀
+        # 1. 시원한 마스터 크기로 완벽하게 복귀한 가운데 정렬 타이틀
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # 2. 🚨 [에러 해결 완결판] st.form 내부에 배치할 수 있는 전용 폼 제출 버튼으로 변경
+        # 2. 타이틀 밑으로 겹치지 않게 안착시킨 붉은색 글씨 링크 형태의 로그아웃 제출문
         logout_clicked = st.form_submit_button("🚪 로그아웃")
         if logout_clicked:
             st.session_state.clear()
             st.rerun()
             
-        # 3. 🎨 버튼의 껍데기를 완전히 파괴하고 붉은색 글씨 링크로 둔갑시키는 특수 CSS
-        st.markdown("""
-            <style>
-                /* 일반 버튼 스타일을 투명화하고 글씨만 남기기 */
-                div[data-testid="stForm"] button[data-testid="stFormSubmitButton"] {
-                    background-color: transparent !important;
-                    border: none !important;
-                    color: #dc2626 !important; /* 선생님이 지정하신 붉은색 계열 */
-                    font-size: 14px !important;
-                    font-weight: 700 !important;
-                    margin: -10px auto 15px auto !important;
-                    display: block !important;
-                    width: auto !important;
-                    box-shadow: none !important;
-                    padding: 0 !important;
-                    cursor: pointer !important;
-                }
-                /* 마우스나 손가락을 올렸을 때의 텍스트 링크 효과 */
-                div[data-testid="stForm"] button[data-testid="stFormSubmitButton"]:hover {
-                    color: #b91c1c !important;
-                    text-decoration: underline !important;
-                    background-color: transparent !important;
-                }
-                /* 폼 안에 제출 단추가 2개 이상일 때 하단 단추까지 영향을 주지 않도록 첫 번째 단추만 정밀 요격 */
-                div[data-testid="stForm"] div[data-testid="stFormSubmitButton"]:first-of-type button {
-                    background-color: transparent !important;
-                    border: none !important;
-                    color: #dc2626 !important;
-                    margin: -10px auto 15px auto !important;
-                }
-                /* 🚀 하단 성적 실시간 검증 버튼은 우리의 파란색 마스터 스타일로 무조건 사수 */
-                div[data-testid="stForm"] div[data-testid="stFormSubmitButton"]:last-of-type button {
-                    background-color: #3b82f6 !important;
-                    color: #ffffff !important;
-                    border: none !important;
-                    border-radius: 6px !important;
-                    padding: 8px 16px !important;
-                    width: 100% !important;
-                    margin: 0 !important;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-        
         st.markdown("<hr style='margin: 10px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
-        # 4. 그다음 조회할 교과과정 선택 배치
+        # 3. 그다음 순서로 수려하게 밀려 올라오는 교과과정 선택부
         active_dbs = get_active_databases()
         if not active_dbs:
             st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
             submit_active = False
         else:
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
-            sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible")
             
-            st.markdown("<br>", unsafe_allow_html=True)
-            submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증")
-
-        if submit_active and sel_s != "과목을 선택하세요.":
-            chosen_db = active_dbs[opts_s.index(sel_s)-1]
-            subject_key = chosen_db['key']
-
-            res = supabase.table(student_table).select("*").eq("subject_key", subject_key).eq("school_email", st.session_state["logged_student_id"]).execute()
-            
-            if len(res.data) > 0:
-                show_result_dialog(res.data[0])
-            else:
-                st.error("❌ 해당 과목에 등록된 선생님의 성적 데이터가 아직 없습니다.")
-                
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # 3. 그다음 조회할 교과과정 선택 배치
-        active_dbs = get_active_databases()
-        if not active_dbs:
-            st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
-            submit_active = False
-        else:
-            opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
+            # 💡 [버그 예방 고유 세팅] 중복 ID 충돌을 방어하기 위해 key 명시 주입 완료
             sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible", key="std_subject_select")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증", type="primary", use_container_width=True)
+            submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증")
 
         if submit_active and sel_s != "과목을 선택하세요.":
             chosen_db = active_dbs[opts_s.index(sel_s)-1]
