@@ -595,7 +595,7 @@ elif st.session_state["admin_logged_in"]:
                 elif file_just_loaded:
                     status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
                 else:
-                    status_placeholder.markdown("<p style='color:#94a3b8; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px; font-style:italic;'> </p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#94a3b8; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px; font-style:italic;'> &nbsp; </p>", unsafe_allow_html=True)
 
                 if save_trigger:
                     # 버튼 클릭 즉시 1행 가두리 내부 글씨를 동기화 중으로 전격 스위칭!
