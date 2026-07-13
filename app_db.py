@@ -79,11 +79,11 @@ st.markdown("""
             font-weight: 600 !important;
         }
         
-        /* 💡 [물리적 부피 고정법] 완충 상자의 순수 높이를 45px로 고정하고, 내부의 패딩/마진 검색을 최소화하여 단추가 밀리는 현상을 완벽 진압 */
-        .perfect-spacer-box {
-            min-height: 45px !important;
-            max-height: 45px !important;
-            height: 45px !important;
+        /* 💡 2x2 상단 전광판 행의 높이를 상시 고정해두어 단추가 움직일 공간을 철저히 제어 */
+        .row1-fixed-status-box {
+            min-height: 40px !important;
+            max-height: 40px !important;
+            height: 40px !important;
             display: block !important;
             margin: 5px 0 !important;
             padding: 0 !important;
@@ -330,7 +330,7 @@ def show_profile_popup_dialog():
                 st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
                 msg_box_sub.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>🎉 담당 과목 권한이 임시 조정되었습니다.</p>", unsafe_allow_html=True)
 
-# 세션 제어 변수 선언
+# 세션 제어 데이터 뱅크 초기화
 if "score_input_success_flag" not in st.session_state: st.session_state["score_input_success_flag"] = False
 if "info_save_success_flag" not in st.session_state: st.session_state["info_save_success_flag"] = False
 if "config_save_success_flag" not in st.session_state: st.session_state["config_save_success_flag"] = False
@@ -527,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항: 한 줄 캡션 전광판 경량형 패치 주입)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항: 선생님이 설계하신 2x2 매커니즘 완벽 가동)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -560,7 +560,7 @@ elif st.session_state["admin_logged_in"]:
                 for col in item_titles[:item_count]: template_df[col] = [20, 18]
                     
                 csv_buffer = template_df.to_csv(index=False).encode('utf-8-sig')
-                st.download_button("📥 일괄 업로드용 성적 양식(.CSV / .XLSX) 다운로드", data=csv_buffer, file_name="수행성적양식.csv", mime="text/csv", use_container_width=True)
+                st.download_button("📥 일괄 업로드용 성적 양식 다운로드", data=csv_buffer, file_name="수행성적양식.csv", mime="text/csv", use_container_width=True)
                 
                 st.markdown("<br>📂 **엑셀/CSV 성적 일괄 가져오기 (덮어쓰기)**", unsafe_allow_html=True)
                 up_f = st.file_uploader("엑셀 파일 올리기", type=["csv", "xlsx"], label_visibility="collapsed", key="integrated_file_uploader")
@@ -577,22 +577,27 @@ elif st.session_state["admin_logged_in"]:
                         file_just_loaded = True
                     except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
                 
-                # 💡 [들썩임 최종 차단] 순수한 물리 패딩 여백이 잠긴 HTML 컨테이너 래퍼 적용
-                st.markdown('<div class="perfect-spacer-box">', unsafe_allow_html=True)
+                # 💡 [2x2-1행]: 글자수 물리적 간섭을 원천 파쇄하는 와이드 상태 전광판 존 빌드
+                st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
                 
+                # 타임라인 규칙 스위칭
                 if st.session_state.get("score_input_success_flag", False):
-                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:35px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["score_input_success_flag"] = False
                 elif file_just_loaded:
-                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:35px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
                 
-                btn_space_l, btn_space_r = st.columns([5.0, 5.0])
-                with btn_space_r: save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
+                # 💡 [2x2-2행]: 가로 2열 격자를 나누고 오른쪽(2열)에 저장 버튼 주입 완료! (완벽한 붙박이 고정 성립)
+                row2_cols = st.columns([5.0, 5.0])
+                with row2_cols[0]:
+                    st.write("") # 2행 1열은 시각적 대칭을 위한 공백 처리
+                with row2_cols[1]: # 2행 2열: 성적 저장하기 버튼 홀더 방 지정
+                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 if save_trigger:
-                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:35px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
                     df_to_save = excel_loaded_df.copy() if excel_loaded_df is not None else df_base.copy()
                     if not df_to_save.empty:
                         try:
