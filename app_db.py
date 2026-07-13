@@ -394,7 +394,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                             if "마스터" not in allowed:
                                 active_dbs = [d for d in active_dbs if d['subject'].strip() in allowed]
                             
-                            if not active_dbs && "마스터" not in allowed:
+                            if not active_dbs and "마스터" not in allowed:
                                 st.session_state["current_menu"] = "평가 대상 과목 구성"
                             else:
                                 st.session_state["current_menu"] = "학생 조회 현황 모니터링"
