@@ -127,7 +127,7 @@ def get_active_databases():
 
 def get_subject_item_names(subject_key):
     cfg_df = load_db_df(config_table)
-    if not cfg_df.empty Image and "subject_key" in cfg_df.columns:
+    if not cfg_df.empty and "subject_key" in cfg_df.columns:
         match = cfg_df[cfg_df["subject_key"] == subject_key]
         if not match.empty:
             row = match.iloc[0]
@@ -657,7 +657,7 @@ elif st.session_state["admin_logged_in"]:
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=["반", "번호", "이름", "합계"], hide_index=True, key="grid_ed_sc", column_config=align_config, height=600)
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리 (💡 [정밀 교정완료] 그림2 요구사항 완벽 가동)
+    # 3번 메뉴: 학생 기본 정보 관리 (🛠️ [버그 수정 완료] 오타 완벽 제거)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -682,7 +682,7 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 💡 [그림2 동선 패치] ➕ 전입생 추가 단추는 상단의 쾌적하고 넉넉한 공간으로 먼저 배치 처리!
+                # ➕ 전입생 추가 단추는 상단의 쾌적하고 넉넉한 공간으로 먼저 배치 처리!
                 st.markdown("<br>", unsafe_allow_html=True)
                 if st.button("➕ 전입생 추가 배정", use_container_width=True): 
                     show_add_student_dialog(subject_key)
@@ -702,7 +702,7 @@ elif st.session_state["admin_logged_in"]:
                     # 박스가 접혀서 버튼이 위로 들썩이는 것을 완벽 방지하는 투명 HTML 공백 결합
                     status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
                 
-                # 💡 [2x2 - 2행 칼정렬 매칭] 1열은 무조건 비워두고(공백), 2열(오른쪽)에 최종 정보 저장 단추 고정!
+                # 💡 [그림2 구조 교정 완결] 2행 1열은 무조건 비워두고(공백), 2행 2열(오른쪽)에 최종 정보 저장 단추 고정!
                 row2_cols = st.columns([5.0, 5.0])
                 with row2_cols[0]:
                     st.write("")
