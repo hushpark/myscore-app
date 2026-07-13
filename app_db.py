@@ -79,15 +79,15 @@ st.markdown("""
             font-weight: 600 !important;
         }
         
-        /* 💡 [완벽 수리] 전광판 높이를 강제로 잠금 처리하여 텍스트가 있든 없든 하단 버튼의 물리적 마진을 사수하는 CSS 기믹 */
+        /* 💡 높이를 고정하여 마진 확보 */
         .fixed-status-container {
-            min-height: 52px !important;
-            max-height: 52px !important;
-            height: 52px !important;
+            min-height: 35px !important;
+            max-height: 35px !important;
+            height: 35px !important;
             display: flex;
             align-items: center;
             overflow: hidden;
-            margin: 5px 0;
+            margin: 2px 0;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -527,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항: 52px 고정형 가두리 상자 주입으로 흔들림 최종 진압)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 전광판의 외곽 여백 충돌을 완벽히 방지하는 캡션 경량화 매커니즘)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -560,7 +560,7 @@ elif st.session_state["admin_logged_in"]:
                 for col in item_titles[:item_count]: template_df[col] = [20, 18]
                     
                 csv_buffer = template_df.to_csv(index=False).encode('utf-8-sig')
-                st.download_button("📥 일괄 업로드용 성적 양식(.CSV / .XLSX) 다운로드", data=csv_buffer, file_name=f"수행성적양식_{chosen_db['subject']}.csv", mime="text/csv", use_container_width=True)
+                st.download_button("📥 일괄 업로드용 성적 양식(.CSV / .XLSX) 다운로드", data=csv_buffer, file_name="수행성적양식.csv", mime="text/csv", use_container_width=True)
                 
                 st.markdown("<br>📂 **엑셀/CSV 성적 일괄 가져오기 (덮어쓰기)**", unsafe_allow_html=True)
                 up_f = st.file_uploader("엑셀 파일 올리기", type=["csv", "xlsx"], label_visibility="collapsed", key="integrated_file_uploader")
@@ -577,23 +577,22 @@ elif st.session_state["admin_logged_in"]:
                         file_just_loaded = True
                     except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
                 
-                # 💡 [요구사항 대전제 완성] 전광판 위치를 버튼 상단으로 복구시키고, 52px 고정 컨테이너 내부 래핑을 주입하여 처음 상태의 단추 마진을 절대 사수!
+                # 💡 [정공법 가두리 적용] 높이가 잠긴 박스 내부에 경량형 캡션(st.caption)만 쏙 넣어서 들썩임 제로화 완성!
                 st.markdown('<div class="fixed-status-container">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                # 내부 세션 및 분기값 실시간 매핑
                 if st.session_state.get("score_input_success_flag", False):
-                    status_placeholder.success("🎉 수행 평가 점수를 저장하였습니다.")
+                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; font-size:14px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["score_input_success_flag"] = False
                 elif file_just_loaded:
-                    status_placeholder.markdown("<span style='color: #10b981; font-weight:600; font-size:14px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</span>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; font-size:14px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
                 
                 btn_space_l, btn_space_r = st.columns([5.0, 5.0])
                 with btn_space_r: save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 if save_trigger:
-                    status_placeholder.markdown("<span style='color: #64748b; font-weight:600; font-size:14px;'>⏳ 원격 데이터베이스에 동기화 중...</span>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; font-size:14px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
                     df_to_save = excel_loaded_df.copy() if excel_loaded_df is not None else df_base.copy()
                     if not df_to_save.empty:
                         try:
