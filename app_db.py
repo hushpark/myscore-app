@@ -492,16 +492,27 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 스마트폰 사이즈 맞춤 및 st.form 하얀 사각형 가두리 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 순서 개편 및 로그아웃 우측 정렬 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
-    # 💡 모바일 가두리 컨테이너 벨트 시작
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
-    # 💡 [그림2 요구사항 최종 해결] 로그인 화면과 똑같이 st.form을 사용하여 하얀 사각형 안에 무조건 가둠!
     with st.form("student_mobile_form", border=True):
-        st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
+        # 1행: 타이틀과 로그아웃 단추를 한 줄에 가두고 쪼개기
+        head_col1, head_col2 = st.columns([6.5, 3.5])
+        with head_col1:
+            st.markdown("<h2 style='text-align:left; margin:0; padding:0; line-height:40px;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
+        with head_col2:
+            # 제목 바로 밑 우측 정렬 효과
+            st.markdown("<div style='padding-top:4px;'></div>", unsafe_allow_html=True)
+            logout_clicked = st.form_submit_button("🚪 로그아웃", type="secondary", use_container_width=True)
+            if logout_clicked:
+                st.session_state.clear()
+                st.rerun()
+                
+        st.markdown("<hr style='margin: 15px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
+        # 2행: 그다음 조회할 교과과정 선택 배치
         active_dbs = get_active_databases()
         if not active_dbs:
             st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
@@ -511,10 +522,8 @@ elif st.session_state["student_logged_in"]:
             sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            # 우리의 파란색 단추로 제출 버튼 바인딩
             submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증", type="primary", use_container_width=True)
 
-        # 폼 내부에서 제출 버튼이 눌렸을 때의 로직 처리
         if submit_active and sel_s != "과목을 선택하세요.":
             chosen_db = active_dbs[opts_s.index(sel_s)-1]
             subject_key = chosen_db['key']
@@ -526,12 +535,6 @@ elif st.session_state["student_logged_in"]:
             else:
                 st.error("❌ 해당 과목에 등록된 선생님의 성적 데이터가 아직 없습니다.")
                 
-    # 💡 로그아웃 단추는 하얀 상자 바로 밑에 모바일 너비에 맞춰 깔끔하게 배치
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚪 안전하게 로그아웃", type="secondary", use_container_width=True, key="std_logout_btn"): 
-        st.session_state.clear()
-        st.rerun()
-        
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================================================================
