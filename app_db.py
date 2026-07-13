@@ -408,10 +408,10 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 스마트폰 사이즈 맞춤 최적화 & 하얀 사각형 복구 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 스마트폰 사이즈 맞춤 최적화 & 하얀 사각형 내부 가두기)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
-    # 💡 [하얀 사각형 완전 봉인] 모바일 전용 수려한 카드 레이아웃 클래스 주입
+    # 💡 하얀 사각형 카드 시작
     st.markdown('<div class="student-mobile-card">', unsafe_allow_html=True)
     
     st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
@@ -437,11 +437,12 @@ elif st.session_state["student_logged_in"]:
                 else:
                     st.error("❌ 해당 과목에 등록된 선생님의 성적 데이터가 아직 없습니다.")
                     
-    st.markdown("<br><hr style='margin: 10px 0; border:1px solid #e2e8f0;'>", unsafe_allow_html=True)
+    st.markdown("<br><hr style='margin: 10px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
     if st.button("🚪 안전하게 로그아웃", type="secondary", use_container_width=True): 
         st.session_state.clear()
         st.rerun()
         
+    # 💡 콘텐츠가 모두 끝난 뒤 하얀 사각형 카드를 여기서 마감!
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================================================================
