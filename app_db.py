@@ -79,11 +79,11 @@ st.markdown("""
             font-weight: 600 !important;
         }
         
-        /* 💡 [수정 완료] 선생님의 지침을 반영하여 전광판 상자 높이를 30px 슬림 축소 마감 */
+        /* 2x2 상단 전광판 박스 CSS 고정 수리 */
         .row1-fixed-status-box {
-            min-height: 30px !important;
-            max-height: 30px !important;
-            height: 30px !important;
+            min-height: 40px !important;
+            max-height: 40px !important;
+            height: 40px !important;
             display: block !important;
             margin: 5px 0 !important;
             padding: 0 !important;
@@ -526,7 +526,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항: 30px 슬림 축소 및 대기 문자 삭제 완전 이행)
+    # 2번 메뉴: 수행 평가 성적 입력 (🚨 2x2 1행 내부 공간으로 실시간 스위칭 메시지 완전 주입)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -576,27 +576,30 @@ elif st.session_state["admin_logged_in"]:
                         file_just_loaded = True
                     except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
                 
-                # 💡 [30px 가두리 수리 구역]
+                # 💡 [2x2 - 1행 잠금 구역 개설]
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                # 💡 [요구사항 조율 완결] '전광판자리' 임시 텍스트는 흔적도 없이 소거하고 깨끗하게 대기
-                if st.session_state.get("score_input_success_flag", False):
-                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
-                    st.session_state["score_input_success_flag"] = False
-                elif file_just_loaded:
-                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
-
+                # 2x2 - 2행 가로 격자 배정 정의 (미리 그려둠)
                 row2_cols = st.columns([5.0, 5.0])
                 with row2_cols[0]:
                     st.write("") 
                 with row2_cols[1]: 
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
+                # 💡 [동선 정상화 결론] 1행 status_placeholder '내부'에 조건별 텍스트를 정확하게 매핑 주입!
+                if st.session_state.get("score_input_success_flag", False):
+                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
+                    st.session_state["score_input_success_flag"] = False
+                elif file_just_loaded:
+                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
+                else:
+                    status_placeholder.markdown("<p style='color:#94a3b8; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px; font-style:italic;'>📢 [전광판자리 - 대기 중]</p>", unsafe_allow_html=True)
+
                 if save_trigger:
-                    # 💡 line-height를 상자 크기 규격인 30px로 타이트하게 정렬 패치 수립
-                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
+                    # 버튼 클릭 즉시 1행 가두리 내부 글씨를 동기화 중으로 전격 스위칭!
+                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
                     df_to_save = excel_loaded_df.copy() if excel_loaded_df is not None else df_base.copy()
                     if not df_to_save.empty:
                         try:
