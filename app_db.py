@@ -79,7 +79,7 @@ st.markdown("""
             font-weight: 600 !important;
         }
         
-        /* 2x2 상단 전광판 박스 CSS 고정 수리 */
+        /* 🔒 30px 박스 붕괴 현상을 원천 방어하는 CSS 클래스 잠금 */
         .row1-fixed-status-box {
             min-height: 30px !important;
             max-height: 30px !important;
@@ -127,7 +127,7 @@ def get_active_databases():
 
 def get_subject_item_names(subject_key):
     cfg_df = load_db_df(config_table)
-    if not cfg_df.empty and "subject_key" in cfg_df.columns:
+    if not cfg_df.empty Image and "subject_key" in cfg_df.columns:
         match = cfg_df[cfg_df["subject_key"] == subject_key]
         if not match.empty:
             row = match.iloc[0]
@@ -526,7 +526,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (🚨 2x2 1행 내부 공간으로 실시간 스위칭 메시지 완전 주입)
+    # 2번 메뉴: 수행 평가 성적 입력 (1행 전광판 존, 2행 1열 공백, 2행 2열 저장 버튼)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -576,29 +576,27 @@ elif st.session_state["admin_logged_in"]:
                         file_just_loaded = True
                     except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
                 
-                # 💡 [2x2 - 1행 잠금 구역 개설]
+                # 💡 [2x2 - 1행 잠금 구역]
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                # 2x2 - 2행 가로 격자 배정 정의 (미리 그려둠)
-                row2_cols = st.columns([5.0, 5.0])
-                with row2_cols[0]:
-                    st.write("") 
-                with row2_cols[1]: 
-                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
-
-                # 💡 [동선 정상화 결론] 1행 status_placeholder '내부'에 조건별 텍스트를 정확하게 매핑 주입!
                 if st.session_state.get("score_input_success_flag", False):
                     status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["score_input_success_flag"] = False
                 elif file_just_loaded:
                     status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
                 else:
-                    status_placeholder.markdown("<p style='color:#94a3b8; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px; font-style:italic;'> &nbsp; </p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
+
+                # 💡 [2x2 - 2행] 1열 공백, 2열 성적 저장하기 버튼 홀더 배치
+                row2_cols = st.columns([5.0, 5.0])
+                with row2_cols[0]:
+                    st.write("") 
+                with row2_cols[1]: 
+                    save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 if save_trigger:
-                    # 버튼 클릭 즉시 1행 가두리 내부 글씨를 동기화 중으로 전격 스위칭!
                     status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
                     df_to_save = excel_loaded_df.copy() if excel_loaded_df is not None else df_base.copy()
                     if not df_to_save.empty:
@@ -659,7 +657,7 @@ elif st.session_state["admin_logged_in"]:
                     edited_df = st.data_editor(sub_df, use_container_width=True, disabled=["반", "번호", "이름", "합계"], hide_index=True, key="grid_ed_sc", column_config=align_config, height=600)
 
     # ---------------------------------------------------------------------
-    # 3번 메뉴: 학생 기본 정보 관리
+    # 3번 메뉴: 학생 기본 정보 관리 (💡 [정밀 교정완료] 그림2 요구사항 완벽 가동)
     # ---------------------------------------------------------------------
     elif menu_selection == "학생 기본 정보 관리":
         registered_dbs = get_active_databases()
@@ -684,23 +682,39 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                for _ in range(15): st.write("")
+                # 💡 [그림2 동선 패치] ➕ 전입생 추가 단추는 상단의 쾌적하고 넉넉한 공간으로 먼저 배치 처리!
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("➕ 전입생 추가 배정", use_container_width=True): 
+                    show_add_student_dialog(subject_key)
+
+                # 우측 표와의 높이 매칭 밸런스 마진 확보
+                for _ in range(8): st.write("")
+                
+                # 💡 [2x2 - 1행 잠금 구역] 30px 크기의 투명한 무색 상태 전광판 세팅
+                st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
+                status_placeholder = st.empty()
+                st.markdown('</div>', unsafe_allow_html=True)
                 
                 if st.session_state.get("info_save_success_flag", False):
-                    st.success("🎉 학생 기본 정보를 저장하였습니다.")
+                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>🎉 학생 기본 정보를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["info_save_success_flag"] = False
+                else:
+                    # 박스가 접혀서 버튼이 위로 들썩이는 것을 완벽 방지하는 투명 HTML 공백 결합
+                    status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
                 
-                info_grid_col1, info_grid_col2 = st.columns(2)
-                with info_grid_col1:
-                    if st.button("➕ 전입생 추가 배정", use_container_width=True): show_add_student_dialog(subject_key)
-                with info_grid_col2:
+                # 💡 [2x2 - 2행 칼정렬 매칭] 1열은 무조건 비워두고(공백), 2열(오른쪽)에 최종 정보 저장 단추 고정!
+                row2_cols = st.columns([5.0, 5.0])
+                with row2_cols[0]:
+                    st.write("")
+                with row2_cols[1]:
                     save_info_trigger = st.button("💾 학생 기본 정보 저장", type="primary", use_container_width=True, key="fine_tuned_info_save_btn")
 
             with layout_right:
+                st.markdown('<p class="menu-guide-inline">💡 개인별 인적사항을 수정한 후, 왼쪽 패널 하단의 [💾 학생 기본 정보 저장] 버튼을 누르시면 반영됩니다.</p>', unsafe_allow_html=True)
                 if df.empty: st.info("📢 배정된 명단이 없습니다. 전입생 추가 기능이나 최고관리자의 마스터 연동 기능을 이용해 명단을 세팅하세요.")
                 else:
                     f_idx = df[df["반"].astype(int) == int(sel_c.replace("반", ""))].index if sel_c != "전체" else df.index
-                    edited_df = st.data_editor(df.loc[f_idx, ["반", "번호", "이름", "school_email"]], use_container_width=True, hide_index=True, key="grid_ed_inf", height=650, column_config={"school_email": st.column_config.TextColumn("학교 이메일")})
+                    edited_df = st.data_editor(df.loc[f_idx, ["반", "번호", "이름", "school_email"]], use_container_width=True, hide_index=True, key="grid_ed_inf", height=600, column_config={"school_email": st.column_config.TextColumn("학교 이메일")})
                     if save_info_trigger:
                         try:
                             for _pos in range(len(edited_df)):
@@ -834,19 +848,29 @@ elif st.session_state["admin_logged_in"]:
                 except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
 
             if st.session_state.get("show_student_toast", False):
-                st.toast("📥 엑셀 데이터가 오른쪽 표에 임시 로드되었습니다. [학생 계정 저장]을 눌러 반영하세요!")
+                st.toast("📥 엑셀 데이터가 오른쪽 표에 임시 로드되었습니다.")
                 st.session_state["show_student_toast"] = False  
             
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
+            mst_status_placeholder = st.empty()
+            st.markdown('</div>', unsafe_allow_html=True)
+            
             if st.session_state.get("student_save_success_flag", False):
-                st.success("🎉 전교생 학생 계정 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!")
+                mst_status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>🎉 전교생 학생 계정 대장이 저장되었습니다.</p>", unsafe_allow_html=True)
                 st.session_state["student_save_success_flag"] = False 
+            else:
+                mst_status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
             
             for _ in range(4): st.write("")
-            info_grid_col1, info_grid_col2 = st.columns(2)
-            with info_grid_col1: add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
-            with info_grid_col2: save_all_std_trigger = st.button("💾 학생 계정 저장", type="primary", use_container_width=True, key="master_all_student_save_btn")
-            if add_mst_std_trigger: show_add_master_student_single_dialog()
+            
+            student_grid_cols = st.columns([5.0, 5.0])
+            with student_grid_cols[0]:
+                st.write("")
+            with student_grid_cols[1]:
+                save_all_std_trigger = st.button("💾 학생 계정 저장", type="primary", use_container_width=True, key="master_all_student_save_btn")
+            
+            if st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn"):
+                show_add_master_student_single_dialog()
                 
         with layout_right:
             target_render_df = st.session_state["cached_student_df"].copy()
@@ -926,18 +950,29 @@ elif st.session_state["admin_logged_in"]:
                 except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
             
             if st.session_state.get("show_teacher_toast", False):
-                st.toast("📥 교사 데이터가 오른쪽 표에 임시 로드되었습니다. [교사 계정 저장]을 눌러 반영하세요!")
+                st.toast("📥 교사 데이터가 오른쪽 표에 임시 로드되었습니다.")
                 st.session_state["show_teacher_toast"] = False
-            st.markdown("<br>", unsafe_allow_html=True)
+            
+            st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
+            tc_status_placeholder = st.empty()
+            st.markdown('</div>', unsafe_allow_html=True)
+            
             if st.session_state.get("teacher_save_success_flag", False):
-                st.success("🎉 교사 전체 권한 대장이 원격 데이터베이스에 완벽하게 일괄 저장 및 반영 완료되었습니다!")
+                tc_status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>🎉 교사 전체 권한 대장이 저장되었습니다.</p>", unsafe_allow_html=True)
                 st.session_state["teacher_save_success_flag"] = False
+            else:
+                tc_status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
             
             for _ in range(4): st.write("")
-            tc_grid_col1, tc_grid_col2 = st.columns(2)
-            with tc_grid_col1: add_tc_trigger = st.button("➕ 교사 개별 신규 추가", use_container_width=True, key="m_single_add_tc_btn")
-            with tc_grid_col2: save_tc_trigger = st.button("💾 교사 계정 저장", type="primary", use_container_width=True, key="master_teacher_save_btn")
-            if add_tc_trigger: show_add_teacher_dialog()
+            
+            teacher_grid_cols = st.columns([5.0, 5.0])
+            with teacher_grid_cols[0]:
+                st.write("")
+            with teacher_grid_cols[1]:
+                save_tc_trigger = st.button("💾 교사 계정 저장", type="primary", use_container_width=True, key="master_teacher_save_btn")
+            
+            if st.button("➕ 교사 개별 신규 추가", use_container_width=True, key="m_single_add_tc_btn"):
+                show_add_teacher_dialog()
                 
         with layout_right:
             target_tc_render_df = st.session_state["cached_teacher_df"].copy()
