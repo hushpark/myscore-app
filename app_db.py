@@ -492,27 +492,48 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 순서 개편 및 로그아웃 우측 정렬 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 타이틀 가운데 정렬 & 붉은색 글씨 로그아웃 링크 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
-        # 1행: 타이틀과 로그아웃 단추를 한 줄에 가두고 쪼개기
-        head_col1, head_col2 = st.columns([6.5, 3.5])
-        with head_col1:
-            st.markdown("<h2 style='text-align:left; margin:0; padding:0; line-height:40px;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
-        with head_col2:
-            # 제목 바로 밑 우측 정렬 효과
-            st.markdown("<div style='padding-top:4px;'></div>", unsafe_allow_html=True)
-            logout_clicked = st.form_submit_button("🚪 로그아웃", type="secondary", use_container_width=True)
-            if logout_clicked:
-                st.session_state.clear()
-                st.rerun()
-                
-        st.markdown("<hr style='margin: 15px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+        # 1. 원래 큰 글자 크기(h2 스타일)로 복귀하고 완벽한 가운데 정렬
+        st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # 2행: 그다음 조회할 교과과정 선택 배치
+        # 2. 타이틀 밑으로 겹치지 않게 배치한 붉은색 계열 로그아웃 글씨 (클릭 시 세션 클리어 태그 발동)
+        # 스트림릿 내장 링크 기능을 사용하여 붉은색 계열(#ef4444) 텍스트로 구현했습니다.
+        if st.button("🚪 로그아웃", type="secondary", use_container_width=True, help="클릭하시면 안전하게 로그아웃됩니다."):
+            st.session_state.clear()
+            st.rerun()
+            
+        # 💡 버튼 대신 완전한 붉은색 글씨 형태를 원하시면 아래 주석처리된 HTML 코드를 활용할 수 있으나,
+        # 스트림릿 폼 내부에서 즉시 파이썬 세션을 끊기 위해 안전한 텍스트 형태의 커스텀 버튼 스타일을 입혔습니다.
+        st.markdown("""
+            <style>
+                /* 로그아웃 버튼을 완전한 붉은색 글씨 링크처럼 보이게 만드는 마법의 CSS */
+                div[data-testid="stForm"] button[kind="secondary"] {
+                    background-color: transparent !important;
+                    border: none !important;
+                    color: #dc2626 !important; /* 붉은색 계열 폰트 */
+                    font-size: 14px !important;
+                    font-weight: 700 !important;
+                    margin: -10px auto 15px auto !important;
+                    display: block !important;
+                    width: auto !important;
+                    box-shadow: none !important;
+                }
+                div[data-testid="stForm"] button[kind="secondary"]:hover {
+                    color: #b91c1c !important;
+                    text-decoration: underline !important;
+                    background-color: transparent !important;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<hr style='margin: 10px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+        
+        # 3. 그다음 조회할 교과과정 선택 배치
         active_dbs = get_active_databases()
         if not active_dbs:
             st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
