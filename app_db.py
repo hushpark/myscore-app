@@ -592,7 +592,7 @@ elif st.session_state["admin_logged_in"]:
                 # 💡 [2x2-2행]: 가로 2열 격자를 나누고 오른쪽(2열)에 저장 버튼 주입 완료! (완벽한 붙박이 고정 성립)
                 row2_cols = st.columns([5.0, 5.0])
                 with row2_cols[0]:
-                    st.write("") # 2행 1열은 시각적 대칭을 위한 공백 처리
+                    st.write("전광판자") # 2행 1열은 시각적 대칭을 위한 공백 처리
                 with row2_cols[1]: # 2행 2열: 성적 저장하기 버튼 홀더 방 지정
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
