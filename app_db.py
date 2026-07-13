@@ -381,7 +381,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                     else:
                         df_tc = load_db_df(teacher_table)
                         id_match = df_tc[df_tc['교사_ID'] == clean_id] if not df_tc.empty else pd.DataFrame()
-                        if not id_match.empty && str(id_match.iloc[0]['비밀번호']) == clean_pw:
+                        if not id_match.empty and str(id_match.iloc[0]['비밀번호']) == clean_pw:
                             row = id_match.iloc[0]
                             st.session_state["admin_logged_in"] = True
                             st.session_state["logged_teacher_id"] = clean_id
