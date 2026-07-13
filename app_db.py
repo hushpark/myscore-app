@@ -90,44 +90,48 @@ st.markdown("""
             text-align: center !important; 
             font-weight: 800 !important; 
             color: #0f172a !important; 
-            margin-bottom: 8px !important; 
+            margin-bottom: 12px !important; 
             letter-spacing: -0.5px !important;
         }
         
-        /* 🎨 첫 번째 로그아웃 버튼을 완벽한 "일반 붉은색 글씨 링크"로 강제 리모델링 */
+        /* 🎨 [학생화면 버튼 전용 튜닝 CSS] 로그아웃 우측 끝 / 검증 단추 정중앙 가두기 정렬법 */
+        /* 1) 로그아웃 버튼 전용 (첫 번째 폼버튼 강제 우측 정렬) */
+        div.student-mobile-card div.stFormSubmitButton:first-of-type {
+            display: flex !important;
+            justify-content: flex-end !important;
+            width: 100% !important;
+            margin-bottom: 15px !important;
+        }
         div.student-mobile-card div.stFormSubmitButton:first-of-type button {
-            background-color: transparent !important;
+            background-color: #ef4444 !important; /* 붉은색 계열 일반 버튼 지정 */
+            color: #ffffff !important;
             border: none !important;
-            color: #ef4444 !important; /* 부드럽고 수려한 붉은색 */
-            font-size: 14px !important;
+            border-radius: 6px !important;
+            font-size: 13px !important;
             font-weight: 700 !important;
-            margin: 0 auto 15px auto !important;
-            display: block !important;
+            padding: 6px 14px !important;
             width: auto !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            height: auto !important;
-            text-decoration: none !important;
         }
         div.student-mobile-card div.stFormSubmitButton:first-of-type button:hover {
-            color: #dc2626 !important;
-            text-decoration: underline !important; /* 마우스 올리면 밑줄 */
-            background-color: transparent !important;
+            background-color: #dc2626 !important;
         }
         
-        /* 🚀 마지막 대형 성적 검증 버튼은 마스터 푸른색 단추 속성 완벽 영구 격리 수호 */
+        /* 2) 실시간 검증 버튼 전용 (두 번째 폼버튼 강제 가운데 정렬) */
+        div.student-mobile-card div.stFormSubmitButton:last-of-type {
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin-top: 20px !important;
+        }
         div.student-mobile-card div.stFormSubmitButton:last-of-type button {
-            background-color: #3b82f6 !important;
+            background-color: #3b82f6 !important; /* 마스터 파란색 단추 사수 */
             color: #ffffff !important;
-            font-size: 16px !important;
+            font-size: 15px !important;
             font-weight: 700 !important;
             border: none !important;
             border-radius: 6px !important;
-            padding: 10px 16px !important;
-            width: 100% !important;
-            display: block !important;
-            box-shadow: none !important;
-            margin-top: 15px !important;
+            padding: 10px 24px !important;
+            width: auto !important; /* 뚱뚱하게 찢어지지 않고 글씨 크기에 맞게 가둠 */
         }
         div.student-mobile-card div.stFormSubmitButton:last-of-type button:hover {
             background-color: #2563eb !important;
@@ -533,7 +537,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 ID 중복 고유 키 배정 및 붉은 글씨 로그아웃 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 로그아웃 우측 끝이동, 검증 버튼 센터 정렬 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
@@ -541,7 +545,7 @@ elif st.session_state["student_logged_in"]:
     with st.form("student_mobile_form", border=True):
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # 💡 [버그 완벽 박멸] 충돌 예방용 유니크 key 주입 완료!
+        # 💡 [피드백 정밀 반영] 테두리 있는 안전 버튼 형식 유지하되, CSS 요격으로 "오른쪽 정렬" 안착!
         logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
         if logout_clicked:
             st.session_state.clear()
@@ -559,7 +563,7 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 💡 [버그 완벽 박멸] 충돌 예방용 유니크 key 주입 완료!
+            # 💡 [피드백 정밀 반영] 좌우로 안 늘어나게 너비를 가두고, CSS 요격으로 박스 "정중앙" 배치!
             submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증", key="std_form_verify")
 
         if submit_active and sel_s != "과목을 선택하세요.":
@@ -827,6 +831,7 @@ elif st.session_state["admin_logged_in"]:
                 if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
+                # 🔒 황금 마진 수치range(19) 완벽 고정
                 for _ in range(19): st.write("")
                 
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
@@ -1000,6 +1005,7 @@ elif st.session_state["admin_logged_in"]:
             else:
                 mst_status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
             
+            # 🔒 황금 마진 수치 range(4) 완벽 고정
             for _ in range(4): st.write("")
             
             # 💡 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
@@ -1102,6 +1108,7 @@ elif st.session_state["admin_logged_in"]:
             else:
                 tc_status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
             
+            # 🔒 황금 마진 수치 range(7) 완벽 고정
             for _ in range(7): st.write("")
             
             teacher_grid_cols = st.columns([5.0, 5.0])
