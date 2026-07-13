@@ -79,7 +79,7 @@ st.markdown("""
             font-weight: 600 !important;
         }
         
-        /* 💡 2x2 상단 전광판 행의 높이를 상시 고정해두어 단추가 움직일 공간을 철저히 제어 */
+        /* 2x2 상단 전광판 박스 CSS 고정 수리 */
         .row1-fixed-status-box {
             min-height: 40px !important;
             max-height: 40px !important;
@@ -330,7 +330,6 @@ def show_profile_popup_dialog():
                 st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
                 msg_box_sub.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>🎉 담당 과목 권한이 임시 조정되었습니다.</p>", unsafe_allow_html=True)
 
-# 세션 제어 데이터 뱅크 초기화
 if "score_input_success_flag" not in st.session_state: st.session_state["score_input_success_flag"] = False
 if "info_save_success_flag" not in st.session_state: st.session_state["info_save_success_flag"] = False
 if "config_save_success_flag" not in st.session_state: st.session_state["config_save_success_flag"] = False
@@ -527,7 +526,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항: 선생님이 설계하신 2x2 매커니즘 완벽 가동)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항: 2x2 1행 상시 가이드라인 가시화 빌드 완료)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -577,23 +576,25 @@ elif st.session_state["admin_logged_in"]:
                         file_just_loaded = True
                     except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
                 
-                # 💡 [2x2-1행]: 글자수 물리적 간섭을 원천 파쇄하는 와이드 상태 전광판 존 빌드
+                # 💡 [요구사항 반영] 2x2 1행에 평소 대기 상태일 때 "전광판자리" 가이드 문구를 정확하게 표출!
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                # 타임라인 규칙 스위칭
+                # 기본 글씨 지정 ("전광판자리" 마킹으로 단추 위치 예선 검전 장치 가동)
+                status_placeholder.markdown("<p style='color:#94a3b8; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px; font-style:italic;'>📢 [전광판자리 - 대기 중]</p>", unsafe_allow_html=True)
+                
                 if st.session_state.get("score_input_success_flag", False):
                     status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["score_input_success_flag"] = False
                 elif file_just_loaded:
                     status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
                 
-                # 💡 [2x2-2행]: 가로 2열 격자를 나누고 오른쪽(2열)에 저장 버튼 주입 완료! (완벽한 붙박이 고정 성립)
+                # 2x2 - 2행 배치 마감
                 row2_cols = st.columns([5.0, 5.0])
                 with row2_cols[0]:
-                    st.write("전광판자") # 2행 1열은 시각적 대칭을 위한 공백 처리
-                with row2_cols[1]: # 2행 2열: 성적 저장하기 버튼 홀더 방 지정
+                    st.write("") 
+                with row2_cols[1]: 
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 if save_trigger:
