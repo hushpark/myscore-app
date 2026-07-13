@@ -252,11 +252,65 @@ def show_add_master_student_single_dialog():
 
 @st.dialog("🎉 성적 조회 결과")
 def show_result_dialog(student_data):
-    st.markdown(f"<div><b>{student_data['이름']}</b> 학생의 실시간 성적 내역입니다.</div>", unsafe_allow_html=True)
-    sc1, sc2, sc3 = st.columns(3)
-    sc1.metric("📝 수행평가 1차", f"{int(student_data.get('수행평가1', 0))} 점")
-    sc2.metric("📝 수행평가 2차", f"{int(student_data.get('수행평가2', 0))} 점")
-    sc3.metric("📝 수행평가 3차", f"{int(student_data.get('수행평가3', 0))} 점")
+    st.markdown(f"<div><b>{student_data['이름']}</b> 학생의 실시간 성적 내역입니다.</div><br>", unsafe_allow_html=True)
+    
+    # 테두리 격자 스타일 강제 주입
+    st.markdown("""
+        <style>
+            .score-grid-container {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                border: 1px solid #cbd5e1;
+                border-radius: 8px;
+                overflow: hidden;
+                text-align: center;
+                background-color: #ffffff;
+            }
+            .score-header-box {
+                background-color: #f8fafc;
+                font-size: 13px;
+                font-weight: 800;
+                color: #475569;
+                padding: 10px 0;
+                border-bottom: 1px solid #cbd5e1;
+            }
+            .score-header-box:not(:last-child), .score-value-box:not(:last-child) {
+                border-right: 1px solid #cbd5e1;
+            }
+            .score-value-box {
+                font-size: 20px;
+                font-weight: 800;
+                color: #0f172a;
+                padding: 15px 0;
+            }
+            .score-total-value {
+                color: #3b82f6 !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # 점수 파싱 및 합계 계산
+    sc1 = int(student_data.get('수행평가1', 0))
+    sc2 = int(student_data.get('수행평가2', 0))
+    sc3 = int(student_data.get('수행평가3', 0))
+    total_score = sc1 + sc2 + sc3
+    
+    # 4열 격자 표 렌더링
+    st.markdown(f"""
+        <div class="score-grid-container">
+            <div class="score-header-box">수행평가 1차</div>
+            <div class="score-header-box">수행평가 2차</div>
+            <div class="score-header-box">수행평가 3차</div>
+            <div class="score-header-box" style="background-color: #eff6ff; color: #1e40af;">합계</div>
+            
+            <div class="score-value-box">{sc1}점</div>
+            <div class="score-value-box">{sc2}점</div>
+            <div class="score-value-box">{sc3}점</div>
+            <div class="score-value-box score-total-value" style="background-color: #f0f9ff;">{total_score}점</div>
+        </div>
+        <br>
+    """, unsafe_allow_html=True)
+    
     if "has_counted" not in st.session_state:
         new_count = int(student_data.get("성적조회 횟수", 0)) + 1
         supabase.table(student_table).update({
@@ -268,9 +322,6 @@ def show_result_dialog(student_data):
     if st.button("닫기", type="secondary", use_container_width=True):
         if "has_counted" in st.session_state: del st.session_state["has_counted"]
         st.rerun()
-
-def reset_pw_status():
-    st.session_state["pw_save_status"] = "none"
 
 @st.dialog("👤 내 정보 수정")
 def show_profile_popup_dialog():
