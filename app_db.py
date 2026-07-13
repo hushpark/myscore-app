@@ -79,15 +79,15 @@ st.markdown("""
             font-weight: 600 !important;
         }
         
-        /* 💡 높이를 고정하여 마진 확보 */
-        .fixed-status-container {
-            min-height: 35px !important;
-            max-height: 35px !important;
-            height: 35px !important;
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            margin: 2px 0;
+        /* 💡 [물리적 부피 고정법] 완충 상자의 순수 높이를 45px로 고정하고, 내부의 패딩/마진 검색을 최소화하여 단추가 밀리는 현상을 완벽 진압 */
+        .perfect-spacer-box {
+            min-height: 45px !important;
+            max-height: 45px !important;
+            height: 45px !important;
+            display: block !important;
+            margin: 5px 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -330,7 +330,7 @@ def show_profile_popup_dialog():
                 st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
                 msg_box_sub.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>🎉 담당 과목 권한이 임시 조정되었습니다.</p>", unsafe_allow_html=True)
 
-# 세션 제어 상태 초기화
+# 세션 제어 변수 선언
 if "score_input_success_flag" not in st.session_state: st.session_state["score_input_success_flag"] = False
 if "info_save_success_flag" not in st.session_state: st.session_state["info_save_success_flag"] = False
 if "config_save_success_flag" not in st.session_state: st.session_state["config_save_success_flag"] = False
@@ -527,7 +527,7 @@ elif st.session_state["admin_logged_in"]:
                     st.dataframe(final_view_df.fillna("-"), use_container_width=True, hide_index=True, column_config=align_config, height=650)
 
     # ---------------------------------------------------------------------
-    # 2번 메뉴: 수행 평가 성적 입력 (💡 전광판의 외곽 여백 충돌을 완벽히 방지하는 캡션 경량화 매커니즘)
+    # 2번 메뉴: 수행 평가 성적 입력 (💡 요구사항: 한 줄 캡션 전광판 경량형 패치 주입)
     # ---------------------------------------------------------------------
     elif menu_selection == "수행 평가 성적 입력":
         registered_dbs = get_active_databases()
@@ -577,22 +577,22 @@ elif st.session_state["admin_logged_in"]:
                         file_just_loaded = True
                     except Exception as e: st.error(f"❌ 파일 해석 실패: {e}")
                 
-                # 💡 [정공법 가두리 적용] 높이가 잠긴 박스 내부에 경량형 캡션(st.caption)만 쏙 넣어서 들썩임 제로화 완성!
-                st.markdown('<div class="fixed-status-container">', unsafe_allow_html=True)
+                # 💡 [들썩임 최종 차단] 순수한 물리 패딩 여백이 잠긴 HTML 컨테이너 래퍼 적용
+                st.markdown('<div class="perfect-spacer-box">', unsafe_allow_html=True)
                 status_placeholder = st.empty()
                 st.markdown('</div>', unsafe_allow_html=True)
                 
                 if st.session_state.get("score_input_success_flag", False):
-                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; font-size:14px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:35px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["score_input_success_flag"] = False
                 elif file_just_loaded:
-                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; font-size:14px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:35px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
                 
                 btn_space_l, btn_space_r = st.columns([5.0, 5.0])
                 with btn_space_r: save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
                 if save_trigger:
-                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; font-size:14px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:35px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
                     df_to_save = excel_loaded_df.copy() if excel_loaded_df is not None else df_base.copy()
                     if not df_to_save.empty:
                         try:
