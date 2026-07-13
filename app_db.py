@@ -584,7 +584,7 @@ elif st.session_state["student_logged_in"]:
             submit_active = False
         else:
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
-            sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible")
+            sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible", key="std_subject_select")
             
             st.markdown("<br>", unsafe_allow_html=True)
             submit_active = st.form_submit_button("🚀 나의 성적 실시간 검증", type="primary", use_container_width=True)
