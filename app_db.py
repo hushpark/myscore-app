@@ -575,7 +575,7 @@ elif st.session_state["student_logged_in"]:
             else:
                 st.error("❌ 해당 과목에 등록된 선생님의 성적 데이터가 아직 없습니다.")
                 
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # 3. 그다음 조회할 교과과정 선택 배치
         active_dbs = get_active_databases()
