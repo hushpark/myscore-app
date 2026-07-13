@@ -576,7 +576,7 @@ elif st.session_state["admin_logged_in"]:
                         st.caption("✅ 파일 로드 성공! 오른쪽 에디터 표에 실시간 동기화되었습니다.")
                     except Exception as e: st.error(f"❌ 파일 구조 해석 실패: {e}")
                         
-                for _ in range(４): st.write("")
+                for _ in range(3): st.write("")
                 
                 # 💡 [요구사항 완벽 구현] 최고관리자 학생 계정 관리 메뉴와 똑같은 위치(버튼 바로 위)에 성공 구역 개설!
                 if st.session_state.get("score_input_success_flag", False):
