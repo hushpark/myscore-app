@@ -81,9 +81,9 @@ st.markdown("""
         
         /* 2x2 상단 전광판 박스 CSS 고정 수리 */
         .row1-fixed-status-box {
-            min-height: 40px !important;
-            max-height: 40px !important;
-            height: 40px !important;
+            min-height: 30px !important;
+            max-height: 30px !important;
+            height: 30px !important;
             display: block !important;
             margin: 5px 0 !important;
             padding: 0 !important;
@@ -590,16 +590,16 @@ elif st.session_state["admin_logged_in"]:
 
                 # 💡 [동선 정상화 결론] 1행 status_placeholder '내부'에 조건별 텍스트를 정확하게 매핑 주입!
                 if st.session_state.get("score_input_success_flag", False):
-                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#3b82f6; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>🎉 수행 평가 점수를 저장하였습니다.</p>", unsafe_allow_html=True)
                     st.session_state["score_input_success_flag"] = False
                 elif file_just_loaded:
-                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#10b981; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>✅ 파일 로드 성공! 오른쪽 테이블에 실시간 동기화되었습니다.</p>", unsafe_allow_html=True)
                 else:
-                    status_placeholder.markdown("<p style='color:#94a3b8; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px; font-style:italic;'>📢 [전광판자리 - 대기 중]</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#94a3b8; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px; font-style:italic;'> </p>", unsafe_allow_html=True)
 
                 if save_trigger:
                     # 버튼 클릭 즉시 1행 가두리 내부 글씨를 동기화 중으로 전격 스위칭!
-                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:40px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
+                    status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
                     df_to_save = excel_loaded_df.copy() if excel_loaded_df is not None else df_base.copy()
                     if not df_to_save.empty:
                         try:
