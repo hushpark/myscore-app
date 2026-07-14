@@ -95,24 +95,30 @@ st.markdown("""
             line-height: 40px !important;
         }
         
-        /* 🎨 [선생님 아이디어 기획 패치] 바탕색을 하얀색(#FFFFFF)으로 메우고, 테두리를 완전히 지워 붉은색 글자 링크로 완벽 위장 */
+        /* 🎨 [위장 전술 링크 패치] 3열 암호변경, 4열 로그아웃 버튼을 완벽한 무테 텍스트 링크 스타일로 통일 개조 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button {
-            background-color: #ffffff !important; /* 하얀색 바탕 주입 */
-            border: none !important; /* 테두리 원천 파괴 제거 */
-            color: #dc2626 !important; /* 고급스러운 교사 붉은색 계열 글씨 적용 */
-            font-size: 15px !important;
+            background-color: #ffffff !important; 
+            border: none !important; 
+            font-size: 14px !important;
             font-weight: 700 !important;
-            box-shadow: none !important; /* 입체 버튼 그림자 완벽 제거 */
+            box-shadow: none !important; 
             padding: 8px 0 !important;
             width: 100% !important;
-            text-align: right !important; /* 4열 칸 정밀 우측 정렬 */
+            text-align: right !important; 
             height: auto !important;
             cursor: pointer !important;
         }
+        /* 3열 암호변경 단추는 무난한 다크 그레이 텍스트 지정 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stHorizontalBlock > div:nth-of-type(3) button {
+            color: #475569 !important;
+        }
+        /* 4열 로그아웃 단추는 눈에 띄는 붉은색 계열 텍스트 지정 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stHorizontalBlock > div:nth-of-type(4) button {
+            color: #dc2626 !important;
+        }
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button:hover {
-            color: #b91c1c !important;
-            text-decoration: underline !important; /* 마우스 올리면 밑줄 효과 */
-            background-color: #f8fafc !important; /* 세련된 아주 연한 그레이 호버 배경 효과 */
+            text-decoration: underline !important;
+            background-color: #f8fafc !important; 
         }
         
         /* 🚀 하단 성적 확인 버튼 센터 마스터 스타일 영구 홀딩 */
@@ -214,6 +220,34 @@ def get_subject_item_names(subject_key):
 # =========================================================================
 # ➕ [다이얼로그 팝업창 모듈]
 # =========================================================================
+@st.dialog("🔐 학생 비밀번호 변경")
+def show_student_pw_dialog():
+    st.markdown("안전한 성적 관리를 위해 실시간 조회 비밀번호를 수정합니다.")
+    with st.form("std_pw_inner_form", border=False):
+        c_pw = st.text_input("현재 비밀번호", type="password", placeholder="현재 비밀번호 입력")
+        n_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정")
+        n_pw_c = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.form_submit_button("💾 비밀번호 안전하게 변경하기", use_container_width=True):
+            if not c_pw or not n_pw or not n_pw_c:
+                st.error("❌ 모든 항목을 빠짐없이 입력해야 합니다.")
+            elif c_pw.strip() != st.session_state.get("logged_student_pw", ""):
+                st.error("❌ 현재 비밀번호가 일치하지 않습니다.")
+            elif n_pw.strip() != n_pw_c.strip():
+                st.error("❌ 새 비밀번호가 서로 일치하지 않습니다.")
+            elif not n_pw.strip():
+                st.error("❌ 비밀번호는 공백일 수 없습니다.")
+            else:
+                try:
+                    std_email = st.session_state.get("logged_student_id", "")
+                    supabase.table(master_student_table).update({"password": n_pw.strip()}).eq("school_email", std_email).execute()
+                    st.session_state["logged_student_pw"] = n_pw.strip()
+                    st.success("🎉 비밀번호가 변경되었습니다! 다음 접속부터 적용됩니다.")
+                    time.sleep(1.0); st.rerun()
+                except Exception as e:
+                    st.error(f"❌ 원격 동기화 실패: {e}")
+
 @st.dialog("➕ 교사 개별 추가")
 def show_add_teacher_dialog():
     st.markdown("새로 임용/등록할 선생님의 권한 정보를 입력해 주세요.")
@@ -498,7 +532,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 선생님 기획 황금 지정 비율 완벽 가두리)
+# 🎓 [2단계-A] 학생 화면 (📱 3열 암호변경 링크 추가 및 단추 다이어트 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
@@ -506,9 +540,17 @@ elif st.session_state["student_logged_in"]:
     with st.form("student_mobile_form", border=True):
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # ⬜ [설계도 2층 최적화 반영] 선생님의 황금 분할 비율 [2.2, 2.2, 2.2, 3.4] 수치 적용!
+        # ⬜ [선생님 황금 비율 조준] 2.2 : 2.2 : 2.2 : 3.4 분할 안착!
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([2.2, 2.2, 2.2, 3.4])
+        
+        with row1_col3:
+            # 💡 [다이어트 기획] 3번째 열에 팝업창을 호출하는 암호변경 위장 링크 탑재!
+            pw_edit_clicked = st.form_submit_button("🔐 암호변경", key="std_form_pw_edit")
+            if pw_edit_clicked:
+                show_student_pw_dialog()
+                
         with row1_col4:
+            # 4번째 열에 무테 붉은 글씨 로그아웃 위장 링크 완벽 수호
             logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
                 st.session_state.clear()
@@ -526,7 +568,7 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [설계도 4층 최적화 반영] 선생님의 정중앙 압축 비율 [3.3, 3.4, 3.3] 수치 적용!
+            # ⬜ [선생님 황금 비율 조준] 정중앙 압축 수치 [3.3, 3.4, 3.3] 적용 완료!
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
                 submit_active = st.form_submit_button("🚀 성적 확인", key="std_form_verify")
@@ -736,7 +778,7 @@ elif st.session_state["admin_logged_in"]:
                             
                             supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
                             if clean_score_records:
-                                supabase.table(student_table).insert(clean_score_records).execute()
+                                supabase.table(student_table).insert(clean_records).execute()
                                 
                             st.session_state["score_input_success_flag"] = True
                             status_placeholder.empty()
@@ -970,7 +1012,6 @@ elif st.session_state["admin_logged_in"]:
             
             for _ in range(4): st.write("")
             
-            # 💡 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             student_grid_cols = st.columns([5.0, 5.0])
             with student_grid_cols[0]:
                 add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
