@@ -44,42 +44,22 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 🎨 [오염 원천 차단] 하단 성적 확인 전용 마스터 파란색 단추 잠금 */
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button[kind="primary"],
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button {
+        /* 💾 [오염 차단 완벽 분리] 시스템 전체 순정 파란색 버튼 속성 절대 사수 */
+        button[kind="primary"], 
+        .stButton > button[kind="primary"],
+        button[data-testid="stFormSubmitButton"] { 
             background-color: #3b82f6 !important; 
             color: #ffffff !important; 
             font-weight: 700 !important; 
             border: none !important; 
-            border-radius: 6px !important;
-            box-shadow: none !important;
+            border-radius: 6px !important; 
         }
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button:hover {
-            background-color: #2563eb !important;
+        button[kind="primary"]:hover,
+        .stButton > button[kind="primary"]:hover,
+        button[data-testid="stFormSubmitButton"]:hover { 
+            background-color: #2563eb !important; 
         }
 
-        /* 🎨 [오염 원천 차단] 상단 제어 전용 흰색 배경 회색 테두리 순정 버튼 잠금 */
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button[kind="secondary"],
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button {
-            background-color: #ffffff !important; 
-            color: #1e293b !important; 
-            font-weight: 700 !important; 
-            border: 1px solid #cbd5e1 !important; 
-            border-radius: 6px !important;
-            box-shadow: none !important;
-        }
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
-            background-color: #f8fafc !important;
-            border-color: #94a3b8 !important;
-            color: #0f172a !important;
-        }
-        
-        /* 로그인 화면 전용 스타일 */
-        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
-        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
-        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
-        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
-        
         /* 📱 학생 스마트폰 사각형 가두리 독립 스타일 */
         .student-mobile-container {
             max-width: 440px !important;
@@ -94,6 +74,36 @@ st.markdown("""
             box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; 
             width: 100% !important;
             box-sizing: border-box !important;
+        }
+        
+        /* 🎨 [선생님 피드백 완벽 이식 CSS 저격공간] 오직 학생카드 내부의 '1번째 행열(최상단)' 버튼들만 조준요격 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button {
+            background-color: #ffffff !important; /* 하얀색 바탕 */
+            border: none !important; /* 👈 테두리 완벽하게 삭제 패치 완료 */
+            color: #1e293b !important; /* 단정한 차콜 검은색 글자 적용 */
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            box-shadow: none !important;
+            padding: 6px 0 !important;
+            width: 100% !important;
+            text-align: center !important;
+            height: auto !important;
+        }
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
+            background-color: #f8fafc !important; /* 호버 시에만 부드러운 그레이 피드백 효과 */
+            color: #0f172a !important;
+        }
+
+        /* 🚀 [오염 복구] 학생카드 내부의 '마지막 행열(성적 확인)' 버튼은 칼같이 파란색 고정 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button {
+            background-color: #3b82f6 !important; 
+            color: #ffffff !important; 
+            font-weight: 700 !important; 
+            border: none !important; 
+            border-radius: 6px !important;
+        }
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button:hover {
+            background-color: #2563eb !important;
         }
         
         /* 타이틀 스타일 고정 및 여백 조율 */
@@ -113,13 +123,12 @@ st.markdown("""
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
         
-        /* 교사용 기본 스타일 백업 보존 */
-        div.stButton > button[kind="primary"], 
-        button[data-testid="stFormSubmitButton"] { 
-            background-color: #3b82f6 !important; 
-            color: #ffffff !important; 
-        }
-        
+        /* 로그인 화면 폼 구성 스타일 */
+        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
+        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
+        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
+
         /* 타이틀 영역 구조 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
         .header-nav-sub { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 25px !important; }
@@ -461,7 +470,8 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
             b_col2 = st.columns([1.0, 1.8, 1.0])[1]
-            submit_active = b_col2.form_submit_button("로그인", type="primary", use_container_width=True)
+            # 💡 메인 로그인 폼 전용 푸른색 단추 락인 완료
+            submit_active = b_col2.submit_button("로그인", type="primary", use_container_width=True)
             
             if submit_active:
                 clean_id = str(user_id_input).strip()
@@ -509,31 +519,28 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 타이틀 하강 배치 및 상단 버튼층 황금 비율 주입 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 요청하신 황금 비율 조정 및 무테 패치 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
         
-        # ⬜ [설계도 요구사항 반영 완료] 1층에 버튼 구역 우선 정렬 배치!
-        # 선생님께서 수치 계산해주신 황금 비율 [1.6, 1.6, 3.4, 3.4] 적용하여 글자 찢어짐 철벽 방어!
+        # ⬜ [설계도 요구사항 반영] 타이틀 상강 배치 및 비율 조정 완료 [1.8, 1.8, 3.2, 3.2]
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
         
         with row1_col3:
-            # type="secondary" 속성을 강제 홀딩하여 순정 흰색 테두리 개체 분리
             pw_edit_clicked = st.form_submit_button("🔐 암호변경", type="secondary")
             if pw_edit_clicked:
                 show_student_pw_dialog()
                 
         with row1_col4:
-            # type="secondary" 속성을 강제 홀딩하여 순정 흰색 테두리 개체 분리
             logout_clicked = st.form_submit_button("🚪 로그아웃", type="secondary")
             if logout_clicked:
                 st.session_state.clear()
                 st.rerun()
                 
-        # ⬜ [설계도 요구사항 반영 완료] 타이틀 문구를 버튼들 바로 아래인 2층 구역으로 전격 내림!
+        # ⬜ 버튼 아래 타이틀 2층 유지
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 8px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
@@ -542,16 +549,15 @@ elif st.session_state["student_logged_in"]:
             st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
             submit_active = False
         else:
-            # 드롭박스 과목 선택창
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible", key="std_subject_select")
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 정중앙 압축 수치 [3.3, 3.4, 3.3] 적용 완료!
+            # ⬜ 정중앙 압축 수치 [3.3, 3.4, 3.3] 세팅
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
-                # 💡 type="primary"를 확실히 각인하여 마스터 파란색 컬러로 완벽 복구 완료!
+                # 💡 [파란색 단추 영구 박제] CSS 오염을 해제하여 순정 파란색 단추 완벽 복구!
                 submit_active = st.form_submit_button("🚀 성적 확인", type="primary", use_container_width=True)
 
         if submit_active and sel_s != "과목을 선택하세요.":
