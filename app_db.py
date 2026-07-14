@@ -508,7 +508,7 @@ elif st.session_state["student_logged_in"]:
         
         # ⬜ [설계도 2층 정밀 개편] 5.5 : 1.5 : 1.5 : 1.5 비율 주입
         # 4열이 무조건 110px의 공간을 안전하게 선점하도록 분할하여 글씨 깨짐 완천 방어!
-        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([2.1, 2.1, 2.1, 3.7])
+        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([2.2, 2.2, 2.2, 3.4])
         with row1_col4:
             logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
