@@ -44,31 +44,31 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 💾 마스터 파란색 단추 양식 통일화 고정 */
-        div.stButton > button[kind="primary"], 
-        div.stForm button[kind="primary"] { 
+        /* 🎨 [오염 원천 차단] 하단 성적 확인 전용 마스터 파란색 단추 잠금 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button[kind="primary"],
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button {
             background-color: #3b82f6 !important; 
             color: #ffffff !important; 
             font-weight: 700 !important; 
             border: none !important; 
-            border-radius: 6px !important; 
+            border-radius: 6px !important;
+            box-shadow: none !important;
         }
-        div.stButton > button[kind="primary"]:hover, 
-        div.stForm button[kind="primary"]:hover { 
-            background-color: #2563eb !important; 
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button:hover {
+            background-color: #2563eb !important;
         }
 
-        /* 💾 [이원화 핵심] 흰색 배경에 회색 테두리가 있는 순정 버튼 양식 격리 확보 */
-        div.stButton > button[kind="secondary"],
-        div.stForm button[kind="secondary"] { 
+        /* 🎨 [오염 원천 차단] 상단 제어 전용 흰색 배경 회색 테두리 순정 버튼 잠금 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button[kind="secondary"],
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button {
             background-color: #ffffff !important; 
             color: #1e293b !important; 
             font-weight: 700 !important; 
             border: 1px solid #cbd5e1 !important; 
-            border-radius: 6px !important; 
+            border-radius: 6px !important;
+            box-shadow: none !important;
         }
-        div.stButton > button[kind="secondary"]:hover,
-        div.stForm button[kind="secondary"]:hover { 
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
             background-color: #f8fafc !important;
             border-color: #94a3b8 !important;
             color: #0f172a !important;
@@ -96,20 +96,15 @@ st.markdown("""
             box-sizing: border-box !important;
         }
         
-        /* 타이틀 스타일 고정 */
+        /* 타이틀 스타일 고정 및 여백 조율 */
         .student-mobile-card h2 { 
             font-size: 24px !important; 
             text-align: center !important; 
             font-weight: 800 !important; 
             color: #0f172a !important; 
-            margin: 0 0 15px 0 !important;
+            margin: 15px 0 20px 0 !important;
             padding: 0 !important;
             line-height: 40px !important;
-        }
-
-        /* 학생 모바일 폼 내부 정렬 기본 마진 리셋 */
-        div.student-mobile-card div[data-testid="stHorizontalBlock"] {
-            align-items: center !important;
         }
         
         div[data-testid="InputInstructions"] { display: none !important; }
@@ -117,6 +112,13 @@ st.markdown("""
         div[data-testid="stTextInput"] > div, div[data-testid="stSelectbox"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
+        
+        /* 교사용 기본 스타일 백업 보존 */
+        div.stButton > button[kind="primary"], 
+        button[data-testid="stFormSubmitButton"] { 
+            background-color: #3b82f6 !important; 
+            color: #ffffff !important; 
+        }
         
         /* 타이틀 영역 구조 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
@@ -335,6 +337,104 @@ def show_result_dialog(student_data, subject_name):
         if "has_counted" in st.session_state: del st.session_state["has_counted"]
         st.rerun()
 
+def reset_pw_status():
+    st.session_state["pw_save_status"] = "none"
+
+@st.dialog("👤 내 정보 수정")
+def show_profile_popup_dialog():
+    st.markdown(f"<div>👤 <b>{st.session_state['teacher_name']}</b> 선생님의 계정 정보를 관리합니다.</div><br>", unsafe_allow_html=True)
+    edit_mode = st.radio("관리할 항목 선택", ["🔐 비밀번호 변경", "📚 담당과목 변경"], horizontal=True)
+    st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+
+    if "pw_step_unlocked" not in st.session_state: st.session_state["pw_step_unlocked"] = False
+    if "pw_save_status" not in st.session_state: st.session_state["pw_save_status"] = "none"
+    if "pw_version_key" not in st.session_state: st.session_state["pw_version_key"] = 100
+
+    v_key = str(st.session_state["pw_version_key"])
+
+    if edit_mode == "🔐 비밀번호 변경":
+        curr_pw_input = st.text_input("현재 비밀번호", type="password", placeholder="현재 사용 중인 비밀번호 입력", key="cur_pw_v_" + v_key)
+        
+        if not curr_pw_input:
+            st.session_state["pw_save_status"] = "none"
+
+        if curr_pw_input:
+            if curr_pw_input.strip() != st.session_state.get("logged_teacher_pw", ""):
+                st.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 현재 비밀번호가 일치하지 않습니다.</p>", unsafe_allow_html=True)
+                st.session_state["pw_save_status"] = "none"
+            else:
+                st.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>✅ 현재 비밀번호가 확인되었습니다.</p>", unsafe_allow_html=True)
+                
+                new_pw = st.text_input("새 비밀번호 입력", type="password", placeholder="새로운 비밀번호 설정", key="new_pw_v_" + v_key, on_change=reset_pw_status)
+                new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력", key="confirm_pw_v_" + v_key, on_change=reset_pw_status)
+                
+                msg_placeholder = st.container()
+                if st.session_state["pw_save_status"] == "success":
+                    msg_placeholder.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600; margin-top: 5px;'>✓ 비밀번호를 변경하였습니다.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail_mismatch":
+                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 새 비밀번호가 서로 일치하지 않습니다. 다시 확인해 주세요.</p>", unsafe_allow_html=True)
+                elif st.session_state["pw_save_status"] == "fail_empty":
+                    msg_placeholder.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600; margin-top: 5px;'>❌ 새 비밀번호는 공백일 수 없습니다.</p>", unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                col1, col2 = st.columns(2)
+                
+                with col1: 
+                    save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
+                with col2: 
+                    close_btn = st.button("닫기", key="close_pw_inner", use_container_width=True)
+
+                if close_btn:
+                    st.session_state["pw_save_status"] = "none"
+                    st.session_state["pw_version_key"] += 1
+                    st.rerun()
+                    
+                if save_btn:
+                    clean_new_pw = new_pw.strip()
+                    clean_confirm_pw = new_pw_confirm.strip()
+                    
+                    if not clean_new_pw:
+                        st.session_state["pw_save_status"] = "fail_empty"
+                        st.rerun()
+                    elif clean_new_pw != clean_confirm_pw:
+                        st.session_state["pw_save_status"] = "fail_mismatch"
+                        st.rerun()
+                    else:
+                        is_ok = False
+                        try:
+                            teacher_id = st.session_state.get("logged_teacher_id", "")
+                            if teacher_id:
+                                supabase.table(teacher_table).update({"비밀번호": clean_new_pw}).eq("교사_ID", teacher_id).execute()
+                                st.session_state["logged_teacher_pw"] = clean_new_pw
+                                st.session_state["pw_save_status"] = "success"
+                                st.session_state["pw_version_key"] += 1
+                                is_ok = True
+                        except Exception as e: st.error(f"❌ 데이터베이스 반영 중 오류가 발생했습니다: {e}")
+                        if is_ok: st.rerun()
+        else:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("닫기", key="close_pw_outer", use_container_width=True): 
+                st.session_state["pw_save_status"] = "none"
+                st.session_state["pw_version_key"] += 1
+                st.rerun()
+
+    elif edit_mode == "📚 담당과목 변경":
+        curr_subs_str = ", ".join(st.session_state.get("allowed_subjects", []))
+        new_subs_str = st.text_input("담당 과목 변경 (여러 과목은 콤마[,]로 분리)", value=curr_subs_str, placeholder="예: 정보, 수학")
+        msg_box_sub = st.empty()
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        with col1: save_sub_btn = st.button("💾 과목 저장하기", type="primary", use_container_width=True)
+        with col2:
+            if st.button("닫기", type="secondary", use_container_width=True): st.rerun()
+                
+        if save_sub_btn:
+            if not new_subs_str.strip(): msg_box_sub.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
+            else:
+                st.session_state["allowed_subjects"] = [s.strip() for s in new_subs_str.split(",") if s.strip()]
+                msg_box_sub.markdown("<p style='color: #10b981; font-size: 14px; font-weight: 600;'>🎉 담당 과목 권한이 임시 조정되었습니다.</p>", unsafe_allow_html=True)
+
 if "score_input_success_flag" not in st.session_state: st.session_state["score_input_success_flag"] = False
 if "info_save_success_flag" not in st.session_state: st.session_state["info_save_success_flag"] = False
 if "config_save_success_flag" not in st.session_state: st.session_state["config_save_success_flag"] = False
@@ -409,30 +509,32 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 순정 이원화 개체 분리 및 정밀 계산 비율 주입 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 타이틀 하강 배치 및 상단 버튼층 황금 비율 주입 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
-        st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # ⬜ [선생님 계산 비율 전격 이식] 1.6 : 1.6 : 3.4 : 3.4 분할 안착!
-        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.9, 1.9, 3.1, 3.1])
+        # ⬜ [설계도 요구사항 반영 완료] 1층에 버튼 구역 우선 정렬 배치!
+        # 선생님께서 수치 계산해주신 황금 비율 [1.6, 1.6, 3.4, 3.4] 적용하여 글자 찢어짐 철벽 방어!
+        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
         
         with row1_col3:
-            # 💡 [순정 이원화] 개체 구분을 위해 테두리가 살아있는 흰색 순정 버튼(type="secondary") 세팅
+            # type="secondary" 속성을 강제 홀딩하여 순정 흰색 테두리 개체 분리
             pw_edit_clicked = st.form_submit_button("🔐 암호변경", type="secondary")
             if pw_edit_clicked:
                 show_student_pw_dialog()
                 
         with row1_col4:
-            # 💡 [순정 이원화] 개체 구분을 위해 테두리가 살아있는 흰색 순정 버튼(type="secondary") 세팅
+            # type="secondary" 속성을 강제 홀딩하여 순정 흰색 테두리 개체 분리
             logout_clicked = st.form_submit_button("🚪 로그아웃", type="secondary")
             if logout_clicked:
                 st.session_state.clear()
                 st.rerun()
                 
+        # ⬜ [설계도 요구사항 반영 완료] 타이틀 문구를 버튼들 바로 아래인 2층 구역으로 전격 내림!
+        st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 8px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         active_dbs = get_active_databases()
@@ -440,15 +542,16 @@ elif st.session_state["student_logged_in"]:
             st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
             submit_active = False
         else:
+            # 드롭박스 과목 선택창
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible", key="std_subject_select")
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [선생님 계산 비율 전격 이식] 정중앙 압축 수치 [3.3, 3.4, 3.3] 적용 완료!
+            # 정중앙 압축 수치 [3.3, 3.4, 3.3] 적용 완료!
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
-                # 💡 [순정 이원화] 최종 성적 대장 조회용 단추는 마스터 푸른색 버튼(type="primary") 고정
+                # 💡 type="primary"를 확실히 각인하여 마스터 파란색 컬러로 완벽 복구 완료!
                 submit_active = st.form_submit_button("🚀 성적 확인", type="primary", use_container_width=True)
 
         if submit_active and sel_s != "과목을 선택하세요.":
