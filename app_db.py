@@ -84,45 +84,46 @@ st.markdown("""
             box-sizing: border-box !important;
         }
         
-        /* 타이틀 단독 1행 배치용 크기 및 중앙정렬 */
+        /* 타이틀 스타일 고정 */
         .student-mobile-card h2 { 
-            font-size: 28px !important; 
-            text-align: center !important; 
+            font-size: 24px !important; 
+            text-align: left !important; 
             font-weight: 800 !important; 
             color: #0f172a !important; 
-            margin: 0 0 10px 0 !important;
+            margin: 0 !important;
             padding: 0 !important;
+            line-height: 40px !important;
         }
         
-        /* 🎨 [도면 완벽 이식] 1행 4열 구역 내 로그아웃 버튼을 무테 흰바탕 붉은 글씨로 고정 */
+        /* 🎨 [그림 2 무테 최적화] 4열 내부의 로그아웃 버튼을 완벽한 무테 붉은글씨로 고정 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button {
             background-color: #ffffff !important;
             border: none !important;
-            color: #dc2626 !important; /* 붉은색 계열 글씨 */
-            font-size: 15px !important;
+            color: #dc2626 !important; 
+            font-size: 14px !important;
             font-weight: 700 !important;
             box-shadow: none !important;
-            padding: 4px 0 !important;
+            padding: 8px 0 !important;
             width: 100% !important;
-            text-align: right !important; /* 4열 맨 우측 정렬 */
+            text-align: right !important; /* 4열 칸 안에서 완전 우측 밀착 */
             height: auto !important;
         }
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button:hover {
             color: #b91c1c !important;
             text-decoration: underline !important;
-            background-color: transparent !important;
+            background-color: #ffffff !important;
         }
         
-        /* 🚀 [도면 완벽 이식] 1행 3열 구역 내 성적확인 버튼 규격 세팅 */
+        /* 🚀 [중앙 고정 정밀 튜닝] 2열 구역 너비에 맞춰 뚱뚱해지지 않게 꽉 채워 배치 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type div.stFormSubmitButton button {
-            background-color: #3b82f6 !important; /* 마스터 파란색 단추 사수 */
+            background-color: #3b82f6 !important; 
             color: #ffffff !important;
-            font-size: 15px !important;
+            font-size: 14px !important;
             font-weight: 700 !important;
             border: none !important;
             border-radius: 6px !important;
             padding: 10px 0 !important;
-            width: 100% !important; /* 2열 정중앙을 가득 채움 */
+            width: 100% !important; /* 좁혀진 2열 구역을 가득 채워 정중앙 강제 안착 */
             box-shadow: none !important;
         }
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type div.stFormSubmitButton button:hover {
@@ -442,7 +443,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
     with st.container():
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+            login_mode = st.radio("접속 모기", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
             user_id_input = st.text_input("ID / 이메일", placeholder="학생은 이메일, 교사는 ID를 입력하세요.", label_visibility="collapsed")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
@@ -496,17 +497,18 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📲 손그림 스케치 도면 100% 반영 격자 레이아웃 완료)
+# 🎓 [2단계-A] 학생 화면 (📱 수학적 비율 강제 정중앙 센터링 및 우측밀착 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
-        # ⬜ [설계도 1층] 대형 타이틀 글자만 단독으로 중앙정렬 배치
+        # ⬜ [설계도 1층] 대형 타이틀 단독 중앙정렬
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # ⬜ [설계도 2층] 1행 4열 행열 구조 주입하여 4번째 열에만 무테 붉은글씨 로그아웃 안착
-        row1_c1, row1_col2, row1_col3, row1_col4 = st.columns([2.5, 2.5, 2.5, 2.5])
+        # ⬜ [설계도 2층 정밀 개편] 5.5 : 1.5 : 1.5 : 1.5 비율 주입
+        # 4열이 무조건 110px의 공간을 안전하게 선점하도록 분할하여 글씨 깨짐 완천 방어!
+        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([5.5, 1.5, 1.5, 1.5])
         with row1_col4:
             logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
@@ -520,14 +522,15 @@ elif st.session_state["student_logged_in"]:
             st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
             submit_active = False
         else:
-            # ⬜ [설계도 3층] 조회할 교과과정 선택 드롭박스가 가로폭 한 줄을 단독 통으로 넓게 독점 사용
+            # ⬜ [설계도 3층] 드롭박스는 통으로 한 줄 다 쓰기
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible", key="std_subject_select")
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [설계도 4층] 1행 3열 행열 구조 생성하여 오직 2번째 열(정중앙)에만 "성적확인" 단추 가두기 완료
-            row2_col1, row2_col2, row2_col3 = st.columns([2.0, 6.0, 2.0])
+            # ⬜ [설계도 4층 정밀 개편] 3.5 : 3.0 : 3.5 비율 주입
+            # 가운데 2열의 가로폭 자체를 딱 버튼 너비(30%)로 슬림하게 좁혀 좌우 거대벽이 버튼을 강제로 '상자 정중앙'에 고정!
+            row2_col1, row2_col2, row2_col3 = st.columns([3.5, 3.0, 3.5])
             with row2_col2:
                 submit_active = st.form_submit_button("🚀 성적 확인", key="std_form_verify")
 
@@ -836,9 +839,9 @@ elif st.session_state["admin_logged_in"]:
                             time.sleep(0.2); st.rerun()
                         except Exception as e: st.error(f"❌ 명단 저장 실패: {e}")
 
-# =========================================================================
-# [나머지 교직원 및 최고관리자 기능 백업 수호 잠금 - 수정 금지 구역]
-# =========================================================================
+    # ---------------------------------------------------------------------
+    # 4번 메뉴: 평가 대상 과목 구성
+    # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         main_col1, main_col2 = layout_left, layout_right
         with main_col1:
@@ -968,8 +971,10 @@ elif st.session_state["admin_logged_in"]:
             else:
                 mst_status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
             
+            # 🔒 황금 마진 수치 range(4) 완벽 고정
             for _ in range(4): st.write("")
             
+            # 💡 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             student_grid_cols = st.columns([5.0, 5.0])
             with student_grid_cols[0]:
                 add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
@@ -1066,6 +1071,7 @@ elif st.session_state["admin_logged_in"]:
             else:
                 tc_status_placeholder.markdown("<p style='margin:0; padding:0; line-height:30px;'>&nbsp;</p>", unsafe_allow_html=True)
             
+            # 🔒 황금 마진 수치 range(7) 완벽 고정
             for _ in range(7): st.write("")
             
             teacher_grid_cols = st.columns([5.0, 5.0])
