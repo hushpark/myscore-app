@@ -44,7 +44,7 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 🔵 [순정 파란색 기본값 고정] */
+        /* 🔵 순정 파란색 기본값 고정 */
         button[kind="primary"], 
         .stButton > button[kind="primary"],
         button[data-testid="stFormSubmitButton"] { 
@@ -61,7 +61,7 @@ st.markdown("""
             background-color: #2563eb !important; 
         }
 
-        /* ⚪ [순정 흰색 테두리 기본값 고정] */
+        /* ⚪ 보조 흰색 버튼 기본 디자인 홀딩 */
         button[kind="secondary"],
         .stButton > button[kind="secondary"],
         div.stForm button[kind="secondary"] { 
@@ -150,7 +150,7 @@ def load_db_df(table_name):
     except Exception:
         return pd.DataFrame()
 
-# 💡 [새 저장방식 이식] 2026년_정보_2학년_1학기 형태의 Key를 깔끔하게 해독하는 가공 장치
+# 💡 [연결점 일치화 패치] 2026년_정보_2학년_1학기 포맷 구조 분석 연동 완료
 def get_active_databases():
     cfg_df = load_db_df(config_table)
     active_list = []
@@ -159,7 +159,6 @@ def get_active_databases():
             subj_key = str(row["subject_key"])
             parts = subj_key.split("_")
             if len(parts) >= 4:
-                # 2026년_정보_2학년_1학기 규칙 분해
                 year_part = parts[0]
                 subj = parts[1]
                 grade = parts[2]
@@ -406,8 +405,10 @@ elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
+        # ⬜ [1층] 대형 타이틀 정중앙 잠금 정렬
         st.markdown("<h2 style='text-align: center; font-size: 24px;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
+        # ⬜ [2층] 선생님 기획 황금 분할 비율 [1.8, 1.8, 3.2, 3.2] 수치 적용!
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
         with row1_col4:
             pw_edit_clicked = st.form_submit_button("🔐 암호변경", type="secondary")
@@ -426,6 +427,7 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
+            # ⬜ [4층] 요구하신 신규 4열 명밀 샌드위치 비율 전격 수립! [1.8, 3.2, 3.2, 1.8]
             row2_col1, row2_col2, row2_col3, row2_col4 = st.columns([1.8, 3.2, 3.2, 1.8])
             
             with row2_col2:
@@ -437,6 +439,7 @@ elif st.session_state["student_logged_in"]:
                     st.session_state.clear()
                     st.rerun()
 
+        # 💡 [연결점 일치화 완료] 새 `2026년_...` Key를 기준으로 원격 테이블에서 조회하도록 완전 정렬
         if submit_active and sel_s != "과목을 선택하세요.":
             chosen_db = active_dbs[opts_s.index(sel_s)-1]
             subject_key = chosen_db['key']
@@ -498,6 +501,7 @@ elif st.session_state["admin_logged_in"]:
         </div>
     """, unsafe_allow_html=True)
 
+    # 💡 [연결점 일치화 완료] 성적 대장 데이터를 불러올 때도 새 subject_key 포맷 기준으로 데이터 정렬
     if not df.empty and "반" in df.columns and "번호" in df.columns: df = df.sort_values(by=["반", "번호"])
 
     layout_left, layout_right = st.columns([3.5, 6.5])
@@ -511,7 +515,7 @@ elif st.session_state["admin_logged_in"]:
             registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
         
         if not registered_dbs:
-            with layout_left: st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
+            st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
         else:
             with layout_left:
                 st.markdown("**📂 대상 교과 선택**")
@@ -519,6 +523,8 @@ elif st.session_state["admin_logged_in"]:
                 selected_db_str = st.selectbox("교과 선택", options=selector_options, label_visibility="collapsed", key="mon_sub")
                 chosen_db = registered_dbs[selector_options.index(selected_db_str)]
                 subject_key = chosen_db['key']
+                
+                # 💡 원격지 DB 로드 조준선 정렬 완결
                 df_data = supabase.table(student_table).select("*").eq("subject_key", subject_key).execute().data
                 df = pd.DataFrame(df_data)
                 if not df.empty: df = df.sort_values(by=["반", "번호"]).reset_index(drop=True)
@@ -557,7 +563,7 @@ elif st.session_state["admin_logged_in"]:
             registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
 
         if not registered_dbs:
-            with layout_left: st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
+            st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
         else:
             with layout_left:
                 st.markdown("**📂 관리할 교과 선택**")
@@ -567,6 +573,7 @@ elif st.session_state["admin_logged_in"]:
                 subject_key = chosen_db['key']
                 item_count, item_titles = get_subject_item_names(subject_key)
 
+                # 💡 원격지 DB 로드 조준선 정렬 완결
                 df_data = supabase.table(student_table).select("*").eq("subject_key", subject_key).execute().data
                 df_base = pd.DataFrame(df_data)
                 if not df_base.empty: df_base = df_base.sort_values(by=["반", "번호"]).reset_index(drop=True)
@@ -617,6 +624,7 @@ elif st.session_state["admin_logged_in"]:
                 with row2_cols[1]: 
                     save_trigger = st.button("💾 성적 저장하기", type="primary", use_container_width=True, key="original_left_save_btn")
 
+                # 💡 [연결점 일치화 완료] 성적 대장을 신규 포맷 규격의 Key로 지우고 인서트하도록 쿼리 튜닝 완결
                 if save_trigger:
                     status_placeholder.markdown("<p style='color:#64748b; font-weight:700; margin:0; padding:0; font-size:14px; line-height:30px;'>⏳ 원격 데이터베이스에 동기화 중...</p>", unsafe_allow_html=True)
                     df_to_save = excel_loaded_df.copy() if excel_loaded_df is not None else df_base.copy()
@@ -700,10 +708,11 @@ elif st.session_state["admin_logged_in"]:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 class_opts = ["전체"]
+                # 💡 && ➡️ and 연산자 문법 원천 가동 봉쇄 유지 완료
                 if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
-                # 🔒 황금 마진 수치 range(19) 완벽 고정
+                # 🔒 학적 대장 마진 스케일 고정
                 for _ in range(19): st.write("")
                 
                 st.markdown('<div class="row1-fixed-status-box">', unsafe_allow_html=True)
@@ -743,7 +752,7 @@ elif st.session_state["admin_logged_in"]:
                         except Exception as e: st.error(f"❌ 명단 저장 실패: {e}")
 
     # ---------------------------------------------------------------------
-    # 4번 메뉴: 평가 대상 과목 구성 (Key 생성 방식 교정 구역)
+    # 4번 메뉴: 평가 대상 과목 구성
     # ---------------------------------------------------------------------
     elif menu_selection == "평가 대상 과목 구성":
         main_col1, main_col2 = layout_left, layout_right
@@ -769,7 +778,7 @@ elif st.session_state["admin_logged_in"]:
 
         if final_sub != "과목을 선택하세요." and sel_gr != "학년을 선택하세요." and sel_se != "학기를 선택하세요.":
             with main_col2:
-                # 💡 [새 저장방식 전격 이식] 2026년_정보_2학년_1학기 형태로 가독성 높은 Key 제조
+                # 💡 `2026년_정보_2학년_1학기` 규칙 제조기 안전 홀딩
                 subject_key = f"2026년_{final_sub}_{sel_gr}_{sel_se}"
                 cfg_df = load_db_df(config_table)
                 db_match = cfg_df[cfg_df["subject_key"] == subject_key] if not cfg_df.empty else pd.DataFrame()
@@ -910,9 +919,9 @@ elif st.session_state["admin_logged_in"]:
                         if clean_records: supabase.table(master_student_table).insert(clean_records).execute()
                         st.session_state["student_file_uploader_key"] = f"st_uploader_init_{int(time.time())}"
                         st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
-                        st.session_state["show_student_toast"] = False
+                        st.session_state["show_student_toast"] = True
                         st.session_state["student_save_success_flag"] = True 
-                        time.sleep(0.2); rerun()
+                        time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
 
     elif menu_selection == "👑 교사 계정 관리" and is_admin:
