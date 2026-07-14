@@ -536,7 +536,7 @@ elif st.session_state["student_logged_in"]:
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
         # ⬜ [선생님 황금 비율 조준] 1.8, 1.8, 3.2, 3.2 분할 안착!
-        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
+        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.7, 1.7, 3.3, 3.3])
         
         with row1_col3:
             # 💡 흰색 무테 바탕 + 단정한 검은색 글씨 링크로 매칭 완료!
