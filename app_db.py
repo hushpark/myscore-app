@@ -95,14 +95,14 @@ st.markdown("""
             line-height: 40px !important;
         }
         
-        /* 🎨 [텍스트 링크 변신 완결판] 파란 버튼을 완전히 부수고 오직 순수 붉은색 글씨 링크로 강제 박제 */
+        /* 🎨 [선생님 아이디어 기획 패치] 바탕색을 하얀색(#FFFFFF)으로 메우고, 테두리를 완전히 지워 붉은색 글자 링크로 완벽 위장 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button {
-            background-color: transparent !important; /* 배경 투명하게 증발 */
-            border: none !important; /* 테두리 원천 파괴 */
-            color: #dc2626 !important; /* 세련된 붉은색 계열 글씨색 주입 */
+            background-color: #ffffff !important; /* 하얀색 바탕 주입 */
+            border: none !important; /* 테두리 원천 파괴 제거 */
+            color: #dc2626 !important; /* 고급스러운 교사 붉은색 계열 글씨 적용 */
             font-size: 15px !important;
             font-weight: 700 !important;
-            box-shadow: none !important; /* 입체감 그림자 제거 */
+            box-shadow: none !important; /* 입체 버튼 그림자 완벽 제거 */
             padding: 8px 0 !important;
             width: 100% !important;
             text-align: right !important; /* 4열 칸 정밀 우측 정렬 */
@@ -111,8 +111,8 @@ st.markdown("""
         }
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button:hover {
             color: #b91c1c !important;
-            text-decoration: underline !important; /* 마우스 호버 시 텍스트 링크 전용 밑줄 효과 */
-            background-color: transparent !important;
+            text-decoration: underline !important; /* 마우스 올리면 밑줄 효과 */
+            background-color: #f8fafc !important; /* 세련된 아주 연한 그레이 호버 배경 효과 */
         }
         
         /* 🚀 하단 성적 확인 버튼 센터 마스터 스타일 영구 홀딩 */
@@ -245,7 +245,7 @@ def show_add_student_dialog(subject_key):
         submit_btn = st.form_submit_button("💾 해당 학생 이 과목에 배정하기", use_container_width=True)
         if submit_btn:
             if not ban.strip() or not num.strip() or not name.strip() or not email.strip(): 
-                st.error("❌ 모든 항목을 빠질없이 입력해 주세요.")
+                st.error("❌ 모든 항목을 빠짐없이 입력해 주세요.")
             else:
                 try:
                     supabase.table(student_table).upsert({
@@ -298,7 +298,6 @@ def show_result_dialog(student_data, subject_name):
     sc3 = int(student_data.get('수행평가3', 0))
     total_score = sc1 + sc2 + sc3
     
-    # 💡 [피드백 정밀 반영] 선생님께서 커스텀하신 띄어쓰기 합계 데이터프레임 구조 교정 완료!
     score_table_df = pd.DataFrame({
         "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 합       계"],
         "취득 점수": [f"{sc1} 점", f"{sc2} 점", f"{sc3} 점", f"{total_score} 점"]
@@ -499,7 +498,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 선생님 맞춤형 황금 조준 비율 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 선생님 기획 황금 지정 비율 완벽 가두리)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
@@ -507,10 +506,9 @@ elif st.session_state["student_logged_in"]:
     with st.form("student_mobile_form", border=True):
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # ⬜ [설계도 2층 피드백 적극 수용] 지정해주신 비율 [2.2, 2.2, 2.2, 3.4] 그대로 적용!
+        # ⬜ [설계도 2층 최적화 반영] 선생님의 황금 분할 비율 [2.2, 2.2, 2.2, 3.4] 수치 적용!
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([2.2, 2.2, 2.2, 3.4])
         with row1_col4:
-            # 폼 내부 제출 단추 형식을 유지한 채 CSS 요격으로 투명화 패치하여 완벽한 글자 링크 완성!
             logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
                 st.session_state.clear()
@@ -528,7 +526,7 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [설계도 4층 피드백 적극 수용] 지정해주신 정중앙 황금 비율 [3.3, 3.4, 3.3] 적용 완료!
+            # ⬜ [설계도 4층 최적화 반영] 선생님의 정중앙 압축 비율 [3.3, 3.4, 3.3] 수치 적용!
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
                 submit_active = st.form_submit_button("🚀 성적 확인", key="std_form_verify")
@@ -738,7 +736,7 @@ elif st.session_state["admin_logged_in"]:
                             
                             supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
                             if clean_score_records:
-                                supabase.table(student_table).insert(clean_records).execute()
+                                supabase.table(student_table).insert(clean_score_records).execute()
                                 
                             st.session_state["score_input_success_flag"] = True
                             status_placeholder.empty()
@@ -972,6 +970,7 @@ elif st.session_state["admin_logged_in"]:
             
             for _ in range(4): st.write("")
             
+            # 💡 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             student_grid_cols = st.columns([5.0, 5.0])
             with student_grid_cols[0]:
                 add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
