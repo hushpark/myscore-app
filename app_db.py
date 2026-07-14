@@ -418,7 +418,7 @@ elif st.session_state["student_logged_in"]:
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
         # ⬜ [선생님 계산 비율 전격 이식] 1.6 : 1.6 : 3.4 : 3.4 분할 안착!
-        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
+        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.9, 1.9, 3.1, 3.1])
         
         with row1_col3:
             # 💡 [순정 이원화] 개체 구분을 위해 테두리가 살아있는 흰색 순정 버튼(type="secondary") 세팅
