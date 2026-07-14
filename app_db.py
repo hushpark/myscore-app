@@ -508,7 +508,7 @@ elif st.session_state["student_logged_in"]:
         
         # ⬜ [설계도 2층 정밀 개편] 5.5 : 1.5 : 1.5 : 1.5 비율 주입
         # 4열이 무조건 110px의 공간을 안전하게 선점하도록 분할하여 글씨 깨짐 완천 방어!
-        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([5.5, 1.5, 1.5, 1.5])
+        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.5, 1.5, 1.5, 5.5])
         with row1_col4:
             logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
@@ -530,7 +530,7 @@ elif st.session_state["student_logged_in"]:
             
             # ⬜ [설계도 4층 정밀 개편] 3.5 : 3.0 : 3.5 비율 주입
             # 가운데 2열의 가로폭 자체를 딱 버튼 너비(30%)로 슬림하게 좁혀 좌우 거대벽이 버튼을 강제로 '상자 정중앙'에 고정!
-            row2_col1, row2_col2, row2_col3 = st.columns([3.5, 3.0, 3.5])
+            row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
                 submit_active = st.form_submit_button("🚀 성적 확인", key="std_form_verify")
 
