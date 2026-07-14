@@ -95,30 +95,25 @@ st.markdown("""
             line-height: 40px !important;
         }
         
-        /* 🎨 [위장 전술 링크 패치] 3열 암호변경, 4열 로그아웃 버튼을 완벽한 무테 텍스트 링크 스타일로 통일 개조 */
+        /* 🎨 [피드백 반영 전격 수정] 상단 제어 버튼들을 흰색 바탕 + 은은한 테두리 + 검은색 글씨로 일괄 리모델링 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button {
-            background-color: #ffffff !important; 
-            border: none !important; 
+            background-color: #ffffff !important; /* 깔끔한 하얀색 바탕 */
+            border: 1px solid #cbd5e1 !important; /* 은은하고 단정한 회색 테두리선 */
+            border-radius: 6px !important; /* 부드러운 둥근 모서리 마감 */
+            color: #1e293b !important; /* 눈이 편안한 깊은 검은색(차콜) 글씨색 주입 */
             font-size: 14px !important;
             font-weight: 700 !important;
-            box-shadow: none !important; 
-            padding: 8px 0 !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important; /* 아주 미세한 그림자 레이어 */
+            padding: 6px 0 !important;
             width: 100% !important;
-            text-align: right !important; 
+            text-align: center !important; /* 가독성을 위한 칸 정중앙 정렬 */
             height: auto !important;
             cursor: pointer !important;
         }
-        /* 3열 암호변경 단추는 무난한 다크 그레이 텍스트 지정 */
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stHorizontalBlock > div:nth-of-type(3) button {
-            color: #475569 !important;
-        }
-        /* 4열 로그아웃 단추는 눈에 띄는 붉은색 계열 텍스트 지정 */
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stHorizontalBlock > div:nth-of-type(4) button {
-            color: #dc2626 !important;
-        }
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button:hover {
-            text-decoration: underline !important;
-            background-color: #f8fafc !important; 
+            color: #0f172a !important; /* 호버 시 더 짙은 검은색 */
+            background-color: #f8fafc !important; /* 호버 시 아주 부드러운 그레이 배경 스위칭 */
+            border-color: #94a3b8 !important; /* 테두리선 선명화 */
         }
         
         /* 🚀 하단 성적 확인 버튼 센터 마스터 스타일 영구 홀딩 */
@@ -532,7 +527,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 3열 암호변경 링크 추가 및 단추 다이어트 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 선생님 기획 황금 지정 비율 완벽 가두리)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
@@ -544,13 +539,13 @@ elif st.session_state["student_logged_in"]:
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([2.2, 2.2, 2.2, 3.4])
         
         with row1_col3:
-            # 💡 [다이어트 기획] 3번째 열에 팝업창을 호출하는 암호변경 위장 링크 탑재!
+            # 💡 흰색 무테 바탕 + 단정한 검은색 글씨 링크로 매칭 완료!
             pw_edit_clicked = st.form_submit_button("🔐 암호변경", key="std_form_pw_edit")
             if pw_edit_clicked:
                 show_student_pw_dialog()
                 
         with row1_col4:
-            # 4번째 열에 무테 붉은 글씨 로그아웃 위장 링크 완벽 수호
+            # 💡 흰색 무테 바탕 + 단정한 검은색 글씨 링크로 매칭 완료!
             logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
                 st.session_state.clear()
@@ -1012,6 +1007,7 @@ elif st.session_state["admin_logged_in"]:
             
             for _ in range(4): st.write("")
             
+            # 💡 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             student_grid_cols = st.columns([5.0, 5.0])
             with student_grid_cols[0]:
                 add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
