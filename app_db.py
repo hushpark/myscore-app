@@ -44,7 +44,7 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 🔵 [순정 파란색 완벽 복원] 오염 유발 CSS를 전면 삭제하여 스트림릿 순정 파란색 버튼으로 대화 통합 고정 */
+        /* 🔵 [순정 파란색 완벽 지정] 다른 단추 오염 차단용 마스터 스타일 고정 */
         button[kind="primary"], 
         .stButton > button[kind="primary"],
         button[data-testid="stFormSubmitButton"] { 
@@ -61,15 +61,23 @@ st.markdown("""
             background-color: #2563eb !important; 
         }
 
-        /* 보조 흰색 버튼 기본 디자인 홀딩 */
+        /* ⚪ [순정 흰색 테두리 완벽 지정] 암호변경과 로그아웃 전용 보조 단추 스타일 박제 */
         button[kind="secondary"],
-        .stButton > button[kind="secondary"] { 
+        .stButton > button[kind="secondary"],
+        div.stForm button[kind="secondary"] { 
             background-color: #ffffff !important; 
             color: #1e293b !important; 
             font-weight: 700 !important; 
             border: 1px solid #cbd5e1 !important; 
             border-radius: 6px !important; 
             box-shadow: none !important;
+        }
+        button[kind="secondary"]:hover,
+        .stButton > button[kind="secondary"]:hover,
+        div.stForm button[kind="secondary"]:hover {
+            background-color: #f8fafc !important;
+            border-color: #94a3b8 !important;
+            color: #0f172a !important;
         }
         
         /* 📱 학생 스마트폰 사각형 가두리 독립 스타일 */
@@ -489,7 +497,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 대개편 기획안 완벽 반영 완료)
+# 🎓 [2단계-A] 학생 화면 (📱 기획 도면 상하 정렬 순서 조정 버전)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
@@ -498,10 +506,10 @@ elif st.session_state["student_logged_in"]:
         # ⬜ [1층] 대형 타이틀 정중앙 잠금 정렬[cite: 1]
         st.markdown("<h2 style='text-align: center; font-size: 24px;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # ⬜ [2층] 기존 로그아웃 자리에 암호변경을 안착하기 위한 비율 분할[cite: 1]
+        # ⬜ [2층] 선생님 기획 황금 분할 비율 [1.8, 1.8, 3.2, 3.2] 수치 적용![cite: 1]
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
         with row1_col4:
-            # 💡 기존 로그아웃 자리에 암호변경만 단독 흰색 테두리 단추로 깔끔하게 정렬 배정
+            # 💡 [순정 분리 격리] 테두리가 살아있는 흰색 순정 단추(type="secondary") 바인딩으로 타 단추 오염 차단![cite: 1]
             pw_edit_clicked = st.form_submit_button("🔐 암호변경", type="secondary")
             if pw_edit_clicked:
                 show_student_pw_dialog()
@@ -518,16 +526,16 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [4층] 요구하신 신규 4열 명밀 샌드위치 비율 전격 수립! [1.8, 3.2, 3.2, 1.8]
+            # ⬜ [4층] 요구하신 신규 4열 명밀 샌드위치 비율 전격 수립! [1.8, 3.2, 3.2, 1.8][cite: 1]
             row2_col1, row2_col2, row2_col3, row2_col4 = st.columns([1.8, 3.2, 3.2, 1.8])
             
             with row2_col2:
-                # 🔵 가운데 첫 번째 영역에 성적 확인 파란색 순정 단추 배치완료
+                # 🔵 가운데 첫 번째 영역에 성적 확인 파란색 순정 단추 배치완료[cite: 1]
                 submit_active = st.form_submit_button("🚀 성적 확인", type="primary", use_container_width=True)
                 
             with row2_col3:
-                # 🔵 가운데 두 번째 영역에 로그아웃 파란색 순정 단추 나란히 콤비 배치완료
-                logout_clicked = st.form_submit_button("🚪 로그아웃", type="primary", use_container_width=True)
+                # 💡 [피드백 요구사항 이식 완료] 로그아웃 버튼도 type="secondary"를 부여하여 흰색 테두리 개체로 완전 개편!
+                logout_clicked = st.form_submit_button("🚪 로그아웃", type="secondary", use_container_width=True)
                 if logout_clicked:
                     st.session_state.clear()
                     st.rerun()
@@ -1004,7 +1012,7 @@ elif st.session_state["admin_logged_in"]:
                         if clean_records: supabase.table(master_student_table).insert(clean_records).execute()
                         st.session_state["student_file_uploader_key"] = f"st_uploader_init_{int(time.time())}"
                         st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
-                        st.session_state["show_student_toast"] = False
+                        st.session_state["show_student_toast"] = True
                         st.session_state["student_save_success_flag"] = True 
                         time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
@@ -1099,7 +1107,7 @@ elif st.session_state["admin_logged_in"]:
                         if clean_teachers: supabase.table(teacher_table).insert(clean_teachers).execute()
                         st.session_state["teacher_file_uploader_key"] = f"tc_uploader_init_{int(time.time())}"
                         st.session_state["cached_teacher_df"] = pd.DataFrame(clean_teachers)
-                        st.session_state["show_teacher_toast"] = False
+                        st.session_state["show_teacher_toast"] = True
                         st.session_state["teacher_save_success_flag"] = True 
                         time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
