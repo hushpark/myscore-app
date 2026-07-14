@@ -44,18 +44,17 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 💾 시스템 전체 순정 파란색 버튼 속성 영구 고정 */
-        button[kind="primary"], 
-        .stButton > button[kind="primary"],
+        /* 🔵 [오염 완전 박멸] 메인 로그인 버튼 및 시스템 순정 파란색 단추 절대 사수 잠금 */
+        div[data-testid="stForm"] button[kind="primary"],
         button[data-testid="stFormSubmitButton"] { 
             background-color: #3b82f6 !important; 
             color: #ffffff !important; 
             font-weight: 700 !important; 
             border: none !important; 
-            border-radius: 6px !important; 
+            border-radius: 6px !important;
+            box-shadow: none !important;
         }
-        button[kind="primary"]:hover,
-        .stButton > button[kind="primary"]:hover,
+        div[data-testid="stForm"] button[kind="primary"]:hover,
         button[data-testid="stFormSubmitButton"]:hover { 
             background-color: #2563eb !important; 
         }
@@ -76,10 +75,10 @@ st.markdown("""
             box-sizing: border-box !important;
         }
         
-        /* 🎨 오직 학생카드 내부의 '1번째 행열(최상단)' 버튼들만 조준 무테화 요격 */
+        /* 🎨 [저격 클래스 개편] 오직 학생카드 내부의 '1번째 행열(최상단)' 버튼들만 정밀 무테화 단독 처리 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button {
             background-color: #ffffff !important; 
-            border: none !important; 
+            border: none !important; /* 회색 테두리선 완벽 증발 완료 */
             color: #1e293b !important; 
             font-size: 14px !important;
             font-weight: 700 !important;
@@ -92,15 +91,17 @@ st.markdown("""
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
             background-color: #f8fafc !important; 
             color: #0f172a !important;
+            border: none !important;
         }
 
-        /* 🚀 학생카드 내부의 '마지막 행열(성적 확인)' 버튼 파란색 원천 고정 */
+        /* 🔵 [오염 완전 박멸] 학생카드 내부의 '마지막 행열(성적 확인)' 파란색 단추 잠금 사수 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button {
             background-color: #3b82f6 !important; 
             color: #ffffff !important; 
             font-weight: 700 !important; 
             border: none !important; 
             border-radius: 6px !important;
+            box-shadow: none !important;
         }
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button:hover {
             background-color: #2563eb !important;
@@ -117,12 +118,12 @@ st.markdown("""
             line-height: 40px !important;
         }
         
-        /* 🎨 [피드백 결정적 반영] 드롭박스 및 모든 입력창의 포커스 시 발생하는 붉은색/파란색 하이라이트 테두리 영구 소멸 패치 */
+        /* 🎨 드롭박스 및 모든 입력창 선택 시 테두리 오염 원천 해제 패치 */
         div[data-testid="stSelectbox"] > div,
         div[data-testid="stTextInput"] > div,
         div[data-testid="stSelectbox"] > div:focus-within,
         div[data-testid="stTextInput"] > div:focus-within {
-            border: 1px solid #cbd5e1 !important; /* 항상 평온하고 단정한 회색 테두리 유지 */
+            border: 1px solid #cbd5e1 !important; 
             outline: none !important;
             box-shadow: none !important;
         }
@@ -130,12 +131,6 @@ st.markdown("""
         div[data-testid="InputInstructions"] { display: none !important; }
         div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
-        
-        /* 로그인 화면 폼 구성 스타일 */
-        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
-        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
-        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
-        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
 
         /* 타이틀 영역 구조 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
@@ -466,7 +461,7 @@ if "logged_teacher_pw" not in st.session_state: st.session_state["logged_teacher
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 로그인 화면 (💡 form_submit_button 오타 교정 완결)
+# 🔓 [1단계] 로그인 화면 (💡 오염 오인 파란색 정상 연출 완정 봉쇄)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
     with st.container():
@@ -478,7 +473,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
             
             b_col2 = st.columns([1.0, 1.8, 1.0])[1]
-            # 💡 [버그 제압] submit_button 오타를 순정 form_submit_button으로 환원하여 기동 보장!
+            # 🔵 순정 파란색 단추 바인딩 확보
             submit_active = b_col2.form_submit_button("로그인", type="primary", use_container_width=True)
             
             if submit_active:
@@ -527,14 +522,14 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 타이틀 하강 레이아웃 및 완벽 분리 파란색 단추)
+# 🎓 [2단계-A] 학생 화면 (📱 최상단 1층 배치 및 완전 분리 파란색 단추 박제)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
         
-        # ⬜ [설계도 비율 준수] 1층에 버튼 구역 우선 정렬 배치 [1.8, 1.8, 3.2, 3.2]
+        # ⬜ [설계도 완벽 배치] 1층 최상단에 제어 단추 구역을 완전 배치 [1.8, 1.8, 3.2, 3.2]
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
         
         with row1_col3:
@@ -548,7 +543,7 @@ elif st.session_state["student_logged_in"]:
                 st.session_state.clear()
                 st.rerun()
                 
-        # ⬜ 버튼 아래 타이틀 2층 하강 구도 잠금
+        # ⬜ 버튼 아래 2층으로 타이틀 하강 배치 완료
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 8px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
@@ -557,7 +552,7 @@ elif st.session_state["student_logged_in"]:
             st.markdown("<p style='color:#ef4444; font-weight:700;'>현재 평가 데이터베이스에 활성화된 과목이 없습니다.</p>", unsafe_allow_html=True)
             submit_active = False
         else:
-            # 드롭박스 과목 선택창 (선택되어도 은은한 회색 테두리로 사수완료)
+            # 드롭박스 과목 선택창 (선택되어도 은은한 회색 테두리 무조건 유지)
             opts_s = ["과목을 선택하세요."] + [f"📚 {d['subject']} ({d['grade']} / {d['semester']})" for d in active_dbs]
             sel_s = st.selectbox("조회할 교과과정 선택", opts_s, label_visibility="visible", key="std_subject_select")
             
@@ -566,7 +561,7 @@ elif st.session_state["student_logged_in"]:
             # 정중앙 압축 수치 [3.3, 3.4, 3.3] 세팅
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
-                # 💡 오염을 원천 파괴하여 완벽한 마스터 파란색 컬러 사수 완수!
+                # 🔵 [오염 완전 해결] 파란색 마스터 전용 버튼으로 명확히 복구 완수!
                 submit_active = st.form_submit_button("🚀 성적 확인", type="primary", use_container_width=True)
 
         if submit_active and sel_s != "과목을 선택하세요.":
