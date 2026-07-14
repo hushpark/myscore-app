@@ -44,20 +44,24 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 🔵 순정 파란색 기본값 고정 (교사용 및 시스템 기본용) */
+        /* 🔵 [오염 종식 핵심 파란색 고정] 시스템 전체 기본 마스터 단추 및 성적 조회 폼 단추 잠금 */
         button[kind="primary"], 
         .stButton > button[kind="primary"],
-        button[data-testid="stFormSubmitButton"] { 
+        button[data-testid="stFormSubmitButton"],
+        div[data-testid="stForm"] button,
+        div.stFormSubmitButton button { 
             background-color: #3b82f6 !important; 
             color: #ffffff !important; 
             font-weight: 700 !important; 
             border: none !important; 
             border-radius: 6px !important; 
             box-shadow: none !important;
+            text-shadow: none !important;
         }
         button[kind="primary"]:hover,
         .stButton > button[kind="primary"]:hover,
-        button[data-testid="stFormSubmitButton"]:hover { 
+        button[data-testid="stFormSubmitButton"]:hover,
+        div[data-testid="stForm"] button:hover { 
             background-color: #2563eb !important; 
         }
         
@@ -77,11 +81,12 @@ st.markdown("""
             box-sizing: border-box !important;
         }
         
-        /* 🎯 [완벽 격리 패치] 암호변경과 로그아웃 전용 클래스 - 완벽한 흰색 무테 구현 */
+        /* 🎯 [초정밀 격리] 암호변경과 로그아웃 전용 클래스 - 타 단추를 오염시키지 않고 이곳만 흰색 무테 마감 */
+        .sub-control-btn div.stFormSubmitButton button,
         .sub-control-btn button {
             background-color: #ffffff !important;
-            border: none !important; /* 테두리선 완벽 파괴 */
-            color: #1e293b !important; /* 차콜 검은색 글자 지정 */
+            border: none !important; 
+            color: #1e293b !important; 
             font-size: 14px !important;
             font-weight: 700 !important;
             box-shadow: none !important;
@@ -89,6 +94,7 @@ st.markdown("""
             height: auto !important;
             padding: 6px 0 !important;
         }
+        .sub-control-btn div.stFormSubmitButton button:hover,
         .sub-control-btn button:hover {
             background-color: #f8fafc !important;
             color: #0f172a !important;
@@ -193,7 +199,7 @@ def show_student_pw_dialog():
         n_pw_c = st.text_input("새 비밀번호 확인", type="password", placeholder="새로운 비밀번호 다시 입력")
         
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.form_submit_button("💾 비밀번호 안전하게 변경하기", use_container_width=True):
+        if st.form_submit_button("💾 비밀번호 안전하게 변경하기", type="primary", use_container_width=True):
             if not c_pw or not n_pw or not n_pw_c:
                 st.error("❌ 모든 항목을 빠짐없이 입력해야 합니다.")
             elif c_pw.strip() != st.session_state.get("logged_student_pw", ""):
@@ -220,7 +226,7 @@ def show_add_teacher_dialog():
         t_name = st.text_input("교사 성명", placeholder="예: 박디몬")
         t_pw = st.text_input("초기 임시 비밀번호", placeholder="예: 1234")
         t_subs = st.text_input("담당 과목 권한 지정 (쉼표 분리)", placeholder="예: 정보, 수학")
-        submit_btn = st.form_submit_button("💾 이 교사 계정 활성화하기", use_container_width=True)
+        submit_btn = st.form_submit_button("💾 이 교사 계정 활성화하기", type="primary", use_container_width=True)
         if submit_btn:
             if not t_id or not t_name or not t_pw or not t_subs: st.error("❌ 모든 항목을 입력해야 합니다.")
             else:
@@ -240,7 +246,7 @@ def show_add_student_dialog(subject_key):
         with c3: name = st.text_input("이름", placeholder="예: 홍길동")
         email = st.text_input("학교 이메일 계정 (ID)", placeholder="student@school.kr")
         
-        submit_btn = st.form_submit_button("💾 해당 학생 이 과목에 배정하기", use_container_width=True)
+        submit_btn = st.form_submit_button("💾 해당 학생 이 과목에 배정하기", type="primary", use_container_width=True)
         if submit_btn:
             if not ban.strip() or not num.strip() or not name.strip() or not email.strip(): 
                 st.error("❌ 모든 항목을 빠짐없이 입력해 주세요.")
@@ -271,7 +277,7 @@ def show_add_master_student_single_dialog():
         with c4: name = st.text_input("이름", placeholder="홍길동")
         email = st.text_input("학교 이메일 계정 (ID)", placeholder="student@school.kr")
         pw = st.text_input("초기 조회 비밀번호", value="1234")
-        if st.form_submit_button("추가", use_container_width=True):
+        if st.form_submit_button("추가", type="primary", use_container_width=True):
             if grade and ban and num and name and email and pw:
                 try:
                     supabase.table(master_student_table).upsert({
@@ -496,19 +502,17 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 타이틀 정렬 교정 및 상단 제어권 격리 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 타이틀 정렬 및 상단 무테 분리 패치 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
-        
-        # ⬜ [설계도 피드백 1층] 🔐 암호변경과 🚪 로그아웃 버튼이 무조건 최상단 안착![cite: 1]
-        # 선생님께서 제안해주신 글자 안 깨지는 황금 비율 [1.8, 1.8, 3.2, 3.2] 완벽 조준 주입![cite: 1]
+        # ⬜ [1층] 암호변경과 로그아웃 버튼을 선생님의 황금 비율 [1.8, 1.8, 3.2, 3.2] 수치로 세팅![cite: 1]
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
         
         with row1_col3:
-            # 🎯 고유 전용 스코프 클래스(.sub-control-btn)로 감싸서 완벽하게 흰색 무테 검은 글씨 연출!
+            # 🎯 오직 이곳만 격리하는 'sub-control-btn' 가두리를 주입하여 흰색 무테 검은 글자 연출!
             st.markdown('<div class="sub-control-btn">', unsafe_allow_html=True)
             pw_edit_clicked = st.form_submit_button("🔐 암호변경")
             if pw_edit_clicked:
@@ -516,7 +520,7 @@ elif st.session_state["student_logged_in"]:
             st.markdown('</div>', unsafe_allow_html=True)
                 
         with row1_col4:
-            # 🎯 고유 전용 스코프 클래스(.sub-control-btn)로 감싸서 완벽하게 흰색 무테 검은 글씨 연출!
+            # 🎯 오직 이곳만 격리하는 'sub-control-btn' 가두리를 주입하여 흰색 무테 검은 글자 연출!
             st.markdown('<div class="sub-control-btn">', unsafe_allow_html=True)
             logout_clicked = st.form_submit_button("🚪 로그아웃")
             if logout_clicked:
@@ -524,8 +528,7 @@ elif st.session_state["student_logged_in"]:
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
                 
-        # ⬜ [설계도 피드백 2층] 대형 타이틀이 버튼 구역 바로 밑으로 내려오도록 고정!
-        # 👈 text-align: center; font-size: 24px 명시하여 다시 정중앙 정렬 및 일정한 크기 박제 완수!
+        # ⬜ [2층] 대형 타이틀을 단추 밑으로 내리고 정중앙 정렬 잠금!
         st.markdown("<h2 style='text-align: center; font-size: 24px; margin: 15px 0 20px 0;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 8px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
@@ -539,10 +542,10 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [설계도 4층] 정중앙 압축 가두리 수치 [3.3, 3.4, 3.3] 세팅[cite: 1]
+            # ⬜ [4층] 정중앙 압축 가두리 수치 [3.3, 3.4, 3.3] 적용 완료![cite: 1]
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
-                # 🔵 상단 스타일과 완벽 분리 격리하여 순정 마스터 파란색 단추 영구 홀딩[cite: 1]
+                # 🔵 격리가 완료되어 상단 스타일 오염을 받지 않는 완벽한 정품 순정 파란색 버튼 작동[cite: 1]
                 submit_active = st.form_submit_button("🚀 성적 확인", type="primary", use_container_width=True)
 
         if submit_active and sel_s != "과목을 선택하세요.":
@@ -1017,7 +1020,7 @@ elif st.session_state["admin_logged_in"]:
                         if clean_records: supabase.table(master_student_table).insert(clean_records).execute()
                         st.session_state["student_file_uploader_key"] = f"st_uploader_init_{int(time.time())}"
                         st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
-                        st.session_state["show_student_toast"] = False
+                        st.session_state["show_student_toast"] = True
                         st.session_state["student_save_success_flag"] = True 
                         time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
