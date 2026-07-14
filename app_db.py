@@ -95,26 +95,27 @@ st.markdown("""
             line-height: 40px !important;
         }
         
-        /* 🎨 [그림 2 무테 최적화] 4열 내부의 로그아웃 버튼을 완벽한 무테 붉은글씨로 고정 */
+        /* 🎨 [스트림릿 이펙트 전격 파괴] 로그아웃 버튼 껍데기를 지우고 순수 붉은색 글씨 링크로 둔갑 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button {
-            background-color: #ffffff !important;
+            background-color: transparent !important;
             border: none !important;
-            color: #dc2626 !important; 
+            color: #ef4444 !important; /* 부드럽고 가독성 좋은 교사 수려한 붉은색 계열 */
             font-size: 14px !important;
             font-weight: 700 !important;
             box-shadow: none !important;
             padding: 8px 0 !important;
             width: 100% !important;
-            text-align: right !important; /* 4열 칸 안에서 완전 우측 밀착 */
+            text-align: right !important; /* 4열 칸 정밀 우측 정렬 */
             height: auto !important;
+            cursor: pointer !important;
         }
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button:hover {
-            color: #b91c1c !important;
-            text-decoration: underline !important;
-            background-color: #ffffff !important;
+            color: #dc2626 !important;
+            text-decoration: underline !important; /* 마우스 올렸을 때 정겨운 언더라인 */
+            background-color: transparent !important;
         }
         
-        /* 🚀 [중앙 고정 정밀 튜닝] 2열 구역 너비에 맞춰 뚱뚱해지지 않게 꽉 채워 배치 */
+        /* 🚀 [성적 확인 버튼 센터 잠금 CSS] 좁아진 2열 구역 안을 통으로 꽉 채움 */
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type div.stFormSubmitButton button {
             background-color: #3b82f6 !important; 
             color: #ffffff !important;
@@ -123,7 +124,7 @@ st.markdown("""
             border: none !important;
             border-radius: 6px !important;
             padding: 10px 0 !important;
-            width: 100% !important; /* 좁혀진 2열 구역을 가득 채워 정중앙 강제 안착 */
+            width: 100% !important; 
             box-shadow: none !important;
         }
         div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type div.stFormSubmitButton button:hover {
@@ -220,7 +221,7 @@ def show_add_teacher_dialog():
         t_id = st.text_input("교사 전용 ID", placeholder="예: info_teacher")
         t_name = st.text_input("교사 성명", placeholder="예: 박디몬")
         t_pw = st.text_input("초기 임시 비밀번호", placeholder="예: 1234")
-        t_subs = st.text_input("담당 과목 권한 지정 (쉼표 분리)", placeholder="예: 국어, 수학")
+        t_subs = st.text_input("담당 과목 권한 지정 (쉼표 분리)", placeholder="예: 정보, 수학")
         submit_btn = st.form_submit_button("💾 이 교사 계정 활성화하기", use_container_width=True)
         if submit_btn:
             if not t_id or not t_name or not t_pw or not t_subs: st.error("❌ 모든 항목을 입력해야 합니다.")
@@ -298,7 +299,7 @@ def show_result_dialog(student_data, subject_name):
     total_score = sc1 + sc2 + sc3
     
     score_table_df = pd.DataFrame({
-        "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 합        계"],
+        "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 총점 합계"],
         "취득 점수": [f"{sc1} 점", f"{sc2} 점", f"{sc3} 점", f"{total_score} 점"]
     })
     
@@ -443,7 +444,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
     with st.container():
         with st.form("master_unified_form"):
             st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-            login_mode = st.radio("접속 모기", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
             
             user_id_input = st.text_input("ID / 이메일", placeholder="학생은 이메일, 교사는 ID를 입력하세요.", label_visibility="collapsed")
             user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
@@ -497,7 +498,7 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 수학적 비율 강제 정중앙 센터링 및 우측밀착 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 선생님 기획 황금 비율 및 무테 텍스트 로그아웃 구현)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
@@ -506,10 +507,10 @@ elif st.session_state["student_logged_in"]:
         # ⬜ [설계도 1층] 대형 타이틀 단독 중앙정렬
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # ⬜ [설계도 2층 정밀 개편] 2.2, 2.2, 2.2, 3.4 비율 주입
-        # 4열이 무조건 110px의 공간을 안전하게 선점하도록 분할하여 글씨 깨짐 완천 방어!
+        # ⬜ [설계도 2층 정밀 개편] 선생님의 황금 비율 [2.2, 2.2, 2.2, 3.4] 수치 적용 완료!
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([2.2, 2.2, 2.2, 3.4])
         with row1_col4:
+            # CSS 요격 튜닝으로 파란 껍데기를 다 도려내어 흰 바탕 무테 붉은 글씨 실현
             logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
                 st.session_state.clear()
@@ -528,8 +529,8 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [설계도 4층 정밀 개편] 3.3, 3.4, 3.3 비율 주입
-            # 가운데 2열의 가로폭 자체를 딱 버튼 너비(30%)로 슬림하게 좁혀 좌우 거대벽이 버튼을 강제로 '상자 정중앙'에 고정!
+            # ⬜ [설계도 4층 정밀 개편] 선생님의 황금 비율 [3.3, 3.4, 3.3] 수치 적용 완료!
+            # 2열 가로폭 자체를 타이트하게 압축해 쏠림 현상을 원천 방어하고 정중앙 박제 고정
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
                 submit_active = st.form_submit_button("🚀 성적 확인", key="std_form_verify")
@@ -1024,7 +1025,7 @@ elif st.session_state["admin_logged_in"]:
         if "teacher_file_uploader_key" not in st.session_state: st.session_state["teacher_file_uploader_key"] = "tc_uploader_init_100"
 
         with layout_left:
-            st.markdown('<p class="menu-guide-inline">💡 교사들의 아이디 및 담당과목 권한을 에디터 상에서 수정한 후, 아래 [💾 교사 계정 저장] 버튼을 누르셔야 원격 데이터베이스에 일괄 적용 세이브 완료됩니다.</p>', unsafe_allow_html=True)
+            st.markdown('<p class="menu-guide-inline">💡 교사들의 아이디 및 담당과목 권한을 에디터 상에서 수정한 후, 아래 [💾 교사 계정 저장] 버튼을 누러셔야 원격 데이터베이스에 일괄 적용 세이브 완료됩니다.</p>', unsafe_allow_html=True)
             st.markdown("**🔍 교사 계정 필터링**")
             cached_tc_src = st.session_state["cached_teacher_df"]
             tc_opts = ["전체 교직원 보기"]
