@@ -220,7 +220,7 @@ def show_add_teacher_dialog():
         t_id = st.text_input("교사 전용 ID", placeholder="예: info_teacher")
         t_name = st.text_input("교사 성명", placeholder="예: 박디몬")
         t_pw = st.text_input("초기 임시 비밀번호", placeholder="예: 1234")
-        t_subs = st.text_input("담당 과목 권한 지정 (쉼표 분리)", placeholder="예: 정보, 수학")
+        t_subs = st.text_input("담당 과목 권한 지정 (쉼표 분리)", placeholder="예: 국어, 수학")
         submit_btn = st.form_submit_button("💾 이 교사 계정 활성화하기", use_container_width=True)
         if submit_btn:
             if not t_id or not t_name or not t_pw or not t_subs: st.error("❌ 모든 항목을 입력해야 합니다.")
@@ -298,7 +298,7 @@ def show_result_dialog(student_data, subject_name):
     total_score = sc1 + sc2 + sc3
     
     score_table_df = pd.DataFrame({
-        "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 총점 합계"],
+        "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 합     계"],
         "취득 점수": [f"{sc1} 점", f"{sc2} 점", f"{sc3} 점", f"{total_score} 점"]
     })
     
@@ -506,7 +506,7 @@ elif st.session_state["student_logged_in"]:
         # ⬜ [설계도 1층] 대형 타이틀 단독 중앙정렬
         st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        # ⬜ [설계도 2층 정밀 개편] 5.5 : 1.5 : 1.5 : 1.5 비율 주입
+        # ⬜ [설계도 2층 정밀 개편] 2.2, 2.2, 2.2, 3.4 비율 주입
         # 4열이 무조건 110px의 공간을 안전하게 선점하도록 분할하여 글씨 깨짐 완천 방어!
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([2.2, 2.2, 2.2, 3.4])
         with row1_col4:
@@ -528,7 +528,7 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [설계도 4층 정밀 개편] 3.5 : 3.0 : 3.5 비율 주입
+            # ⬜ [설계도 4층 정밀 개편] 3.3, 3.4, 3.3 비율 주입
             # 가운데 2열의 가로폭 자체를 딱 버튼 너비(30%)로 슬림하게 좁혀 좌우 거대벽이 버튼을 강제로 '상자 정중앙'에 고정!
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
