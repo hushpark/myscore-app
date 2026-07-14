@@ -44,9 +44,9 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 🔵 [오염 완전 방어] 메인 푸른색 계열 주단추 속성 및 로그인 폼 제출 버튼 규격 고정 */
-        button[kind="primary"],
-        div.stButton > button[kind="primary"], 
+        /* 🔵 [오염 완벽 차단] 메인 로그인 단추 및 시스템 전체 파란색 주단추 속성 잠금 */
+        button[kind="primary"], 
+        .stButton > button[kind="primary"],
         button[data-testid="stFormSubmitButton"],
         div.stForm [data-testid="stFormSubmitButton"] > button { 
             background-color: #3b82f6 !important; 
@@ -57,37 +57,11 @@ st.markdown("""
             box-shadow: none !important;
         }
         button[kind="primary"]:hover,
-        div.stButton > button[kind="primary"]:hover, 
-        button[data-testid="stFormSubmitButton"]:hover,
-        div.stForm [data-testid="stFormSubmitButton"] > button:hover { 
+        .stButton > button[kind="primary"]:hover,
+        button[data-testid="stFormSubmitButton"]:hover { 
             background-color: #2563eb !important; 
         }
 
-        /* ⚪ [오염 완전 방어] 순정형 흰색 배경에 회색 테두리 보조 단추 격리 고정 */
-        button[kind="secondary"],
-        div.stButton > button[kind="secondary"],
-        div.stForm button[kind="secondary"] { 
-            background-color: #ffffff !important; 
-            color: #1e293b !important; 
-            font-weight: 700 !important; 
-            border: 1px solid #cbd5e1 !important; 
-            border-radius: 6px !important; 
-            box-shadow: none !important;
-        }
-        button[kind="secondary"]:hover,
-        div.stButton > button[kind="secondary"]:hover,
-        div.stForm button[kind="secondary"]:hover { 
-            background-color: #f8fafc !important;
-            border-color: #94a3b8 !important;
-            color: #0f172a !important;
-        }
-        
-        /* 로그인 화면 전용 스타일 */
-        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
-        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
-        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
-        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
-        
         /* 📱 학생 스마트폰 사각형 가두리 독립 스타일 */
         .student-mobile-container {
             max-width: 440px !important;
@@ -104,13 +78,45 @@ st.markdown("""
             box-sizing: border-box !important;
         }
         
-        /* 타이틀 스타일 고정 및 상단 마진 조율 */
+        /* 🎨 [저격 클래스 요격 패치] 오직 학생카드 내부의 '1번째 행열(최상단)' 버튼들만 정밀 무테 검은 글씨 마감 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button {
+            background-color: #ffffff !important; 
+            border: none !important; /* 👈 회색 테두리 흔적 선 완벽 삭제 마감 */
+            color: #1e293b !important; /* 단정한 짙은 검은색 글자 적용 */
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            box-shadow: none !important;
+            padding: 6px 0 !important;
+            width: 100% !important;
+            text-align: center !important;
+            height: auto !important;
+        }
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
+            background-color: #f8fafc !important; 
+            color: #0f172a !important;
+            border: none !important;
+        }
+
+        /* 🚀 학생카드 내부의 '마지막 행열(성적 확인)' 버튼은 칼같이 순정 파란색 고정 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button {
+            background-color: #3b82f6 !important; 
+            color: #ffffff !important; 
+            font-weight: 700 !important; 
+            border: none !important; 
+            border-radius: 6px !important;
+            box-shadow: none !important;
+        }
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button:hover {
+            background-color: #2563eb !important;
+        }
+        
+        /* 타이틀 스타일 고정 및 여백 최적화 */
         .student-mobile-card h2 { 
             font-size: 24px !important; 
             text-align: center !important; 
             font-weight: 800 !important; 
             color: #0f172a !important; 
-            margin: 0 0 15px 0 !important;
+            margin: 15px 0 20px 0 !important;
             padding: 0 !important;
             line-height: 40px !important;
         }
@@ -120,6 +126,11 @@ st.markdown("""
         div[data-testid="stTextInput"] > div, div[data-testid="stSelectbox"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
         div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
+        
+        /* 로그인 화면 전용 스타일 */
+        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
+        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
         
         /* 타이틀 영역 구조 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
@@ -412,29 +423,30 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 기획 도면 상하 정렬 순서 조정 버전)
+# 🎓 [2단계-A] 학생 화면 (📱 타이틀 하강 및 상단 버튼층 격리 무테 구현 완결)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
-        # ⬜ [설계도 최상단] 1층 대형 타이틀 단독 중앙정렬 복귀[cite: 1]
-        st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
-        
-        # ⬜ [설계도 2층] 선생님 기획 황금 분할 비율 [1.8, 1.8, 3.2, 3.2] 수치 적용![cite: 1]
+        # ⬜ [설계도 최종 패치 1층] 제어 단추 전교생 황금 비율 안착 [1.8, 1.8, 3.2, 3.2]
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
         
         with row1_col3:
+            # 💡 순정형 격리 속성을 그대로 부여 (CSS 요격에 의해 깔끔하게 무테 연출 완료)
             pw_edit_clicked = st.form_submit_button("🔐 암호변경", type="secondary")
             if pw_edit_clicked:
                 show_student_pw_dialog()
                 
         with row1_col4:
+            # 💡 순정형 격리 속성을 그대로 부여 (CSS 요격에 의해 깔끔하게 무테 연출 완료)
             logout_clicked = st.form_submit_button("🚪 로그아웃", type="secondary")
             if logout_clicked:
                 st.session_state.clear()
                 st.rerun()
                 
+        # ⬜ [설계도 최종 패치 2층] 대형 타이틀이 버튼 구역 바로 밑으로 내려오도록 완벽 이동 고정!
+        st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 8px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         active_dbs = get_active_databases()
@@ -447,9 +459,10 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [설계도 4층] 정중앙 압축 수치 [3.3, 3.4, 3.3] 적용 완료![cite: 1]
+            # ⬜ [설계도 4층] 정중앙 압축 수치 [3.3, 3.4, 3.3] 세팅
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
+                # 💡 다른 버튼과 간섭을 철저하게 방어한 순정 마스터 파란색 단추 잠금 작동
                 submit_active = st.form_submit_button("🚀 성적 확인", type="primary", use_container_width=True)
 
         if submit_active and sel_s != "과목을 선택하세요.":
@@ -657,7 +670,7 @@ elif st.session_state["admin_logged_in"]:
                             
                             supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
                             if clean_score_records:
-                                supabase.table(student_table).insert(clean_score_records).execute()
+                                supabase.table(student_table).insert(clean_records).execute()
                                 
                             st.session_state["score_input_success_flag"] = True
                             status_placeholder.empty()
@@ -715,6 +728,7 @@ elif st.session_state["admin_logged_in"]:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 class_opts = ["전체"]
+                # 💡 [문법 완벽 교정 장치] && 문법 버그를 표준 파이썬 and 연산자로 완벽 대수술 마감!
                 if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
