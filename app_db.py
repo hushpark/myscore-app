@@ -44,24 +44,31 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 🔵 [순정 파란색 기본값 고정] 다른 모든 일반 구역의 파란색 주단추 속성 절대 사수 */
-        button[kind="primary"], 
-        .stButton > button[kind="primary"],
-        button[data-testid="stFormSubmitButton"] { 
+        /* 마스터 푸른색 계열 버튼 규격화 및 일반 폼 제출 버튼 속성 고정 */
+        div.stButton > button[kind="primary"], 
+        button[data-testid="stFormSubmitButton"],
+        div.stForm [data-testid="stFormSubmitButton"] > button { 
             background-color: #3b82f6 !important; 
             color: #ffffff !important; 
             font-weight: 700 !important; 
             border: none !important; 
             border-radius: 6px !important; 
-            box-shadow: none !important;
+            padding: 8px 16px !important; 
         }
-        button[kind="primary"]:hover,
-        .stButton > button[kind="primary"]:hover,
-        button[data-testid="stFormSubmitButton"]:hover { 
+        div.stButton > button[kind="primary"]:hover, 
+        button[data-testid="stFormSubmitButton"]:hover,
+        div.stForm [data-testid="stFormSubmitButton"] > button:hover { 
             background-color: #2563eb !important; 
         }
-
-        /* 📱 학생용/로그인 전용 독립 상자 스타일 가두리 */
+        div.stButton > button[kind="secondary"] { background-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; }
+        
+        /* 로그인 화면 전용 스타일 */
+        div[data-testid="stForm"] div[data-testid="stRadio"] { padding-left: 95px !important; margin-bottom: 25px !important; width: 100% !important; }
+        div[data-testid="stForm"] div[role="radiogroup"] { display: flex !important; gap: 35px !important; align-items: center !important; }
+        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
+        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
+        
+        /* 📱 학생 스마트폰 사각형 가두리 독립 스타일 */
         .student-mobile-container {
             max-width: 440px !important;
             margin: 60px auto 0 auto !important;
@@ -70,85 +77,67 @@ st.markdown("""
         .student-mobile-card { 
             background-color: #ffffff !important; 
             border: 1px solid #cbd5e1 !important; 
-            padding: 35px 30px !important; 
+            padding: 40px 35px !important; 
             border-radius: 24px !important; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; 
             width: 100% !important;
             box-sizing: border-box !important;
         }
         
-        /* 🔴 [학생 로그인 대화상자 버튼만 단독 저격] 다른 곳 오염 차단 패치 */
-        div[data-testid="stForm"] button[kind="primary"],
-        div[data-testid="stForm"] button {
-            background-color: #ff4b4b !important;
-            color: #ffffff !important;
-            border: none !important;
-            border-radius: 8px !important;
-        }
-        div[data-testid="stForm"] button:hover {
-            background-color: #e03e3e !important;
-        }
-
-        /* 🎨 오직 학생카드 내부의 '1번째 행열(최상단)' 암호변경/로그아웃만 완벽 무테 흰색 바탕 단독 요격 */
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button {
-            background-color: #ffffff !important; 
-            border: none !important; 
-            color: #1e293b !important; 
-            font-size: 14px !important;
-            font-weight: 700 !important;
-            box-shadow: none !important;
-            padding: 6px 0 !important;
-            width: 100% !important;
-            text-align: center !important;
-            height: auto !important;
-        }
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
-            background-color: #f8fafc !important; 
-            color: #0f172a !important;
-        }
-        
-        /* 🚀 [학생 성적 확인 버튼만 단독 저격] 다른 곳 오염 없이 여기만 깔끔한 빨간색 지정 */
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button {
-            background-color: #ff4b4b !important; 
-            color: #ffffff !important; 
-            font-weight: 700 !important; 
-            border: none !important; 
-            border-radius: 8px !important;
-            box-shadow: none !important;
-        }
-        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type button:hover {
-            background-color: #e03e3e !important;
-        }
-        
         /* 타이틀 스타일 고정 */
         .student-mobile-card h2 { 
             font-size: 24px !important; 
-            text-align: center !important; 
+            text-align: left !important; 
             font-weight: 800 !important; 
             color: #0f172a !important; 
-            margin: 15px 0 20px 0 !important;
+            margin: 0 !important;
             padding: 0 !important;
             line-height: 40px !important;
         }
         
-        /* 🎨 드롭박스 선택 시 교란 방지 */
-        div[data-testid="stSelectbox"] > div,
-        div[data-testid="stTextInput"] > div,
-        div[data-testid="stSelectbox"] > div:focus-within,
-        div[data-testid="stTextInput"] > div:focus-within {
-            border: 1px solid #cbd5e1 !important; 
-            outline: none !important;
+        /* 🎨 [피드백 반영 전격 수정] 상단 제어 버튼들을 흰색 바탕 + 은은한 테두리 + 검은색 글씨로 일괄 리모델링 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button {
+            background-color: #ffffff !important; /* 깔끔한 하얀색 바탕 */
+            border: 1px solid #cbd5e1 !important; /* 은은하고 단정한 회색 테두리선 */
+            border-radius: 6px !important; /* 부드러운 둥근 모서리 마감 */
+            color: #1e293b !important; /* 눈이 편안한 깊은 검은색(차콜) 글씨색 주입 */
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important; /* 아주 미세한 그림자 레이어 */
+            padding: 6px 0 !important;
+            width: 100% !important;
+            text-align: center !important; /* 가독성을 위한 칸 정중앙 정렬 */
+            height: auto !important;
+            cursor: pointer !important;
+        }
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:first-of-type div.stFormSubmitButton button:hover {
+            color: #0f172a !important; /* 호버 시 더 짙은 검은색 */
+            background-color: #f8fafc !important; /* 호버 시 아주 부드러운 그레이 배경 스위칭 */
+            border-color: #94a3b8 !important; /* 테두리선 선명화 */
+        }
+        
+        /* 🚀 하단 성적 확인 버튼 센터 마스터 스타일 영구 홀딩 */
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type div.stFormSubmitButton button {
+            background-color: #3b82f6 !important; 
+            color: #ffffff !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            border: none !important;
+            border-radius: 6px !important;
+            padding: 10px 0 !important;
+            width: 100% !important; 
             box-shadow: none !important;
+        }
+        div.student-mobile-card div[data-testid="stHorizontalBlock"]:last-of-type div.stFormSubmitButton button:hover {
+            background-color: #2563eb !important;
         }
         
         div[data-testid="InputInstructions"] { display: none !important; }
         div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p { font-weight: 800 !important; color: #1e293b !important; font-size: 15px !important; }
+        div[data-testid="stTextInput"] > div, div[data-testid="stSelectbox"] > div { background-color: #ffffff !important; border: 1px solid #94a3b8 !important; border-radius: 6px !important; }
         div[data-testid="stTextInput"] input { background-color: #ffffff !important; color: #0f172a !important; padding: 8px 12px !important; }
-
-        /* 로그인 화면 폼 구성 스타일 가두리 상자 */
-        div[data-testid="stForm"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; padding: 45px 40px !important; border-radius: 24px !important; max-width: 440px !important; margin: 70px auto 0 auto !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; }
-        div[data-testid="stForm"] h2 { font-size: 26px !important; text-align: center !important; font-weight: 800 !important; color: #0f172a !important; }
-
+        div[data-testid="stTextInput"] > div:focus-within, div[data-testid="stSelectbox"] > div:focus-within { border: 2px solid #3b82f6 !important; outline: none !important; }
+        
         /* 타이틀 영역 구조 */
         .header-title-main { font-size: 32px !important; font-weight: 800 !important; color: #1e293b !important; letter-spacing: -0.5px !important; margin-bottom: 5px !important; }
         .header-nav-sub { font-size: 18px !important; font-weight: 700 !important; color: #1e293b !important; margin-bottom: 25px !important; }
@@ -362,7 +351,7 @@ def show_result_dialog(student_data, subject_name):
         }).eq("subject_key", student_data["subject_key"]).eq("school_email", student_data["school_email"]).execute()
         st.session_state["has_counted"] = True
     
-    if st.button("닫기", use_container_width=True):
+    if st.button("닫기", type="secondary", use_container_width=True):
         if "has_counted" in st.session_state: del st.session_state["has_counted"]
         st.rerun()
 
@@ -409,7 +398,7 @@ def show_profile_popup_dialog():
                 col1, col2 = st.columns(2)
                 
                 with col1: 
-                    save_btn = st.button("💾 비밀번호 저장", use_container_width=True)
+                    save_btn = st.button("💾 비밀번호 저장", type="primary", use_container_width=True)
                 with col2: 
                     close_btn = st.button("닫기", key="close_pw_inner", use_container_width=True)
 
@@ -454,9 +443,9 @@ def show_profile_popup_dialog():
         st.markdown("<br>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
-        with col1: save_sub_btn = st.button("💾 과목 저장하기", use_container_width=True)
+        with col1: save_sub_btn = st.button("💾 과목 저장하기", type="primary", use_container_width=True)
         with col2:
-            if st.button("닫기", use_container_width=True): st.rerun()
+            if st.button("닫기", type="secondary", use_container_width=True): st.rerun()
                 
         if save_sub_btn:
             if not new_subs_str.strip(): msg_box_sub.markdown("<p style='color: #ef4444; font-size: 14px; font-weight: 600;'>❌ 담당 과목을 최소 1개 이상 입력하세요.</p>", unsafe_allow_html=True)
@@ -478,92 +467,90 @@ if "logged_teacher_pw" not in st.session_state: st.session_state["logged_teacher
 df = load_db_df(student_table)
 
 # =========================================================================
-# 🔓 [1단계] 로그인 화면 (🔴 학생 로그인 버튼만 단독 빨간색 저격)
+# 🔓 [1단계] 로그인 화면 (안내문구 최적화 및 파란색 단추 바인딩 완료)
 # =========================================================================
 if not st.session_state["admin_logged_in"] and not st.session_state["student_logged_in"]:
-    st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
-    with st.form("master_unified_form"):
-        st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
-        login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
-        
-        user_id_input = st.text_input("ID / 이메일", placeholder="학생은 이메일, 교사는 ID를 입력하세요.", label_visibility="collapsed")
-        user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
-        
-        b_col2 = st.columns([1.0, 1.8, 1.0])[1]
-        submit_active = b_col2.form_submit_button("로그인", use_container_width=True)
-        
-        if submit_active:
-            clean_id = str(user_id_input).strip()
-            clean_pw = str(user_pw_input).strip()
-            if login_mode == "학생":
-                res = supabase.table(master_student_table).select("*").eq("school_email", clean_id).eq("password", clean_pw).execute().data
-                if res:
-                    st.session_state["student_logged_in"] = True
-                    st.session_state["logged_student_id"] = clean_id
-                    st.session_state["logged_student_pw"] = clean_pw
-                    st.session_state["student_info"] = res[0]
-                    st.rerun()
-                else: st.error("❌ 학생 로그인 정보가 올바르지 않습니다.")
-            elif login_mode == "교사":
-                if clean_id == "admin" and clean_pw == "1234":
-                    st.session_state["admin_logged_in"] = True
-                    st.session_state["logged_teacher_id"] = "admin"
-                    st.session_state["logged_teacher_pw"] = "1234"
-                    st.session_state["teacher_name"] = "최고관리자"
-                    st.session_state["allowed_subjects"] = ["마스터"]
-                    st.session_state["current_menu"] = "학생 조회 현황 모니터링"
-                    st.rerun()
-                else:
-                    df_tc = load_db_df(teacher_table)
-                    id_match = df_tc[df_tc['교사_ID'] == clean_id] if not df_tc.empty else pd.DataFrame()
-                    if not id_match.empty and str(id_match.iloc[0]['비밀번호']) == clean_pw:
-                        row = id_match.iloc[0]
-                        st.session_state["admin_logged_in"] = True
-                        st.session_state["logged_teacher_id"] = clean_id
-                        st.session_state["logged_teacher_pw"] = clean_pw
-                        st.session_state["teacher_name"] = str(row['교사_성명']).strip()
-                        allowed = [s.strip() for s in str(row['담당_과목']).split(",") if s.strip()]
-                        st.session_state["allowed_subjects"] = allowed
-                        
-                        active_dbs = get_active_databases()
-                        if "마스터" not in allowed:
-                            active_dbs = [d for d in active_dbs if d['subject'].strip() in allowed]
-                        
-                        if not active_dbs and "마스터" not in allowed:
-                            st.session_state["current_menu"] = "평가 대상 과목 구성"
-                        else:
-                            st.session_state["current_menu"] = "학생 조회 현황 모니터링"
-                        
+    with st.container():
+        with st.form("master_unified_form"):
+            st.markdown("<h2 style='text-align:center;'>수행평가 점수 확인 시스템</h2>", unsafe_allow_html=True)
+            login_mode = st.radio("접속 모드", ["학생", "교사"], horizontal=True, label_visibility="collapsed")
+            
+            user_id_input = st.text_input("ID / 이메일", placeholder="학생은 이메일, 교사는 ID를 입력하세요.", label_visibility="collapsed")
+            user_pw_input = st.text_input("PW", type="password", placeholder="비밀번호를 입력하세요", label_visibility="collapsed")
+            
+            b_col2 = st.columns([1.0, 1.8, 1.0])[1]
+            submit_active = b_col2.form_submit_button("로그인", type="primary", use_container_width=True)
+            
+            if submit_active:
+                clean_id = str(user_id_input).strip()
+                clean_pw = str(user_pw_input).strip()
+                if login_mode == "학생":
+                    res = supabase.table(master_student_table).select("*").eq("school_email", clean_id).eq("password", clean_pw).execute().data
+                    if res:
+                        st.session_state["student_logged_in"] = True
+                        st.session_state["logged_student_id"] = clean_id
+                        st.session_state["logged_student_pw"] = clean_pw
+                        st.session_state["student_info"] = res[0]
                         st.rerun()
-                    else: st.error("❌ 교사 로그인 실패")
-    st.markdown('</div>', unsafe_allow_html=True)
+                    else: st.error("❌ 학생 로그인 정보가 올바르지 않습니다.")
+                elif login_mode == "교사":
+                    if clean_id == "admin" and clean_pw == "1234":
+                        st.session_state["admin_logged_in"] = True
+                        st.session_state["logged_teacher_id"] = "admin"
+                        st.session_state["logged_teacher_pw"] = "1234"
+                        st.session_state["teacher_name"] = "최고관리자"
+                        st.session_state["allowed_subjects"] = ["마스터"]
+                        st.session_state["current_menu"] = "학생 조회 현황 모니터링"
+                        st.rerun()
+                    else:
+                        df_tc = load_db_df(teacher_table)
+                        id_match = df_tc[df_tc['교사_ID'] == clean_id] if not df_tc.empty else pd.DataFrame()
+                        if not id_match.empty and str(id_match.iloc[0]['비밀번호']) == clean_pw:
+                            row = id_match.iloc[0]
+                            st.session_state["admin_logged_in"] = True
+                            st.session_state["logged_teacher_id"] = clean_id
+                            st.session_state["logged_teacher_pw"] = clean_pw
+                            st.session_state["teacher_name"] = str(row['교사_성명']).strip()
+                            allowed = [s.strip() for s in str(row['담당_과목']).split(",") if s.strip()]
+                            st.session_state["allowed_subjects"] = allowed
+                            
+                            active_dbs = get_active_databases()
+                            if "마스터" not in allowed:
+                                active_dbs = [d for d in active_dbs if d['subject'].strip() in allowed]
+                            
+                            if not active_dbs and "마스터" not in allowed:
+                                st.session_state["current_menu"] = "평가 대상 과목 구성"
+                            else:
+                                st.session_state["current_menu"] = "학생 조회 현황 모니터링"
+                            
+                            st.rerun()
+                        else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 격리 요격으로 오직 학생 전용 단추만 빨간색 가동)
+# 🎓 [2단계-A] 학생 화면 (📱 선생님 기획 황금 지정 비율 완벽 가두리)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
-    st.markdown('<div class="student-mobile-card">', unsafe_allow_html=True)
     
-    with st.form("student_mobile_form", border=False):
-        # ⬜ 1층 제어 단추 선생님의 정확한 황금 비율 구조 안착 [1.8, 1.8, 3.2, 3.2]
+    with st.form("student_mobile_form", border=True):
+        st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
+        
+        # ⬜ [선생님 황금 비율 조준] 1.8, 1.8, 3.2, 3.2 분할 안착!
         row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
         
         with row1_col3:
-            # CSS 요격 처리에 의해 완벽한 무테 스타일 확보
-            pw_edit_clicked = st.form_submit_button("🔐 암호변경")
+            # 💡 흰색 무테 바탕 + 단정한 검은색 글씨 링크로 매칭 완료!
+            pw_edit_clicked = st.form_submit_button("🔐 암호변경", key="std_form_pw_edit")
             if pw_edit_clicked:
                 show_student_pw_dialog()
                 
         with row1_col4:
-            # CSS 요격 처리에 의해 완벽한 무테 스타일 확보
-            logout_clicked = st.form_submit_button("🚪 로그아웃")
+            # 💡 흰색 무테 바탕 + 단정한 검은색 글씨 링크로 매칭 완료!
+            logout_clicked = st.form_submit_button("🚪 로그아웃", key="std_form_logout")
             if logout_clicked:
                 st.session_state.clear()
                 st.rerun()
                 
-        # ⬜ 2층 대형 타이틀 하강 배치 구조 잠금
-        st.markdown("<h2>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 8px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         active_dbs = get_active_databases()
@@ -576,29 +563,27 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ 4층 성적 확인 정중앙 가두리 수치 [3.3, 3.4, 3.3] 고정
+            # ⬜ [선생님 황금 비율 조준] 정중앙 압축 수치 [3.3, 3.4, 3.3] 적용 완료!
             row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
             with row2_col2:
-                # 🔴 오직 여기만 독립 빨간색 단추로 정형 박제
-                submit_active = st.form_submit_button("🚀 성적 확인", use_container_width=True)
+                submit_active = st.form_submit_button("🚀 성적 확인", key="std_form_verify")
 
-    if submit_active and sel_s != "과목을 선택하세요.":
-        chosen_db = active_dbs[opts_s.index(sel_s)-1]
-        subject_key = chosen_db['key']
-        extracted_subject_name = chosen_db['subject']
+        if submit_active and sel_s != "과목을 선택하세요.":
+            chosen_db = active_dbs[opts_s.index(sel_s)-1]
+            subject_key = chosen_db['key']
+            extracted_subject_name = chosen_db['subject']
 
-        res = supabase.table(student_table).select("*").eq("subject_key", subject_key).eq("school_email", st.session_state["logged_student_id"]).execute()
-        
-        if len(res.data) > 0:
-            show_result_dialog(res.data[0], extracted_subject_name)
-        else:
-            st.error("❌ 해당 과목에 등록된 선생님의 성적 데이터가 아직 없습니다.")
+            res = supabase.table(student_table).select("*").eq("subject_key", subject_key).eq("school_email", st.session_state["logged_student_id"]).execute()
+            
+            if len(res.data) > 0:
+                show_result_dialog(res.data[0], extracted_subject_name)
+            else:
+                st.error("❌ 해당 과목에 등록된 선생님의 성적 데이터가 아직 없습니다.")
                 
-    st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================================================================
-# 🔒 [2단계-B] 교사 화면 (화강암 고정 구역 - 교사 구역 버튼들은 철저히 파란색 수호)
+# 🔒 [2단계-B] 교사 화면 (화강암 고정 구역 - 절대 변경 금지 지침 완벽 완수)
 # =========================================================================
 elif st.session_state["admin_logged_in"]:
     menus = ["학생 조회 현황 모니터링", "수행 평가 성적 입력", "학생 기본 정보 관리", "평가 대상 과목 구성"]
@@ -633,9 +618,9 @@ elif st.session_state["admin_logged_in"]:
         
         st.markdown('<div class="sidebar-spacer"></div>', unsafe_allow_html=True)
         
-        if st.button("👤 내 정보 수정", use_container_width=True):
+        if st.button("👤 내 정보 수정", type="secondary", use_container_width=True):
             show_profile_popup_dialog()
-        if st.sidebar.button("🚪 로그아웃", use_container_width=True): st.session_state.clear(); st.rerun()
+        if st.sidebar.button("🚪 로그아웃", type="secondary", use_container_width=True): st.session_state.clear(); st.rerun()
 
     st.markdown(f"""
         <div class="header-title-main">수행평가 점수 확인 시스템</div>
@@ -657,7 +642,7 @@ elif st.session_state["admin_logged_in"]:
             registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
         
         if not registered_dbs:
-            st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
+            with layout_left: st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
         else:
             with layout_left:
                 st.markdown("**📂 대상 교과 선택**")
@@ -703,7 +688,7 @@ elif st.session_state["admin_logged_in"]:
             registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
 
         if not registered_dbs:
-            st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
+            with layout_left: st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
         else:
             with layout_left:
                 st.markdown("**📂 관리할 교과 선택**")
@@ -788,7 +773,7 @@ elif st.session_state["admin_logged_in"]:
                             
                             supabase.table(student_table).delete().eq("subject_key", subject_key).execute()
                             if clean_score_records:
-                                supabase.table(student_table).insert(clean_score_records).execute()
+                                supabase.table(student_table).insert(clean_records).execute()
                                 
                             st.session_state["score_input_success_flag"] = True
                             status_placeholder.empty()
@@ -832,7 +817,7 @@ elif st.session_state["admin_logged_in"]:
             registered_dbs = [d for d in registered_dbs if d['subject'].strip() in allowed_trimmed]
 
         if not registered_dbs:
-            st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
+            with layout_left: st.info("📢 현재 개설되었거나 권한이 연결된 과목이 없습니다.")
         else:
             with layout_left:
                 st.markdown("**📂 관리할 교과 선택**")
@@ -1022,6 +1007,7 @@ elif st.session_state["admin_logged_in"]:
             
             for _ in range(4): st.write("")
             
+            # 💡 2행 1열에 개별 신규 추가 / 2행 2열에 최종 계정 저장 단추 칼정렬 세팅!
             student_grid_cols = st.columns([5.0, 5.0])
             with student_grid_cols[0]:
                 add_mst_std_trigger = st.button("➕ 학생 개별 신규 추가", use_container_width=True, key="m_single_add_std_btn")
@@ -1055,7 +1041,7 @@ elif st.session_state["admin_logged_in"]:
                         if clean_records: supabase.table(master_student_table).insert(clean_records).execute()
                         st.session_state["student_file_uploader_key"] = f"st_uploader_init_{int(time.time())}"
                         st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
-                        st.session_state["show_student_toast"] = True
+                        st.session_state["show_student_toast"] = False
                         st.session_state["student_save_success_flag"] = True 
                         time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
