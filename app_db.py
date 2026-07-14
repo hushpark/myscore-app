@@ -715,7 +715,7 @@ elif st.session_state["admin_logged_in"]:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 class_opts = ["전체"]
-                if not df.empty && "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
+                if not df.empty and "반" in df.columns: class_opts += [f"{x}반" for x in sorted(df['반'].unique())]
                 sel_c = st.selectbox("학반 필터링", options=class_opts, label_visibility="collapsed", key="inf_class")
 
                 # 🔒 황금 마진 수치 range(19) 완벽 고정
