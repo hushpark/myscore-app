@@ -298,7 +298,7 @@ def show_result_dialog(student_data, subject_name):
     total_score = sc1 + sc2 + sc3
     
     score_table_df = pd.DataFrame({
-        "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 합     계"],
+        "평가 항목": ["수행평가 1차", "수행평가 2차", "수행평가 3차", "📊 합         계"],
         "취득 점수": [f"{sc1} 점", f"{sc2} 점", f"{sc3} 점", f"{total_score} 점"]
     })
     
