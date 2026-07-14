@@ -44,25 +44,32 @@ st.markdown("""
         [data-testid="stSidebar"] button[kind="secondary"] { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px 0 !important; width: 100% !important; display: block !important; margin-bottom: 8px !important; }
         [data-testid="stSidebar"] button[kind="secondary"] *, [data-testid="stSidebar"] button[kind="secondary"] p { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; font-size: 15px !important; font-weight: 700 !important; }
         
-        /* 🔵 [오염 종식 핵심 파란색 고정] 시스템 전체 기본 마스터 단추 및 성적 조회 폼 단추 잠금 */
+        /* 🔵 [순정 파란색 완벽 복원] 오염 유발 CSS를 전면 삭제하여 스트림릿 순정 파란색 버튼으로 대화 통합 고정 */
         button[kind="primary"], 
         .stButton > button[kind="primary"],
-        button[data-testid="stFormSubmitButton"],
-        div[data-testid="stForm"] button,
-        div.stFormSubmitButton button { 
+        button[data-testid="stFormSubmitButton"] { 
             background-color: #3b82f6 !important; 
             color: #ffffff !important; 
             font-weight: 700 !important; 
             border: none !important; 
             border-radius: 6px !important; 
             box-shadow: none !important;
-            text-shadow: none !important;
         }
         button[kind="primary"]:hover,
         .stButton > button[kind="primary"]:hover,
-        button[data-testid="stFormSubmitButton"]:hover,
-        div[data-testid="stForm"] button:hover { 
+        button[data-testid="stFormSubmitButton"]:hover { 
             background-color: #2563eb !important; 
+        }
+
+        /* 보조 흰색 버튼 기본 디자인 홀딩 */
+        button[kind="secondary"],
+        .stButton > button[kind="secondary"] { 
+            background-color: #ffffff !important; 
+            color: #1e293b !important; 
+            font-weight: 700 !important; 
+            border: 1px solid #cbd5e1 !important; 
+            border-radius: 6px !important; 
+            box-shadow: none !important;
         }
         
         /* 📱 학생 스마트폰 사각형 가두리 독립 스타일 */
@@ -79,26 +86,6 @@ st.markdown("""
             box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; 
             width: 100% !important;
             box-sizing: border-box !important;
-        }
-        
-        /* 🎯 [초정밀 격리] 암호변경과 로그아웃 전용 클래스 - 타 단추를 오염시키지 않고 이곳만 흰색 무테 마감 */
-        .sub-control-btn div.stFormSubmitButton button,
-        .sub-control-btn button {
-            background-color: #ffffff !important;
-            border: none !important; 
-            color: #1e293b !important; 
-            font-size: 14px !important;
-            font-weight: 700 !important;
-            box-shadow: none !important;
-            width: 100% !important;
-            height: auto !important;
-            padding: 6px 0 !important;
-        }
-        .sub-control-btn div.stFormSubmitButton button:hover,
-        .sub-control-btn button:hover {
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
-            border: none !important;
         }
         
         div[data-testid="InputInstructions"] { display: none !important; }
@@ -502,34 +489,23 @@ if not st.session_state["admin_logged_in"] and not st.session_state["student_log
                         else: st.error("❌ 교사 로그인 실패")
 
 # =========================================================================
-# 🎓 [2단계-A] 학생 화면 (📱 타이틀 정렬 및 상단 무테 분리 패치 완결)
+# 🎓 [2단계-A] 학생 화면 (📱 대개편 기획안 완벽 반영 완료)
 # =========================================================================
 elif st.session_state["student_logged_in"]:
     st.markdown('<div class="student-mobile-container">', unsafe_allow_html=True)
     
     with st.form("student_mobile_form", border=True):
-        # ⬜ [1층] 암호변경과 로그아웃 버튼을 선생님의 황금 비율 [1.8, 1.8, 3.2, 3.2] 수치로 세팅![cite: 1]
-        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
+        # ⬜ [1층] 대형 타이틀 정중앙 잠금 정렬[cite: 1]
+        st.markdown("<h2 style='text-align: center; font-size: 24px;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         
-        with row1_col3:
-            # 🎯 오직 이곳만 격리하는 'sub-control-btn' 가두리를 주입하여 흰색 무테 검은 글자 연출!
-            st.markdown('<div class="sub-control-btn">', unsafe_allow_html=True)
-            pw_edit_clicked = st.form_submit_button("🔐 암호변경")
+        # ⬜ [2층] 기존 로그아웃 자리에 암호변경을 안착하기 위한 비율 분할[cite: 1]
+        row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.8, 1.8, 3.2, 3.2])
+        with row1_col4:
+            # 💡 기존 로그아웃 자리에 암호변경만 단독 흰색 테두리 단추로 깔끔하게 정렬 배정
+            pw_edit_clicked = st.form_submit_button("🔐 암호변경", type="secondary")
             if pw_edit_clicked:
                 show_student_pw_dialog()
-            st.markdown('</div>', unsafe_allow_html=True)
                 
-        with row1_col4:
-            # 🎯 오직 이곳만 격리하는 'sub-control-btn' 가두리를 주입하여 흰색 무테 검은 글자 연출!
-            st.markdown('<div class="sub-control-btn">', unsafe_allow_html=True)
-            logout_clicked = st.form_submit_button("🚪 로그아웃")
-            if logout_clicked:
-                st.session_state.clear()
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-                
-        # ⬜ [2층] 대형 타이틀을 단추 밑으로 내리고 정중앙 정렬 잠금!
-        st.markdown("<h2 style='text-align: center; font-size: 24px; margin: 15px 0 20px 0;'>수행평가 점수 확인</h2>", unsafe_allow_html=True)
         st.markdown("<hr style='margin: 8px 0; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
         
         active_dbs = get_active_databases()
@@ -542,11 +518,19 @@ elif st.session_state["student_logged_in"]:
             
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # ⬜ [4층] 정중앙 압축 가두리 수치 [3.3, 3.4, 3.3] 적용 완료![cite: 1]
-            row2_col1, row2_col2, row2_col3 = st.columns([3.3, 3.4, 3.3])
+            # ⬜ [4층] 요구하신 신규 4열 명밀 샌드위치 비율 전격 수립! [1.8, 3.2, 3.2, 1.8]
+            row2_col1, row2_col2, row2_col3, row2_col4 = st.columns([1.8, 3.2, 3.2, 1.8])
+            
             with row2_col2:
-                # 🔵 격리가 완료되어 상단 스타일 오염을 받지 않는 완벽한 정품 순정 파란색 버튼 작동[cite: 1]
+                # 🔵 가운데 첫 번째 영역에 성적 확인 파란색 순정 단추 배치완료
                 submit_active = st.form_submit_button("🚀 성적 확인", type="primary", use_container_width=True)
+                
+            with row2_col3:
+                # 🔵 가운데 두 번째 영역에 로그아웃 파란색 순정 단추 나란히 콤비 배치완료
+                logout_clicked = st.form_submit_button("🚪 로그아웃", type="primary", use_container_width=True)
+                if logout_clicked:
+                    st.session_state.clear()
+                    st.rerun()
 
         if submit_active and sel_s != "과목을 선택하세요.":
             chosen_db = active_dbs[opts_s.index(sel_s)-1]
@@ -1020,7 +1004,7 @@ elif st.session_state["admin_logged_in"]:
                         if clean_records: supabase.table(master_student_table).insert(clean_records).execute()
                         st.session_state["student_file_uploader_key"] = f"st_uploader_init_{int(time.time())}"
                         st.session_state["cached_student_df"] = pd.DataFrame(clean_records)
-                        st.session_state["show_student_toast"] = True
+                        st.session_state["show_student_toast"] = False
                         st.session_state["student_save_success_flag"] = True 
                         time.sleep(0.2); st.rerun()
                     except Exception as e: st.error(f"❌ 저장 실패: {e}")
